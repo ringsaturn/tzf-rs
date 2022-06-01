@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/ringsaturn/tzf/pb;pb";
+
+message Point {
+    float lng = 1;
+    float lat = 2;
+}
+
+message Polygon {
+    repeated Point points = 1;
+}
+
+message Timezone {
+    repeated Polygon polygons = 1;
+    string name = 2;
+}
+
+message Timezones {
+    repeated Timezone timezones = 1;
+}
