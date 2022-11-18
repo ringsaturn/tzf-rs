@@ -2,12 +2,13 @@ mod gen;
 mod geometry;
 
 #[derive(Debug)]
-pub struct Item {
+pub struct Item<'a> {
     pub poly: Vec<geometry::Polygon>,
-    pub tz: gen::Timezone,
+    // pub tz: gen::Timezone,
+    pub name: &'a str,
 }
 
-impl Item {
+impl Item<'_> {
     pub fn contain_point(&self, p: &geometry::Point) -> bool {
         for poly in self.poly.iter() {
             if geometry::pt_in_polygon(p, &poly) {
@@ -19,14 +20,13 @@ impl Item {
 }
 
 #[derive(Debug)]
-pub struct Finder {
-    all: Vec<Item>,
+pub struct Finder<'a> {
+    all: Vec<Item<'a>>,
 }
 
-impl Finder {
+impl Finder<'_> {
     // type Error = anyhow::Error;
-
-    pub fn from_pb(tzs: gen::Timezones) -> Finder {
+    pub fn from_pb(_tzs: gen::Timezones) -> Finder<'static> {
         // TODO
         Finder { all: vec![] }
     }
@@ -34,11 +34,11 @@ impl Finder {
     // https://users.rust-lang.org/t/cannot-move-out-of-x-which-is-behind-a-shared-reference/33263
     pub fn get_tz_name(&self, p: &geometry::Point) -> &str {
         for item in self.all.iter() {
-            if item.contain_point(p){
-                return &item.tz.name
+            if item.contain_point(p) {
+                return &item.name;
             }
         }
-        return ""
+        return "";
     }
 }
 
