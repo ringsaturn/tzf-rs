@@ -57,6 +57,8 @@ impl Finder {
                     })
                 }
 
+                // TODO(ringsaturn): support holes
+
                 let newpoly: geometry::Polygon = geometry::Polygon { edges: edges };
                 poly.push(newpoly);
             }
@@ -83,14 +85,9 @@ impl Finder {
 }
 
 fn main() {
-    println!("Hello, world!");
-
     let file_bytes = include_bytes!("data/combined-with-oceans.reduce.pb").to_vec();
 
     let tz = gen::Timezones::try_from(file_bytes).unwrap();
-    // let tz: gen::Timezones = Ok(gen::Timezones::decode(&file_bytes[..])).unwrap();
-
-    println!("一共有 {:?} 个时区", tz.timezones.len());
 
     let finder: Finder = Finder::from_pb(tz);
 
