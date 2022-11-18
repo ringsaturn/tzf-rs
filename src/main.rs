@@ -2,13 +2,14 @@ mod gen;
 mod geometry;
 
 #[derive(Debug)]
-pub struct Item<'a> {
+pub struct Item {
     pub poly: Vec<geometry::Polygon>,
     // pub tz: gen::Timezone,
-    pub name: &'a str,
+    pub name: String,
+    // pub name: u8,
 }
 
-impl Item<'_> {
+impl Item {
     pub fn contain_point(&self, p: &geometry::Point) -> bool {
         for poly in self.poly.iter() {
             if geometry::pt_in_polygon(p, &poly) {
@@ -20,30 +21,26 @@ impl Item<'_> {
 }
 
 #[derive(Debug)]
-pub struct Finder<'a> {
+pub struct Finder {
     // &Vec<Foo>
     // &[Foo]
-    all: Vec<Item<'a>>,
+    all: Vec<Item>,
     // all: &'a [Item<'a>],
 }
 
-impl Finder<'_> {
+impl Finder {
     // type Error = anyhow::Error;
-    pub fn from_pb(tzs: gen::Timezones) -> Finder<'static> {
+    pub fn from_pb(tzs: gen::Timezones) -> Finder {
         // TODO
         let mut f: Finder = Finder { all: vec![] };
         for tz in tzs.timezones.iter() {
-            // let newName = tz.name.as_str().clone();
+            print!("{:?}\n", tz.name);
             let item: Item = Item {
-                name: &tz.name.to_owned(),
+                name: tz.name.to_string(),
                 poly: vec![],
             };
-            // [&v[..3], &v[l - 3..]].concat();
-            // f.all = f.all + item;
-            // f.all = [f.all[..], item].concat();
-            f.all.insert(3, item);
 
-            // f.all.push(item);
+            f.all.push(item);
         }
         return f;
     }
