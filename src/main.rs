@@ -21,14 +21,31 @@ impl Item<'_> {
 
 #[derive(Debug)]
 pub struct Finder<'a> {
+    // &Vec<Foo>
+    // &[Foo]
     all: Vec<Item<'a>>,
+    // all: &'a [Item<'a>],
 }
 
 impl Finder<'_> {
     // type Error = anyhow::Error;
-    pub fn from_pb(_tzs: gen::Timezones) -> Finder<'static> {
+    pub fn from_pb(tzs: gen::Timezones) -> Finder<'static> {
         // TODO
-        Finder { all: vec![] }
+        let mut f: Finder = Finder { all: vec![] };
+        for tz in tzs.timezones.iter() {
+            // let newName = tz.name.as_str().clone();
+            let item: Item = Item {
+                name: &tz.name.to_owned(),
+                poly: vec![],
+            };
+            // [&v[..3], &v[l - 3..]].concat();
+            // f.all = f.all + item;
+            // f.all = [f.all[..], item].concat();
+            f.all.insert(3, item);
+
+            // f.all.push(item);
+        }
+        return f;
     }
 
     // https://users.rust-lang.org/t/cannot-move-out-of-x-which-is-behind-a-shared-reference/33263
@@ -57,6 +74,9 @@ fn main() {
             geometry::Edge::new((0.0, 10.0), (0.0, 0.0)),
         ],
     };
+    let finder: Finder = Finder::from_pb(tz);
+
+    print!("{:?}", finder);
 
     // let item = Item { poly: vec![poly], tz: None};
 
