@@ -1,12 +1,12 @@
+use std::vec;
+
 mod gen;
 mod geometry;
 
 #[derive(Debug)]
 pub struct Item {
     pub poly: Vec<geometry::Polygon>,
-    // pub tz: gen::Timezone,
     pub name: String,
-    // pub name: u8,
 }
 
 impl Item {
@@ -22,10 +22,7 @@ impl Item {
 
 #[derive(Debug)]
 pub struct Finder {
-    // &Vec<Foo>
-    // &[Foo]
     all: Vec<Item>,
-    // all: &'a [Item<'a>],
 }
 
 impl Finder {
@@ -34,10 +31,32 @@ impl Finder {
         // TODO
         let mut f: Finder = Finder { all: vec![] };
         for tz in tzs.timezones.iter() {
-            print!("{:?}\n", tz.name);
+            // print!("{:?}\n", tz.name);
+            let mut poly: Vec<geometry::Polygon> = vec![];
+
+            // 遍历所有的多边形
+            for polygon in tz.polygons.iter() {
+                let mut edges: Vec<geometry::Edge> = vec![];
+
+                for point in polygon.points.iter() {
+                    edges.push(geometry::Edge {
+                        pt1: (geometry::Point {
+                            x: f64::from(point.lng),
+                            y: f64::from(point.lat),
+                        }),
+                        pt2: (geometry::Point {
+                            x: f64::from(point.lng),
+                            y: f64::from(point.lat),
+                        }),
+                    })
+                }
+                let newpoly: geometry::Polygon = geometry::Polygon { edges: edges };
+                poly.push(newpoly);
+            }
+
             let item: Item = Item {
                 name: tz.name.to_string(),
-                poly: vec![],
+                poly: poly,
             };
 
             f.all.push(item);
@@ -73,9 +92,12 @@ fn main() {
     };
     let finder: Finder = Finder::from_pb(tz);
 
-    print!("{:?}", finder);
+    // print!("{:?}", finder);
+    print!(
+        "{:?}",
+        finder.get_tz_name(&geometry::Point { x: 116.0, y: 39.0 })
+    );
 
     // let item = Item { poly: vec![poly], tz: None};
-
-    println!("{:?}", poly);
+    // println!("{:?}", poly);
 }
