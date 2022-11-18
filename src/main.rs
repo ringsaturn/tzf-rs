@@ -89,17 +89,8 @@ fn main() {
 
     println!("一共有 {:?} 个时区", tz.timezones.len());
 
-    // let _poly = geometry::Polygon {
-    //     edges: vec![
-    //         geometry::Edge::new((0.0, 0.0), (10.0, 0.0)),
-    //         geometry::Edge::new((10.0, 0.0), (10.0, 10.0)),
-    //         geometry::Edge::new((10.0, 10.0), (0.0, 10.0)),
-    //         geometry::Edge::new((0.0, 10.0), (0.0, 0.0)),
-    //     ],
-    // };
     let finder: Finder = Finder::from_pb(tz);
 
-    // print!("{:?}", finder);
     print!(
         "{:?}",
         finder.get_tz_name(&geometry::Point {
