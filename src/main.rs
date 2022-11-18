@@ -38,18 +38,27 @@ impl Finder {
             for polygon in tz.polygons.iter() {
                 let mut edges: Vec<geometry::Edge> = vec![];
 
-                for point in polygon.points.iter() {
+                let points_len = polygon.points.len();
+                for i in 0..points_len {
+                    let curr = polygon.points.get(i).unwrap();
+                    let mut next_idx = i + 1;
+                    if next_idx > points_len {
+                        next_idx = 0;
+                    }
+                    let next = polygon.points.get(next_idx).unwrap();
+
                     edges.push(geometry::Edge {
                         pt1: (geometry::Point {
-                            x: f64::from(point.lng),
-                            y: f64::from(point.lat),
+                            x: f64::from(curr.lng),
+                            y: f64::from(curr.lat),
                         }),
                         pt2: (geometry::Point {
-                            x: f64::from(point.lng),
-                            y: f64::from(point.lat),
+                            x: f64::from(next.lng),
+                            y: f64::from(next.lat),
                         }),
                     })
                 }
+
                 let newpoly: geometry::Polygon = geometry::Polygon { edges: edges };
                 poly.push(newpoly);
             }
@@ -82,14 +91,14 @@ fn main() {
 
     println!("一共有 {:?} 个时区", tz.timezones.len());
 
-    let poly = geometry::Polygon {
-        edges: vec![
-            geometry::Edge::new((0.0, 0.0), (10.0, 0.0)),
-            geometry::Edge::new((10.0, 0.0), (10.0, 10.0)),
-            geometry::Edge::new((10.0, 10.0), (0.0, 10.0)),
-            geometry::Edge::new((0.0, 10.0), (0.0, 0.0)),
-        ],
-    };
+    // let _poly = geometry::Polygon {
+    //     edges: vec![
+    //         geometry::Edge::new((0.0, 0.0), (10.0, 0.0)),
+    //         geometry::Edge::new((10.0, 0.0), (10.0, 10.0)),
+    //         geometry::Edge::new((10.0, 10.0), (0.0, 10.0)),
+    //         geometry::Edge::new((0.0, 10.0), (0.0, 0.0)),
+    //     ],
+    // };
     let finder: Finder = Finder::from_pb(tz);
 
     // print!("{:?}", finder);
