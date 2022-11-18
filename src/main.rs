@@ -27,12 +27,11 @@ pub struct Finder {
 
 impl Finder {
     pub fn from_pb(tzs: gen::Timezones) -> Finder {
-        // TODO
         let mut f: Finder = Finder { all: vec![] };
         for tz in tzs.timezones.iter() {
             let mut poly: Vec<geometry::Polygon> = vec![];
 
-            // 遍历所有的多边形
+            // iter all polygons
             for polygon in tz.polygons.iter() {
                 let mut edges: Vec<geometry::Edge> = vec![];
 
@@ -98,7 +97,4 @@ fn main() {
             y: 39.9289
         })
     );
-
-    // let item = Item { poly: vec![poly], tz: None};
-    // println!("{:?}", poly);
 }
