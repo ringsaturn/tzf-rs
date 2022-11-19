@@ -1,13 +1,13 @@
 #![feature(test)]
 #[cfg(test)]
-mod benches {
+mod benches_finder {
 
     use std::fs::File;
     use tzf_rs::Finder;
     extern crate test;
     use test::Bencher;
     #[bench]
-    fn bench_get_tz_beijing(b: &mut Bencher) {
+    fn bench_finder_get_tz_beijing(b: &mut Bencher) {
         let guard = pprof::ProfilerGuardBuilder::default()
             .frequency(1000)
             .blocklist(&["libc", "libgcc", "pthread", "vdso"])
