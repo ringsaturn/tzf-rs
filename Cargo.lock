@@ -627,6 +627,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "tzf-rel"
+version = "0.1.0"
+source = "git+http://github.com/ringsaturn/tzf-rel?rev=2a8a67f509c1731a8c4485e7f1f7683347c02175#2a8a67f509c1731a8c4485e7f1f7683347c02175"
+
+[[package]]
 name = "tzf-rs"
 version = "0.1.0"
 dependencies = [
@@ -636,6 +641,7 @@ dependencies = [
  "pprof",
  "prost",
  "prost-build",
+ "tzf-rel",
 ]
 
 [[package]]
