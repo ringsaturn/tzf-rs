@@ -145,3 +145,28 @@ impl FuzzyFinder {
         return "";
     }
 }
+
+pub struct DefaultFinder {
+    finder: Finder,
+    fuzzy_finder: FuzzyFinder,
+}
+
+impl DefaultFinder {
+    pub fn new_default() -> DefaultFinder {
+        let finder = Finder::new_default();
+        let fuzzy_finder = FuzzyFinder::new_default();
+        let df = DefaultFinder {
+            finder,
+            fuzzy_finder,
+        };
+        return df;
+    }
+
+    pub fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
+        let fuzzy_name = self.fuzzy_finder.get_tz_name(lng, lat);
+        if fuzzy_name != "" {
+            return fuzzy_name;
+        }
+        return self.finder.get_tz_name(lng, lat);
+    }
+}
