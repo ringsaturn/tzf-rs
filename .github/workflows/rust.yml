@@ -14,7 +14,7 @@ jobs:
 
     runs-on: ubuntu-latest
     env:
-      PROTOC_VERSION: "3.21.2"
+      PROTOC_VERSION: "3.20.3"
     steps:
     - uses: actions/checkout@v3
     - name: Download data
