@@ -1,6 +1,6 @@
 #![feature(test)]
 
-use std::vec;
+use std::{time, vec};
 
 mod gen;
 mod geometry;
@@ -99,6 +99,9 @@ impl Finder {
 mod tests {
 
     use super::Finder;
+    use std::fs::File;
+    extern crate test;
+    use test::Bencher;
 
     #[test]
     fn add() {
@@ -122,20 +125,34 @@ mod tests {
         assert_eq!(finder.get_tz_name(114.1594, 22.3173), "Asia/Hong_Kong");
     }
 
-    extern crate test;
-    use test::Bencher;
-
     #[bench]
     fn bench_get_tz_beijing(b: &mut Bencher) {
+        let guard = pprof::ProfilerGuardBuilder::default()
+            .frequency(1000)
+            .blocklist(&["libc", "libgcc", "pthread", "vdso"])
+            .build()
+            .unwrap();
+
         let finder = Finder::new_default();
+
         b.iter(|| {
             let _ = finder.get_tz_name(116.3883, 39.9289);
         });
+
+        if let Ok(report) = guard.report().build() {
+            let file = File::create("flamegraph.svg").unwrap();
+            report.flamegraph(file).unwrap();
+        };
     }
 }
 
 fn main() {
     let finder = Finder::new_default();
 
+    let now = time::Instant::now();
+
     print!("{:?}", finder.get_tz_name(116.3883, 39.9289));
+
+    let elapsed = now.elapsed();
+    println!("Elapsed: {:.2?}", elapsed);
 }
