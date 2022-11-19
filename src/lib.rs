@@ -74,10 +74,8 @@ impl Finder {
 
     pub fn new_default() -> Finder {
         // let file_bytes = include_bytes!("data/combined-with-oceans.reduce.pb").to_vec();
-        let file_bytes = load_reduced();
-        let tz = gen::Timezones::try_from(file_bytes).unwrap();
-
-        let finder: Finder = Finder::from_pb(tz);
+        let file_bytes: Vec<u8> = load_reduced();
+        let finder: Finder = Finder::from_pb(gen::Timezones::try_from(file_bytes).unwrap());
         return finder;
     }
 

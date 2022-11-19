@@ -14,7 +14,7 @@ mod benches {
             .build()
             .unwrap();
 
-        let finder = Finder::new_default();
+        let finder: Finder = Finder::new_default();
 
         b.iter(|| {
             let _ = finder.get_tz_name(116.3883, 39.9289);
