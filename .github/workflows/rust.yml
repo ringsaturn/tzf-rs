@@ -21,8 +21,6 @@ jobs:
       uses: ATiltedTree/setup-rust@v1
       with:
         rust-version: nightly
-    - name: Download data
-      run: make download
     - name: Install protoc
       run: |
         curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOC_VERSION/protoc-$PROTOC_VERSION-linux-x86_64.zip
