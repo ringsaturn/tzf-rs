@@ -1,5 +1,7 @@
+use std::collections::HashMap;
+use std::f64::consts::PI;
 use std::vec;
-use tzf_rel::load_reduced;
+use tzf_rel::{load_preindex, load_reduced};
 mod gen;
 mod geometry;
 
@@ -86,6 +88,59 @@ impl Finder {
             if item.contain_point(p) {
                 return &item.name;
             }
+        }
+        return "";
+    }
+}
+
+// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
+pub fn deg2num(lng: f64, lat: f64, zoom: i64) -> (i64, i64) {
+    let lat_rad = lat.to_radians();
+    let n = f64::powf(2.0, zoom as f64);
+    let xtile = (lng + 180.0) / 360.0 * n;
+    let ytile = (1.0 - lat_rad.tan().asinh() / PI) / 2.0 * n;
+    return (xtile as i64, ytile as i64);
+}
+
+#[derive(Debug)]
+pub struct FuzzyFinder {
+    min_zoom: i64,
+    max_zoom: i64,
+    all: HashMap<(i64, i64, i64), String>, // K: <x,y,z>
+}
+
+impl FuzzyFinder {
+    pub fn from_pb(tzs: gen::PreindexTimezones) -> FuzzyFinder {
+        let mut f = FuzzyFinder {
+            min_zoom: tzs.agg_zoom as i64,
+            max_zoom: tzs.idx_zoom as i64,
+            all: HashMap::new(),
+        };
+        for item in tzs.keys.iter() {
+            f.all.insert(
+                (item.x as i64, item.y as i64, item.z as i64),
+                item.name.to_string(),
+            );
+        }
+        return f;
+    }
+
+    pub fn new_default() -> FuzzyFinder {
+        let file_bytes: Vec<u8> = load_preindex();
+        let finder: FuzzyFinder =
+            FuzzyFinder::from_pb(gen::PreindexTimezones::try_from(file_bytes).unwrap());
+        return finder;
+    }
+
+    pub fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
+        for zoom in self.min_zoom..self.max_zoom {
+            let idx = deg2num(lng, lat, zoom);
+            let k = &(idx.0, idx.1, zoom);
+            let ret = self.all.get(&k);
+            if ret.is_none() {
+                continue;
+            }
+            return ret.unwrap();
         }
         return "";
     }
