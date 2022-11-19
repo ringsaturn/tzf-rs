@@ -1,5 +1,3 @@
-#![feature(test)]
-
 use std::vec;
 use tzf_rel::load_reduced;
 mod gen;
@@ -76,7 +74,6 @@ impl Finder {
 
     pub fn new_default() -> Finder {
         // let file_bytes = include_bytes!("data/combined-with-oceans.reduce.pb").to_vec();
-
         let file_bytes = load_reduced();
         let tz = gen::Timezones::try_from(file_bytes).unwrap();
 
@@ -93,56 +90,5 @@ impl Finder {
             }
         }
         return "";
-    }
-}
-
-#[cfg(test)]
-mod tests {
-
-    use super::Finder;
-    use std::fs::File;
-    extern crate test;
-    use test::Bencher;
-
-    #[test]
-    fn add() {
-        assert_eq!(1, 1,);
-    }
-
-    #[test]
-    fn smoke_test() {
-        let finder = Finder::new_default();
-
-        assert_eq!(finder.get_tz_name(116.3883, 39.9289), "Asia/Shanghai");
-        assert_eq!(finder.get_tz_name(121.3547, 31.1139), "Asia/Shanghai");
-        assert_eq!(finder.get_tz_name(111.8674, 34.4200), "Asia/Shanghai");
-        assert_eq!(finder.get_tz_name(-97.8674, 34.4200), "America/Chicago");
-        assert_eq!(finder.get_tz_name(139.4382, 36.4432), "Asia/Tokyo");
-        assert_eq!(finder.get_tz_name(24.5212, 50.2506), "Europe/Kyiv");
-        assert_eq!(finder.get_tz_name(-0.9671, 52.0152), "Europe/London");
-        assert_eq!(finder.get_tz_name(-4.5706, 46.2747), "Etc/GMT");
-        assert_eq!(finder.get_tz_name(-4.5706, 46.2747), "Etc/GMT");
-        assert_eq!(finder.get_tz_name(-73.7729, 38.3530), "Etc/GMT+5");
-        assert_eq!(finder.get_tz_name(114.1594, 22.3173), "Asia/Hong_Kong");
-    }
-
-    #[bench]
-    fn bench_get_tz_beijing(b: &mut Bencher) {
-        let guard = pprof::ProfilerGuardBuilder::default()
-            .frequency(1000)
-            .blocklist(&["libc", "libgcc", "pthread", "vdso"])
-            .build()
-            .unwrap();
-
-        let finder = Finder::new_default();
-
-        b.iter(|| {
-            let _ = finder.get_tz_name(116.3883, 39.9289);
-        });
-
-        if let Ok(report) = guard.report().build() {
-            let file = File::create("flamegraph.svg").unwrap();
-            report.flamegraph(file).unwrap();
-        };
     }
 }
