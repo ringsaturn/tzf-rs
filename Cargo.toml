@@ -9,6 +9,10 @@ version = "0.1.0"
 anyhow = "1"
 bytes = "1"
 prost = "0.11"
+lazy_static = "1.4.0"
 
 [build-dependencies]
 prost-build = "0.11"
+
+[profile.bench]
+lto = true

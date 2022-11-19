@@ -1,6 +1,6 @@
 use prost::Message;
 
-mod pb;
+pub mod pb;
 pub use pb::*;
 
 impl TryFrom<Vec<u8>> for Timezones {

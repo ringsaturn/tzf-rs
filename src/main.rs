@@ -1,3 +1,5 @@
+#![feature(test)]
+
 use std::vec;
 
 mod gen;
@@ -72,8 +74,18 @@ impl Finder {
         return f;
     }
 
+    pub fn new_default() -> Finder {
+        let file_bytes = include_bytes!("data/combined-with-oceans.reduce.pb").to_vec();
+
+        let tz = gen::Timezones::try_from(file_bytes).unwrap();
+
+        let finder: Finder = Finder::from_pb(tz);
+        return finder;
+    }
+
     // https://users.rust-lang.org/t/cannot-move-out-of-x-which-is-behind-a-shared-reference/33263
-    pub fn get_tz_name(&self, p: &geometry::Point) -> &str {
+    pub fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
+        let p = &geometry::Point { x: lng, y: lat };
         for item in self.all.iter() {
             if item.contain_point(p) {
                 return &item.name;
@@ -83,18 +95,47 @@ impl Finder {
     }
 }
 
+#[cfg(test)]
+mod tests {
+
+    use super::Finder;
+
+    #[test]
+    fn add() {
+        assert_eq!(1, 1,);
+    }
+
+    #[test]
+    fn smoke_test() {
+        let finder = Finder::new_default();
+
+        assert_eq!(finder.get_tz_name(116.3883, 39.9289), "Asia/Shanghai");
+        assert_eq!(finder.get_tz_name(121.3547, 31.1139), "Asia/Shanghai");
+        assert_eq!(finder.get_tz_name(111.8674, 34.4200), "Asia/Shanghai");
+        assert_eq!(finder.get_tz_name(-97.8674, 34.4200), "America/Chicago");
+        assert_eq!(finder.get_tz_name(139.4382, 36.4432), "Asia/Tokyo");
+        assert_eq!(finder.get_tz_name(24.5212, 50.2506), "Europe/Kyiv");
+        assert_eq!(finder.get_tz_name(-0.9671, 52.0152), "Europe/London");
+        assert_eq!(finder.get_tz_name(-4.5706, 46.2747), "Etc/GMT");
+        assert_eq!(finder.get_tz_name(-4.5706, 46.2747), "Etc/GMT");
+        assert_eq!(finder.get_tz_name(-73.7729, 38.3530), "Etc/GMT+5");
+        assert_eq!(finder.get_tz_name(114.1594, 22.3173), "Asia/Hong_Kong");
+    }
+
+    extern crate test;
+    use test::Bencher;
+
+    #[bench]
+    fn bench_get_tz_beijing(b: &mut Bencher) {
+        let finder = Finder::new_default();
+        b.iter(|| {
+            let _ = finder.get_tz_name(116.3883, 39.9289);
+        });
+    }
+}
+
 fn main() {
-    let file_bytes = include_bytes!("data/combined-with-oceans.reduce.pb").to_vec();
+    let finder = Finder::new_default();
 
-    let tz = gen::Timezones::try_from(file_bytes).unwrap();
-
-    let finder: Finder = Finder::from_pb(tz);
-
-    print!(
-        "{:?}",
-        finder.get_tz_name(&geometry::Point {
-            x: 116.3883,
-            y: 39.9289
-        })
-    );
+    print!("{:?}", finder.get_tz_name(116.3883, 39.9289));
 }

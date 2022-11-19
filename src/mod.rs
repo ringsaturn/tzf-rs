@@ -1,2 +1,3 @@
-mod geometry;
-pub use geometry::*;
+pub mod geometry;
+// pub mod finder;
+pub mod main;

@@ -10,31 +10,31 @@ pub struct Point {
 ///
 /// Excerpt from RFC-9476 section 'Polygon'
 ///
-///   -  A linear ring is a closed LineString with four or more positions.
-///   -  The first and last positions are equivalent, and they MUST contain
-///     identical values; their representation SHOULD also be identical.
-///   -  A linear ring is the boundary of a surface or the boundary of a
-///     hole in a surface.
-///   -  A linear ring MUST follow the right-hand rule with respect to the
-///     area it bounds, i.e., exterior rings are counterclockwise, and
-///     holes are clockwise.
+///    -  A linear ring is a closed LineString with four or more positions.
+///    -  The first and last positions are equivalent, and they MUST contain
+///      identical values; their representation SHOULD also be identical.
+///    -  A linear ring is the boundary of a surface or the boundary of a
+///      hole in a surface.
+///    -  A linear ring MUST follow the right-hand rule with respect to the
+///      area it bounds, i.e., exterior rings are counterclockwise, and
+///      holes are clockwise.
 ///
-///   Note: the [GJ2008] specification did not discuss linear ring winding
-///   order.  For backwards compatibility, parsers SHOULD NOT reject
-///   Polygons that do not follow the right-hand rule.
+///    Note: the \[GJ2008\] specification did not discuss linear ring winding
+///    order.  For backwards compatibility, parsers SHOULD NOT reject
+///    Polygons that do not follow the right-hand rule.
 ///
-///   Though a linear ring is not explicitly represented as a GeoJSON
-///   geometry type, it leads to a canonical formulation of the Polygon
-///   geometry type definition as follows:
+///    Though a linear ring is not explicitly represented as a GeoJSON
+///    geometry type, it leads to a canonical formulation of the Polygon
+///    geometry type definition as follows:
 ///
-///   -  For type "Polygon", the "coordinates" member MUST be an array of
-///     linear ring coordinate arrays.
-///   -  For Polygons with more than one of these rings, the first MUST be
-///     the exterior ring, and any others MUST be interior rings.  The
-///     exterior ring bounds the surface, and the interior rings (if
-///     present) bound holes within the surface.
+///    -  For type "Polygon", the "coordinates" member MUST be an array of
+///      linear ring coordinate arrays.
+///    -  For Polygons with more than one of these rings, the first MUST be
+///      the exterior ring, and any others MUST be interior rings.  The
+///      exterior ring bounds the surface, and the interior rings (if
+///      present) bound holes within the surface.
 ///
-/// [GJ2008]: https://geojson.org/geojson-spec
+/// \[GJ2008\]: <https://geojson.org/geojson-spec>
 ///
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Polygon {
@@ -113,6 +113,18 @@ pub struct PreindexTimezones {
 #[repr(i32)]
 pub enum CompressMethod {
     Unknown = 0,
-    /// https://developers.google.com/maps/documentation/utilities/polylinealgorithm
+    /// <https://developers.google.com/maps/documentation/utilities/polylinealgorithm>
     Polyline = 1,
+}
+impl CompressMethod {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            CompressMethod::Unknown => "Unknown",
+            CompressMethod::Polyline => "Polyline",
+        }
+    }
 }
