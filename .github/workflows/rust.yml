@@ -17,6 +17,10 @@ jobs:
       PROTOC_VERSION: "3.20.3"
     steps:
     - uses: actions/checkout@v3
+    - name: Setup | Rust
+      uses: ATiltedTree/setup-rust@v1
+      with:
+        rust-version: nightly
     - name: Download data
       run: make download
     - name: Install protoc
