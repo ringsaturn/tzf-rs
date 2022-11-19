@@ -95,26 +95,25 @@ impl Finder {
 
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 pub fn deg2num(lng: f64, lat: f64, zoom: i64) -> (i64, i64) {
-    let lng_rad = lng.to_radians();
     let lat_rad = lat.to_radians();
-    let n = (2 ^ zoom) as f64;
-    let xtile = ((lng_rad + 180.0) / (360.0 * n)) as i64;
-    let ytile = ((1.0 - lat_rad.tan().asinh() / PI) / (2.0 * n)) as i64;
-    return (xtile, ytile);
+    let n = f64::powf(2.0, zoom as f64);
+    let xtile = (lng + 180.0) / 360.0 * n;
+    let ytile = (1.0 - lat_rad.tan().asinh() / PI) / 2.0 * n;
+    return (xtile as i64, ytile as i64);
 }
 
 #[derive(Debug)]
 pub struct FuzzyFinder {
     min_zoom: i64,
     max_zoom: i64,
-    all: HashMap<(i64, i64, i64), String>, // x,y,z
+    all: HashMap<(i64, i64, i64), String>, // K: <x,y,z>
 }
 
 impl FuzzyFinder {
     pub fn from_pb(tzs: gen::PreindexTimezones) -> FuzzyFinder {
         let mut f = FuzzyFinder {
-            min_zoom: tzs.idx_zoom as i64,
-            max_zoom: tzs.agg_zoom as i64,
+            min_zoom: tzs.agg_zoom as i64,
+            max_zoom: tzs.idx_zoom as i64,
             all: HashMap::new(),
         };
         for item in tzs.keys.iter() {
@@ -135,9 +134,9 @@ impl FuzzyFinder {
 
     pub fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
         for zoom in self.min_zoom..self.max_zoom {
-            print!("{} ", zoom);
             let idx = deg2num(lng, lat, zoom);
-            let ret = self.all.get(&(idx.0, idx.1, zoom));
+            let k = &(idx.0, idx.1, zoom);
+            let ret = self.all.get(&k);
             if ret.is_none() {
                 continue;
             }
