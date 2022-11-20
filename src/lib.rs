@@ -55,8 +55,7 @@ impl Finder {
                     interior.push(holeextr);
                 }
 
-                // let geopoly = Polygon::new(LineString::new(exterior), interior);
-                let geopoly = geometry_rs::new_polygon(exterior, interior);
+                let geopoly = geometry_rs::Polygon::new(exterior, interior);
                 polys.push(geopoly);
             }
 
