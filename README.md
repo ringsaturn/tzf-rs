@@ -5,19 +5,16 @@
 Add to `Cargo.toml`
 
 ```toml
-tzf-rs = { git =  "http://github.com/ringsaturn/tzf-rs", rev = "868b272159d9cea3c2cd2d8d36a40080de6a9e83"}
+tzf-rs = "0.1.0"
 ```
 
-NOTE: This package is still working in process and `868b272159d9cea3c2cd2d8d36a40080de6a9e83`
-is the latest stable commit for now.
-
 ```rust
-use tzf_rs::Finder;
+use tzf_rs::DefaultFinder;
 
 fn main() {
-    let finder = Finder::new();
+    let finder = DefaultFinder::new();
 
-    print!("{:?}\n", finder.get_tz_name(116.3883, 39.9289));
+    print!("{:?}\n", DefaultFinder.get_tz_name(116.3883, 39.9289));
 }
 ```
 
