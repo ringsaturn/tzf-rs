@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PROTOC_VERSION: "3.20.3"
-    needs: build
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
       - uses: actions/checkout@v3
