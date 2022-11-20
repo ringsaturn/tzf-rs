@@ -165,7 +165,7 @@ dependencies = [
 [[package]]
 name = "geometry-rs"
 version = "0.1.0"
-source = "git+http://github.com/ringsaturn/geometry-rs?rev=efffcb206629667a32950ca3e87e025866c62cbd#efffcb206629667a32950ca3e87e025866c62cbd"
+source = "git+http://github.com/ringsaturn/geometry-rs?rev=925593c825dcbe0a704f65802b6e541b85108771#925593c825dcbe0a704f65802b6e541b85108771"
 dependencies = [
  "float_next_after",
 ]
