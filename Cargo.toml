@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "tzf-rs"
-version = "0.1.0"
+version = "0.1.1"
 license-file = "LICENSE"
 description = "a fast timezone for Rust"
 homepage = "http://github.com/ringsaturn/tzf-rs"
