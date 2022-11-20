@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+  release:
+    types:
+      - published
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      PROTOC_VERSION: "3.20.3"
+    needs: build
+    if: github.event_name == 'release' && github.event.action == 'published'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup | Rust
+        uses: ATiltedTree/setup-rust@v1
+        with:
+          rust-version: nightly
+      - name: Install protoc
+        run: |
+          curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOC_VERSION/protoc-$PROTOC_VERSION-linux-x86_64.zip
+          sudo unzip -o protoc-$PROTOC_VERSION-linux-x86_64.zip -d /usr/local bin/protoc
+          sudo unzip -o protoc-$PROTOC_VERSION-linux-x86_64.zip -d /usr/local 'include/*'
+          rm -f protoc-$PROTOC_VERSION-linux-x86_64.zip
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+      - uses: katyo/publish-crates@v1
+        with:
+          registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
