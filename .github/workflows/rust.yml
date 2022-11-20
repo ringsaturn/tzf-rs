@@ -2,36 +2,35 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     env:
       PROTOC_VERSION: "3.20.3"
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup | Rust
-      uses: ATiltedTree/setup-rust@v1
-      with:
-        rust-version: nightly
-    - name: Install protoc
-      run: |
-        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOC_VERSION/protoc-$PROTOC_VERSION-linux-x86_64.zip
-        sudo unzip -o protoc-$PROTOC_VERSION-linux-x86_64.zip -d /usr/local bin/protoc
-        sudo unzip -o protoc-$PROTOC_VERSION-linux-x86_64.zip -d /usr/local 'include/*'
-        rm -f protoc-$PROTOC_VERSION-linux-x86_64.zip
-    - name: Cache
-      uses: Swatinem/rust-cache@v2
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
-    - name: Run benches
-      run: cargo bench --verbose
+      - uses: actions/checkout@v3
+      - name: Setup | Rust
+        uses: ATiltedTree/setup-rust@v1
+        with:
+          rust-version: nightly
+      - name: Install protoc
+        run: |
+          curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOC_VERSION/protoc-$PROTOC_VERSION-linux-x86_64.zip
+          sudo unzip -o protoc-$PROTOC_VERSION-linux-x86_64.zip -d /usr/local bin/protoc
+          sudo unzip -o protoc-$PROTOC_VERSION-linux-x86_64.zip -d /usr/local 'include/*'
+          rm -f protoc-$PROTOC_VERSION-linux-x86_64.zip
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
+      - name: Run benches
+        run: cargo bench --verbose
