@@ -14,7 +14,7 @@ mod benche_fuzzy {
             .build()
             .unwrap();
 
-        let finder: FuzzyFinder = FuzzyFinder::new_default();
+        let finder: FuzzyFinder = FuzzyFinder::new();
 
         b.iter(|| {
             let _ = finder.get_tz_name(116.3883, 39.9289);

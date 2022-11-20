@@ -2,7 +2,7 @@ use std::time::Instant;
 use tzf_rs::FuzzyFinder;
 
 fn main() {
-    let finder = FuzzyFinder::new_default();
+    let finder = FuzzyFinder::new();
 
     let now = Instant::now();
 

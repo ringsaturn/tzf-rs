@@ -14,7 +14,7 @@ mod benches_default {
             .build()
             .unwrap();
 
-        let finder: DefaultFinder = DefaultFinder::new_default();
+        let finder: DefaultFinder = DefaultFinder::new();
 
         b.iter(|| {
             let _ = finder.get_tz_name(116.3883, 39.9289);

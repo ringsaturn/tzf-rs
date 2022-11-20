@@ -2,7 +2,7 @@ use std::time::Instant;
 use tzf_rs::DefaultFinder;
 
 fn main() {
-    let finder = DefaultFinder::new_default();
+    let finder = DefaultFinder::new();
 
     let now = Instant::now();
 

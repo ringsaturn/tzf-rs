@@ -6,9 +6,9 @@ use tzf_rel::{load_preindex, load_reduced};
 mod gen;
 
 #[derive(Debug)]
-pub struct Item {
-    pub polys: Vec<Polygon>,
-    pub name: String,
+struct Item {
+    polys: Vec<Polygon>,
+    name: String,
 }
 
 impl Item {
@@ -69,7 +69,7 @@ impl Finder {
         return f;
     }
 
-    pub fn new_default() -> Finder {
+    pub fn new() -> Finder {
         // let file_bytes = include_bytes!("data/combined-with-oceans.reduce.pb").to_vec();
         let file_bytes: Vec<u8> = load_reduced();
         let finder: Finder = Finder::from_pb(gen::Timezones::try_from(file_bytes).unwrap());
@@ -121,7 +121,7 @@ impl FuzzyFinder {
         return f;
     }
 
-    pub fn new_default() -> FuzzyFinder {
+    pub fn new() -> FuzzyFinder {
         let file_bytes: Vec<u8> = load_preindex();
         let finder: FuzzyFinder =
             FuzzyFinder::from_pb(gen::PreindexTimezones::try_from(file_bytes).unwrap());
@@ -148,9 +148,9 @@ pub struct DefaultFinder {
 }
 
 impl DefaultFinder {
-    pub fn new_default() -> DefaultFinder {
-        let finder = Finder::new_default();
-        let fuzzy_finder = FuzzyFinder::new_default();
+    pub fn new() -> DefaultFinder {
+        let finder = Finder::new();
+        let fuzzy_finder = FuzzyFinder::new();
         let df = DefaultFinder {
             finder,
             fuzzy_finder,

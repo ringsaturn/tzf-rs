@@ -14,7 +14,7 @@ mod tests {
 
     #[test]
     fn smoke_test() {
-        let finder = FuzzyFinder::new_default();
+        let finder = FuzzyFinder::new();
 
         assert_eq!(finder.get_tz_name(116.3883, 39.9289), "Asia/Shanghai");
         assert_eq!(finder.get_tz_name(121.3547, 31.1139), "Asia/Shanghai");
