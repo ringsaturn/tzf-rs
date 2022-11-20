@@ -12,7 +12,6 @@ NOTE: This package is still working in process and `868b272159d9cea3c2cd2d8d36a4
 is the latest stable commit for now.
 
 ```rust
-use std::time::Instant;
 use tzf_rs::Finder;
 
 fn main() {
