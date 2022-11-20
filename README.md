@@ -5,10 +5,10 @@
 Add to `Cargo.toml`
 
 ```toml
-geometry-rs = { git =  "http://github.com/ringsaturn/tzf-rs", rev = "3ddc64ed0ff096f7b0cb830b42cc9e85efec2632"}
+geometry-rs = { git =  "http://github.com/ringsaturn/tzf-rs", rev = "868b272159d9cea3c2cd2d8d36a40080de6a9e83"}
 ```
 
-NOTE: This package is still working in process and `3ddc64ed0ff096f7b0cb830b42cc9e85efec2632`
+NOTE: This package is still working in process and `868b272159d9cea3c2cd2d8d36a40080de6a9e83`
 is the latest stable commit for now.
 
 ```rust
