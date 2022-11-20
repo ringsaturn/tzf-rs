@@ -1,4 +1,4 @@
-use geo::{Contains, Coord, LineString, MultiPolygon, Point, Polygon};
+use geometry_rs::{Point, Polygon};
 use std::collections::HashMap;
 use std::f64::consts::PI;
 use std::vec;
@@ -7,13 +7,18 @@ mod gen;
 
 #[derive(Debug)]
 pub struct Item {
-    pub mpoly: MultiPolygon,
+    pub polys: Vec<Polygon>,
     pub name: String,
 }
 
 impl Item {
     pub fn contain_point(&self, p: &Point) -> bool {
-        return self.mpoly.contains(p);
+        for poly in self.polys.iter() {
+            if poly.contains_point(*p) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
@@ -29,35 +34,35 @@ impl Finder {
             let mut polys: Vec<Polygon> = vec![];
 
             for pbpoly in tz.polygons.iter() {
-                let mut exterior: Vec<Coord> = vec![];
+                let mut exterior: Vec<Point> = vec![];
                 for pbpoint in pbpoly.points.iter() {
-                    exterior.push(Coord {
+                    exterior.push(Point {
                         x: pbpoint.lng as f64,
                         y: pbpoint.lat as f64,
                     })
                 }
-                let mut interior: Vec<LineString> = vec![];
+
+                let mut interior: Vec<Vec<Point>> = vec![];
 
                 for holepoly in pbpoly.holes.iter() {
-                    let mut holeextr: Vec<Coord> = vec![];
+                    let mut holeextr: Vec<Point> = vec![];
                     for holepoint in holepoly.points.iter() {
-                        holeextr.push(Coord {
+                        holeextr.push(Point {
                             x: holepoint.lng as f64,
                             y: holepoint.lat as f64,
                         })
                     }
-                    interior.push(LineString::new(holeextr));
+                    interior.push(holeextr);
                 }
 
-                let geopoly = Polygon::new(LineString::new(exterior), interior);
+                // let geopoly = Polygon::new(LineString::new(exterior), interior);
+                let geopoly = geometry_rs::new_polygon(exterior, interior);
                 polys.push(geopoly);
             }
 
-            let mpoly = MultiPolygon::new(polys);
-
             let item: Item = Item {
                 name: tz.name.to_string(),
-                mpoly: mpoly,
+                polys: polys,
             };
 
             f.all.push(item);
@@ -74,9 +79,10 @@ impl Finder {
 
     // https://users.rust-lang.org/t/cannot-move-out-of-x-which-is-behind-a-shared-reference/33263
     pub fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
-        let p = &Point::new(lng, lat);
+        // let p = &Point::new(lng, lat);
+        let p = geometry_rs::Point { x: lng, y: lat };
         for item in self.all.iter() {
-            if item.contain_point(p) {
+            if item.contain_point(&p) {
                 return &item.name;
             }
         }
