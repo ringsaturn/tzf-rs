@@ -18,7 +18,7 @@ bytes = "1"
 prost = "0.11"
 lazy_static = "1.4.0"
 pprof = { version = "0.11", features = ["flamegraph"] }
-tzf-rel = { git =  "http://github.com/ringsaturn/tzf-rel", rev = "2a8a67f509c1731a8c4485e7f1f7683347c02175"}
+tzf-rel = { git =  "http://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
 geometry-rs = { git =  "http://github.com/ringsaturn/geometry-rs", tag = "v0.1.0"}
 
 [build-dependencies]

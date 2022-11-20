@@ -655,7 +655,7 @@ dependencies = [
 [[package]]
 name = "tzf-rel"
 version = "0.1.0"
-source = "git+http://github.com/ringsaturn/tzf-rel?rev=2a8a67f509c1731a8c4485e7f1f7683347c02175#2a8a67f509c1731a8c4485e7f1f7683347c02175"
+source = "git+http://github.com/ringsaturn/tzf-rel?tag=v0.0.2022-f5#2a8a67f509c1731a8c4485e7f1f7683347c02175"
 
 [[package]]
 name = "tzf-rs"
