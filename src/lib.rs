@@ -1,4 +1,3 @@
-// use geo::{Contains, Coord, LineString, MultiPolygon, Point, Polygon};
 use geometry_rs::{Point, Polygon};
 use std::collections::HashMap;
 use std::f64::consts::PI;
