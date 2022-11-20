@@ -2,6 +2,13 @@
 edition = "2021"
 name = "tzf-rs"
 version = "0.1.0"
+license-file = "LICENSE"
+description = "a fast timezone for Rust"
+homepage = "http://github.com/ringsaturn/tzf-rs"
+documentation = "http://github.com/ringsaturn/tzf-rs"
+repository = "http://github.com/ringsaturn/tzf-rs"
+readme = "README.md"
+keywords = ["timezone"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
