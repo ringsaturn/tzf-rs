@@ -43,7 +43,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         with:
           name: Go Benchmark
-          tool: "rust"
+          tool: "cargo"
           output-file-path: output.txt
           github-token: ${{ secrets.CI_TOKEN }}
           gh-repository: "github.com/ringsaturn/tzf-rs"
