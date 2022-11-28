@@ -135,6 +135,22 @@ impl Finder {
         }
         return "";
     }
+
+    /// Example:
+    ///
+    /// ```rust
+    /// use tzf_rs::Finder;
+    ///
+    /// let finder = Finder::new();
+    /// println!("{:?}", finder.timezonenames());
+    /// ```
+    pub fn timezonenames(&self) -> Vec<&str> {
+        let mut ret: Vec<&str> = vec![];
+        for item in self.all.iter() {
+            ret.push(&item.name);
+        }
+        return ret;
+    }
 }
 
 /// deg2num is used to convert longitude, latitude to [Slippy map tilenames]
@@ -253,5 +269,14 @@ impl DefaultFinder {
             return fuzzy_name;
         }
         return self.finder.get_tz_name(lng, lat);
+    }
+
+    /// ```rust
+    /// use tzf_rs::DefaultFinder;
+    /// let finder = DefaultFinder::new();
+    /// println!("{:?}", finder.timezonenames());
+    /// ```
+    pub fn timezonenames(&self) -> Vec<&str> {
+        return self.finder.timezonenames();
     }
 }
