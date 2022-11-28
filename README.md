@@ -5,7 +5,7 @@
 Add to `Cargo.toml`
 
 ```toml
-tzf-rs = "0.1.2"
+tzf-rs = "0.1.3"
 ```
 
 ```rust
