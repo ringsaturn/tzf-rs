@@ -22,6 +22,7 @@ pprof = { version = "0.11", features = ["flamegraph"] }
 tzf-rel = "0.0.2022-f5"
 # geometry-rs = { git =  "http://github.com/ringsaturn/geometry-rs", tag = "v0.1.0"}
 geometry-rs = "0.1.2"
+clap = { version = "4.0.27", features = ["color", "help", "usage", "derive"]}
 
 [build-dependencies]
 prost-build = "0.11"
