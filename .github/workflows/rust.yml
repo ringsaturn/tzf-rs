@@ -37,17 +37,17 @@ jobs:
       - name: Run tests
         run: cargo test --verbose
       - name: Run benches
-        run: cargo bench | tee output.txt
-      - name: Continuous Benchmark
-        uses: benchmark-action/github-action-benchmark@v1.15.0
-        if: ${{ github.ref == 'refs/heads/main' }}
-        with:
-          name: Go Benchmark
-          tool: "cargo"
-          output-file-path: output.txt
-          github-token: ${{ secrets.CI_TOKEN }}
-          gh-repository: "github.com/ringsaturn/tzf-rs"
-          auto-push: true
-          comment-on-alert: true
-          fail-on-alert: false
-          benchmark-data-dir-path: "docs/"
+        run: cargo bench
+      # - name: Continuous Benchmark
+      #   uses: benchmark-action/github-action-benchmark@v1.15.0
+      #   if: ${{ github.ref == 'refs/heads/main' }}
+      #   with:
+      #     name: Go Benchmark
+      #     tool: "cargo"
+      #     output-file-path: output.txt
+      #     github-token: ${{ secrets.CI_TOKEN }}
+      #     gh-repository: "github.com/ringsaturn/tzf-rs"
+      #     auto-push: true
+      #     comment-on-alert: true
+      #     fail-on-alert: false
+      #     benchmark-data-dir-path: "docs/"
