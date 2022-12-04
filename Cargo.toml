@@ -27,8 +27,8 @@ tzf-rel = "0.0.2022-g"
 # geometry-rs = { git =  "http://github.com/ringsaturn/geometry-rs", tag = "v0.1.0"}
 geometry-rs = "0.1.2"
 
-cities-json = { git = "https://github.com/ringsaturn/go-cities.json", rev = "38a818ded6dcd1759e4633a36502b693c8b14858" }
-# cities-json = "0.1.1"
+# cities-json = { git = "https://github.com/ringsaturn/go-cities.json", rev = "38a818ded6dcd1759e4633a36502b693c8b14858" }
+cities-json = "0.1.1"
 
 [dev-dependencies]
 criterion = {version = "0.4", features = ["html_reports"]}
