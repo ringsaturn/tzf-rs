@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "tzf-rs"
-version = "0.1.3"
+version = "0.1.4"
 license-file = "LICENSE"
 description = "Fast convert longitude,latitude to timezone name."
 homepage = "http://github.com/ringsaturn/tzf-rs"
