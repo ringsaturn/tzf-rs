@@ -151,7 +151,8 @@ dependencies = [
 [[package]]
 name = "cities-json"
 version = "0.1.1"
-source = "git+https://github.com/ringsaturn/go-cities.json?rev=38a818ded6dcd1759e4633a36502b693c8b14858#38a818ded6dcd1759e4633a36502b693c8b14858"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a0f0868aa6585408158f9d442e612eab2f35b43c6bf15a24af874956f5adaa9"
 dependencies = [
  "lazy_static",
  "serde",
@@ -807,9 +808,9 @@ dependencies = [
 
 [[package]]
 name = "prost-build"
-version = "0.11.3"
+version = "0.11.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e330bf1316db56b12c2bcfa399e8edddd4821965ea25ddb2c134b610b1c1c604"
+checksum = "276470f7f281b0ed53d2ae42dd52b4a8d08853a3c70e7fe95882acbb98a6ae94"
 dependencies = [
  "bytes",
  "heck",
