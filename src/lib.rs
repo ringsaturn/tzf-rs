@@ -136,6 +136,22 @@ impl Finder {
         return "";
     }
 
+    /// ```rust
+    /// use tzf_rs::Finder;
+    /// let finder = Finder::new();
+    /// println!("{:?}", finder.get_tz_names(116.3883, 39.9289));
+    /// ```
+    pub fn get_tz_names(&self, lng: f64, lat: f64) -> Vec<&str> {
+        let mut ret: Vec<&str> = vec![];
+        let p = geometry_rs::Point { x: lng, y: lat };
+        for item in self.all.iter() {
+            if item.contain_point(&p) {
+                ret.push(&item.name);
+            }
+        }
+        return ret;
+    }
+
     /// Example:
     ///
     /// ```rust
@@ -269,6 +285,15 @@ impl DefaultFinder {
             return fuzzy_name;
         }
         return self.finder.get_tz_name(lng, lat);
+    }
+
+    /// ```rust
+    /// use tzf_rs::DefaultFinder;
+    /// let finder = DefaultFinder::new();
+    /// println!("{:?}", finder.get_tz_names(116.3883, 39.9289));
+    /// ```
+    pub fn get_tz_names(&self, lng: f64, lat: f64) -> Vec<&str> {
+        return self.finder.get_tz_names(lng, lat);
     }
 
     /// ```rust
