@@ -19,6 +19,8 @@ jobs:
     env:
       PROTOC_VERSION: "3.20.3"
     steps:
+      - name: Collect Workflow Telemetry
+        uses: runforesight/workflow-telemetry-action@v1
       - uses: actions/checkout@v3
       - name: Setup | Rust
         uses: ATiltedTree/setup-rust@v1
