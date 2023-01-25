@@ -13,7 +13,6 @@ permissions:
   contents: write
   deployments: write
   actions: read
-  pull-requests: write
 
 jobs:
   build:
@@ -21,6 +20,8 @@ jobs:
     steps:
       - name: Collect Workflow Telemetry
         uses: runforesight/workflow-telemetry-action@v1
+        with:
+          comment_on_pr: false
       - uses: actions/checkout@v3
       - name: Setup | Rust
         uses: ATiltedTree/setup-rust@v1
