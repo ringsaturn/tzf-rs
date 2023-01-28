@@ -1155,9 +1155,9 @@ dependencies = [
 
 [[package]]
 name = "tzf-rel"
-version = "0.0.2022-g"
+version = "0.0.2022-g1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19d417415297976a83bea6037a0e2ef756f7e8a47e0b0f51df4b1baed99138a6"
+checksum = "9740d99d1cf246ba7848086fdbebc8ce6adc64715e6e5edd4695985f8053064b"
 
 [[package]]
 name = "tzf-rs"
