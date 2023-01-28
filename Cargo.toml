@@ -21,7 +21,7 @@ clap = { version = "4.1.4", features = ["color", "help", "usage", "derive"]}
 rand = "0.8.5"
 
 # tzf-rel = { git =  "http://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
-tzf-rel = "0.0.2022-g"
+tzf-rel = "0.0.2022-g1"
 
 # geometry-rs = { git =  "http://github.com/ringsaturn/geometry-rs", tag = "v0.1.0"}
 geometry-rs = "0.1.2"
