@@ -17,7 +17,7 @@ anyhow = "1"
 bytes = "1"
 prost = "0.11"
 lazy_static = "1.4.0"
-clap = { version = "4.1.6", features = ["color", "help", "usage", "derive"]}
+clap = { version = "4.1.8", features = ["color", "help", "usage", "derive"]}
 rand = "0.8.5"
 
 # tzf-rel = { git =  "http://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
