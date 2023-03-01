@@ -27,7 +27,7 @@ tzf-rel = "0.0.2022-g1"
 geometry-rs = "0.1.2"
 
 # cities-json = { git = "https://github.com/ringsaturn/go-cities.json", rev = "38a818ded6dcd1759e4633a36502b693c8b14858" }
-cities-json = "0.3.4"
+cities-json = "0.3.5"
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
 pprof = { version = "0.11", features = ["flamegraph"] }
 
