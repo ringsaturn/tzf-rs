@@ -150,9 +150,9 @@ dependencies = [
 
 [[package]]
 name = "cities-json"
-version = "0.3.4"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcdd53149b5ffe4097fd15acaf9c48e43940f186d420d8910bdc6e435529ce70"
+checksum = "8e5f039b0c2faf758ee901150b8e376b73d26313fee5f52b94ed42084da3112a"
 dependencies = [
  "lazy_static",
  "rand",
