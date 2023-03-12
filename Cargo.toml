@@ -1,23 +1,23 @@
 [package]
-edition = "2021"
-name = "tzf-rs"
-version = "0.3.0"
-license-file = "LICENSE"
 description = "Fast convert longitude,latitude to timezone name."
-homepage = "http://github.com/ringsaturn/tzf-rs"
 documentation = "https://docs.rs/tzf-rs"
-repository = "http://github.com/ringsaturn/tzf-rs"
-readme = "README.md"
+edition = "2021"
+homepage = "http://github.com/ringsaturn/tzf-rs"
 keywords = ["timezone", "geo"]
+license-file = "LICENSE"
+name = "tzf-rs"
+readme = "README.md"
+repository = "http://github.com/ringsaturn/tzf-rs"
+version = "0.3.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1"
 bytes = "1"
-prost = "0.11"
+clap = {version = "4.1.8", features = ["color", "help", "usage", "derive"]}
 lazy_static = "1.4.0"
-clap = { version = "4.1.8", features = ["color", "help", "usage", "derive"]}
+prost = "0.11"
 rand = "0.8.5"
 
 # tzf-rel = { git =  "http://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
@@ -28,20 +28,19 @@ geometry-rs = "0.1.2"
 
 # cities-json = { git = "https://github.com/ringsaturn/go-cities.json", rev = "38a818ded6dcd1759e4633a36502b693c8b14858" }
 cities-json = "0.3.5"
-[target.'cfg(not(target_env = "msvc"))'.dependencies]
-pprof = { version = "0.11", features = ["flamegraph"] }
-
 
 [dev-dependencies]
 criterion = {version = "0.4", features = ["html_reports"]}
-lazy_static = "1.4.0"
 
 [[bench]]
-name = "finders"
 harness = false
+name = "finders"
 
 [build-dependencies]
 prost-build = "0.11"
 
 [profile.bench]
 lto = true
+
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+pprof = {version = "0.11", features = ["flamegraph"]}

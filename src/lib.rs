@@ -58,7 +58,7 @@ pub struct Finder {
 }
 
 impl Finder {
-    /// `from_pb` is used when you can customed timezone data, as long as
+    /// `from_pb` is used when you can use your own timezone data, as long as
     /// it's compatible with Proto's desc.
     pub fn from_pb(tzs: gen::Timezones) -> Finder {
         let mut f: Finder = Finder { all: vec![] };
@@ -101,7 +101,7 @@ impl Finder {
         return f;
     }
 
-    /// new is for most general usacase.
+    /// new is for most general use case.
     ///
     /// Example:
     ///
@@ -194,7 +194,7 @@ pub fn deg2num(lng: f64, lat: f64, zoom: i64) -> (i64, i64) {
 /// map key to to check if in map.
 ///
 /// It's is very fast and use about 400ns to check if has preindex.
-/// It work for most places on earch and here is a quick loop of preindex data:
+/// It work for most places on earth and here is a quick loop of preindex data:
 /// ![](https://user-images.githubusercontent.com/13536789/200174943-7d40661e-bda5-4b79-a867-ec637e245a49.png)
 ///
 #[derive(Debug)]
