@@ -3,5 +3,10 @@
 - Documents: <https://docs.rs/tzf-rs>
 - Original Go repo: <https://github.com/ringsaturn/tzf>
 - Binary timezone data: <https://github.com/ringsaturn/tzf-rel>
-- Geometry: use <https://github.com/ringsaturn/geometry-rs>
-  which is <https://github.com/tidwall/geometry>'s Rust port.
+- Geometry: use <https://github.com/ringsaturn/geometry-rs> which is
+  <https://github.com/tidwall/geometry>'s Rust port.
+
+## Bindings
+
+- Ruby, see [tzf-rb](https://github.com/HarlemSquirrel/tzf-rb)
+- Python, see [tzfpy](https://github.com/ringsaturn/tzfpy)
