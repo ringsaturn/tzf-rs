@@ -55,13 +55,17 @@ impl Item {
 #[derive(Debug)]
 pub struct Finder {
     all: Vec<Item>,
+    data_version: String,
 }
 
 impl Finder {
     /// `from_pb` is used when you can use your own timezone data, as long as
     /// it's compatible with Proto's desc.
     pub fn from_pb(tzs: gen::Timezones) -> Finder {
-        let mut f: Finder = Finder { all: vec![] };
+        let mut f: Finder = Finder {
+            all: vec![],
+            data_version: tzs.version,
+        };
         for tz in tzs.timezones.iter() {
             let mut polys: Vec<Polygon> = vec![];
 
@@ -167,6 +171,18 @@ impl Finder {
         }
         return ret;
     }
+
+    /// Example:
+    ///
+    /// ```rust
+    /// use tzf_rs::Finder;
+    ///
+    /// let finder = Finder::new();
+    /// println!("{:?}", finder.data_version());
+    /// ```
+    pub fn data_version(&self) -> &str {
+        return &self.data_version;
+    }
 }
 
 /// deg2num is used to convert longitude, latitude to [Slippy map tilenames]
@@ -202,6 +218,7 @@ pub struct FuzzyFinder {
     min_zoom: i64,
     max_zoom: i64,
     all: HashMap<(i64, i64, i64), String>, // K: <x,y,z>
+    data_version: String,
 }
 
 impl FuzzyFinder {
@@ -210,6 +227,7 @@ impl FuzzyFinder {
             min_zoom: tzs.agg_zoom as i64,
             max_zoom: tzs.idx_zoom as i64,
             all: HashMap::new(),
+            data_version: tzs.version,
         };
         for item in tzs.keys.iter() {
             f.all.insert(
@@ -250,6 +268,18 @@ impl FuzzyFinder {
             return ret.unwrap();
         }
         return "";
+    }
+
+    /// Example:
+    ///
+    /// ```rust
+    /// use tzf_rs::FuzzyFinder;
+    ///
+    /// let finder = FuzzyFinder::new();
+    /// println!("{:?}", finder.data_version());
+    /// ```
+    pub fn data_version(&self) -> &str {
+        return &self.data_version;
     }
 }
 
@@ -303,5 +333,17 @@ impl DefaultFinder {
     /// ```
     pub fn timezonenames(&self) -> Vec<&str> {
         return self.finder.timezonenames();
+    }
+
+    /// Example:
+    ///
+    /// ```rust
+    /// use tzf_rs::DefaultFinder;
+    ///
+    /// let finder = DefaultFinder::new();
+    /// println!("{:?}", finder.data_version());
+    /// ```
+    pub fn data_version(&self) -> &str {
+        return &self.finder.data_version;
     }
 }
