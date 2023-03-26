@@ -1150,7 +1150,7 @@ checksum = "e305448914389c394ef4d3285688b6fa0f69602122c4a446acb39ff3e9669c65"
 
 [[package]]
 name = "tzf-rs"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "bytes",
