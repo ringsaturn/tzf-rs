@@ -64,6 +64,8 @@ pub struct Timezones {
     /// Reduced data will toggle neighbor search as plan b
     #[prost(bool, tag = "2")]
     pub reduced: bool,
+    #[prost(string, tag = "3")]
+    pub version: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -89,6 +91,8 @@ pub struct CompressedTimezones {
     pub method: i32,
     #[prost(message, repeated, tag = "2")]
     pub timezones: ::prost::alloc::vec::Vec<CompressedTimezone>,
+    #[prost(string, tag = "3")]
+    pub version: ::prost::alloc::string::String,
 }
 /// PreindexTimezone tile item.
 ///
@@ -117,6 +121,8 @@ pub struct PreindexTimezones {
     pub agg_zoom: i32,
     #[prost(message, repeated, tag = "3")]
     pub keys: ::prost::alloc::vec::Vec<PreindexTimezone>,
+    #[prost(string, tag = "4")]
+    pub version: ::prost::alloc::string::String,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
