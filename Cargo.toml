@@ -15,7 +15,7 @@ version = "0.4.0"
 [dependencies]
 anyhow = "1"
 bytes = "1"
-clap = {version = "4.2.1", features = ["color", "help", "usage", "derive"]}
+clap = {version = "4.2.5", features = ["color", "help", "usage", "derive"]}
 lazy_static = "1.4.0"
 prost = "0.11"
 rand = "0.8.5"
