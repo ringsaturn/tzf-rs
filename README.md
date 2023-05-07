@@ -6,6 +6,20 @@
 - Geometry: use <https://github.com/ringsaturn/geometry-rs> which is
   <https://github.com/tidwall/geometry>'s Rust port.
 
+## Build options
+
+By default, the binary is built as well. If you don't want/need it, then build like this:
+
+```bash
+> cargo build --no-default-features
+```
+
+Or put in your `Cargo.toml` file:
+
+```toml
+tzf-rs = { version = "0.4.0", default-features = false }
+```
+
 ## Bindings
 
 - Ruby, see [tzf-rb](https://github.com/HarlemSquirrel/tzf-rb)
