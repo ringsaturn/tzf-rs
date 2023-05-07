@@ -17,7 +17,7 @@ By default, the binary is built as well. If you don't want/need it, then build l
 Or put in your `Cargo.toml` file:
 
 ```toml
-tzf-rs = { version = "0.4.0", default-features = false }
+tzf-rs = { version = "0.4.1", default-features = false }
 ```
 
 ## Bindings
