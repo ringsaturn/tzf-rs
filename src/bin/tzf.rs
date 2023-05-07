@@ -1,3 +1,5 @@
+#![cfg(feature = "clap")]
+
 use clap::Parser;
 use tzf_rs::DefaultFinder;
 
