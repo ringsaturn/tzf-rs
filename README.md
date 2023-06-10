@@ -8,17 +8,41 @@
 
 ## Build options
 
-By default, the binary is built as well. If you don't want/need it, then build like this:
+By default, the binary is built as well. If you don't want/need it, then build
+like this:
 
 ```bash
-> cargo build --no-default-features
+cargo build --no-default-features
 ```
 
-Or put in your `Cargo.toml` file:
+Or add in the below way:
 
-```toml
-tzf-rs = { version = "0.4.1", default-features = false }
+```bash
+cargo add tzf-rs --no-default-features
 ```
+
+## Best practice
+
+It's expensive to init tzf-rs's Finder/FuzzyFinder/DefaultFinder, please
+consider reuse it or as a global var. Below is a global var example:
+
+```rust
+use lazy_static::lazy_static;
+use tzf_rs::DefaultFinder;
+
+lazy_static! {
+    static ref FINDER: DefaultFinder = DefaultFinder::new();
+}
+
+fn main() {
+    print!("{:?}\n", FINDER.get_tz_name(116.3883, 39.9289));
+    print!("{:?}\n", FINDER.get_tz_names(116.3883, 39.9289));
+}
+```
+
+For reuse it,
+[`racemap/rust-tz-service`](https://github.com/racemap/rust-tz-service) is a
+good example.
 
 ## Bindings
 

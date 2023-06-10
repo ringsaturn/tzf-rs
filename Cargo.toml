@@ -16,7 +16,6 @@ version = "0.4.1"
 anyhow = "1"
 bytes = "1"
 clap = {version = "4.3.3", features = ["color", "help", "usage", "derive"], optional = true}
-lazy_static = "1.4.0"
 prost = "0.11"
 rand = "0.8.5"
 
@@ -26,11 +25,13 @@ tzf-rel = "0.0.2023-b"
 # geometry-rs = { git =  "http://github.com/ringsaturn/geometry-rs", tag = "v0.1.0"}
 geometry-rs = "0.1.2"
 
+[dev-dependencies]
+lazy_static = "1.4.0"
+
+criterion = {version = "0.5", features = ["html_reports"]}
+
 # cities-json = { git = "https://github.com/ringsaturn/go-cities.json", rev = "38a818ded6dcd1759e4633a36502b693c8b14858" }
 cities-json = "0.3.8"
-
-[dev-dependencies]
-criterion = {version = "0.5", features = ["html_reports"]}
 
 [features]
 default = ["clap"]
