@@ -23,7 +23,7 @@ rand = "0.8.5"
 tzf-rel = "0.0.2023-b"
 
 # geometry-rs = { git =  "http://github.com/ringsaturn/geometry-rs", tag = "v0.1.0"}
-geometry-rs = "0.1.2"
+geometry-rs = "0.2.0"
 
 [dev-dependencies]
 lazy_static = "1.4.0"
