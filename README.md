@@ -44,6 +44,9 @@ For reuse it,
 [`racemap/rust-tz-service`](https://github.com/racemap/rust-tz-service) is a
 good example.
 
+A Redis protocol demo could be used here:
+[redizone](https://github.com/ringsaturn/redizone).
+
 ## Bindings
 
 - Ruby, see [tzf-rb](https://github.com/HarlemSquirrel/tzf-rb)

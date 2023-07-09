@@ -29,7 +29,6 @@ use std::vec;
 use tzf_rel::{load_preindex, load_reduced};
 mod gen;
 
-#[derive(Debug)]
 struct Item {
     polys: Vec<Polygon>,
     name: String,
@@ -52,7 +51,6 @@ impl Item {
 /// [geometry-rs]: https://github.com/ringsaturn/geometry-rs
 /// [geometry]: https://github.com/tidwall/geometry
 /// [Josh Baker]: https://github.com/tidwall
-#[derive(Debug)]
 pub struct Finder {
     all: Vec<Item>,
     data_version: String,
@@ -91,7 +89,7 @@ impl Finder {
                     interior.push(holeextr);
                 }
 
-                let geopoly = geometry_rs::Polygon::new(exterior, interior);
+                let geopoly = geometry_rs::Polygon::new(exterior, interior, true);
                 polys.push(geopoly);
             }
 
@@ -213,7 +211,7 @@ pub fn deg2num(lng: f64, lat: f64, zoom: i64) -> (i64, i64) {
 /// It work for most places on earth and here is a quick loop of preindex data:
 /// ![](https://user-images.githubusercontent.com/13536789/200174943-7d40661e-bda5-4b79-a867-ec637e245a49.png)
 ///
-#[derive(Debug)]
+
 pub struct FuzzyFinder {
     min_zoom: i64,
     max_zoom: i64,
