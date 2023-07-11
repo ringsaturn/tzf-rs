@@ -89,7 +89,7 @@ impl Finder {
                     interior.push(holeextr);
                 }
 
-                let geopoly = geometry_rs::Polygon::new(exterior, interior, true);
+                let geopoly = geometry_rs::Polygon::new(exterior, interior);
                 polys.push(geopoly);
             }
 
