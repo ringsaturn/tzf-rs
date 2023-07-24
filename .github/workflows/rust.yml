@@ -50,6 +50,7 @@ jobs:
 
       - name: Run benches
         run: cargo bench
+
       # - name: Continuous Benchmark
       #   uses: benchmark-action/github-action-benchmark@v1.15.0
       #   if: ${{ github.ref == 'refs/heads/main' }}
@@ -63,3 +64,9 @@ jobs:
       #     comment-on-alert: true
       #     fail-on-alert: false
       #     benchmark-data-dir-path: "docs/"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: "criterion_result"
+          path: ./target/criterion
