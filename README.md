@@ -1,10 +1,8 @@
 # WIP: tzf's Rust port. [![Rust](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml) [![Documentation](https://docs.rs/tzf-rs/badge.svg)](https://docs.rs/tzf-rs) [![codecov](https://codecov.io/gh/ringsaturn/tzf-rs/branch/main/graph/badge.svg?token=NQFIP9DD86)](https://codecov.io/gh/ringsaturn/tzf-rs)
 
-- Documents: <https://docs.rs/tzf-rs>
-- Original Go repo: <https://github.com/ringsaturn/tzf>
-- Binary timezone data: <https://github.com/ringsaturn/tzf-rel>
-- Geometry: use <https://github.com/ringsaturn/geometry-rs> which is
-  <https://github.com/tidwall/geometry>'s Rust port.
+Package tzf-rs, like original
+[Go package tzf](https://github.com/ringsaturn/tzf), is designed for high
+performance geo queries and services such as weather forecast APIs.
 
 ## Build options
 
@@ -46,6 +44,24 @@ good example.
 
 A Redis protocol demo could be used here:
 [redizone](https://github.com/ringsaturn/redizone).
+
+## Performance
+
+Below is a benchmark run on global cities(about 14K), and avg time is 3900 ns
+per query:
+
+```
+test benches_default::bench_default_finder_random_city ... bench:       3,957 ns/iter (+/- 297)
+```
+
+You can view latest benchmark from
+[GitHub Actions logs](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml).
+
+## References
+
+- Binary timezone data: <https://github.com/ringsaturn/tzf-rel>
+- Geometry: use <https://github.com/ringsaturn/geometry-rs> which is
+  <https://github.com/tidwall/geometry>'s Rust port.
 
 ## Bindings
 
