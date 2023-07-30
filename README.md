@@ -51,10 +51,15 @@ Below is a benchmark run on global cities(about 14K), and avg time is 3900 ns
 per query:
 
 ```
-test benches_default::bench_default_finder_random_city ... bench:       3,957 ns/iter (+/- 297)
+test benches_default::bench_default_finder_random_city ... bench:       2,870 ns/iter (+/- 182)
 ```
 
-You can view latest benchmark from
+| Criterion result | Pic                              |
+| ---------------- | -------------------------------- |
+| PDF              | ![](assets/pdf_small.svg)        |
+| Regression       | ![](assets/regression_small.svg) |
+
+You can view more details from latest benchmark from
 [GitHub Actions logs](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml).
 
 ## References
@@ -63,7 +68,7 @@ You can view latest benchmark from
 - Geometry: use <https://github.com/ringsaturn/geometry-rs> which is
   <https://github.com/tidwall/geometry>'s Rust port.
 
-## Bindings
+### Bindings
 
 - Ruby, see [tzf-rb](https://github.com/HarlemSquirrel/tzf-rb)
 - Python, see [tzfpy](https://github.com/ringsaturn/tzfpy)
