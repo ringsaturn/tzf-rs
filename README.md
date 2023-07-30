@@ -1,8 +1,4 @@
-# WIP: tzf's Rust port. [![Rust](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml) [![Documentation](https://docs.rs/tzf-rs/badge.svg)](https://docs.rs/tzf-rs) [![codecov](https://codecov.io/gh/ringsaturn/tzf-rs/branch/main/graph/badge.svg?token=NQFIP9DD86)](https://codecov.io/gh/ringsaturn/tzf-rs)
-
-Package tzf-rs, like original
-[Go package tzf](https://github.com/ringsaturn/tzf), is designed for high
-performance geo queries and services such as weather forecast APIs.
+# tzf-rs: a fast timezone finder for Rust. [![Rust](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml) [![Documentation](https://docs.rs/tzf-rs/badge.svg)](https://docs.rs/tzf-rs) [![codecov](https://codecov.io/gh/ringsaturn/tzf-rs/branch/main/graph/badge.svg?token=NQFIP9DD86)](https://codecov.io/gh/ringsaturn/tzf-rs)
 
 ## Build options
 
@@ -47,8 +43,24 @@ A Redis protocol demo could be used here:
 
 ## Performance
 
-Below is a benchmark run on global cities(about 14K), and avg time is 3900 ns
-per query:
+The tzf-rs package is intended for high-performance geo spatial query services,
+such as weather forecasting APIs. Most queries can be returned within a very
+short time, averaging around 3000 nanoseconds(there is 1000ns slower compared
+with Go repo `tzf` and I will continue to improve that, you can track progress
+[here](https://github.com/ringsaturn/geometry-rs/issues/3)).
+
+Here is what has been done to improve performance:
+
+1. Using pre-indexing to handle most queries takes approximately 1000
+   nanoseconds.
+2. Using a finely-tuned Ray Casting algorithm package
+   <https://github.com/ringsaturn/geometry-rs> to verify whether a polygon
+   contains a point.
+
+That's all. There are no black magic tricks inside the tzf-rs.
+
+Below is a benchmark run on global cities(about 14K), and avg time is about 3000
+ns per query:
 
 ```
 test benches_default::bench_default_finder_random_city ... bench:       2,870 ns/iter (+/- 182)
@@ -64,6 +76,11 @@ You can view more details from latest benchmark from
 
 ## References
 
+I have written an article about the history of tzf, its Rust port, and its Rust
+port's Python binding; you can view it
+[here](https://blog.ringsaturn.me/en/posts/2023-01-31-history-of-tzf/).
+
+- Original Go repo: <https://github.com/ringsaturn/tzf>
 - Binary timezone data: <https://github.com/ringsaturn/tzf-rel>
 - Geometry: use <https://github.com/ringsaturn/geometry-rs> which is
   <https://github.com/tidwall/geometry>'s Rust port.
