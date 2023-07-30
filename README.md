@@ -84,6 +84,8 @@ port's Python binding; you can view it
 - Binary timezone data: <https://github.com/ringsaturn/tzf-rel>
 - Geometry: use <https://github.com/ringsaturn/geometry-rs> which is
   <https://github.com/tidwall/geometry>'s Rust port.
+- Continuous Benchmark compared with other packages:
+  <https://github.com/ringsaturn/tz-benchmark>
 
 ### Bindings
 
