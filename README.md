@@ -67,7 +67,7 @@ That's all. There are no black magic tricks inside the tzf-rs.
 Below is a benchmark run on global cities(about 14K), and avg time is about 3000
 ns per query:
 
-```
+```txt
 test benches_default::bench_default_finder_random_city ... bench:       2,870 ns/iter (+/- 182)
 ```
 
