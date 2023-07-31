@@ -1,27 +1,5 @@
-//! Fast timezone finder for Rust.
-//!
-//! It's designed for high performance geo queries related services like
-//! weather forecast API. And most queries could return in very limited time,
-//! averagely like 2000 nanoseconds.
-//!
-//! Please note that this package use a simplified shape data so not so accurate
-//! around border.
-//!
-//! There are there finders implements:
-//! - [Finder]: works anywhere.
-//! - [FuzzyFinder]: blazing fast for most places on earth, use a preindex data.
-//!   Not work for places around borders.
-//! - [DefaultFinder]: combine both, if [FuzzyFinder] got no data, then use [Finder].
-//!
-//! Preprocessed timezone data is distributed via [tzf-rel].
-//!
-//! It's Rust port of [tzf] and also the foundation of
-//! [tzfpy] since `v0.11.0`....
-//!
-//! [tzf]: https://github.com/ringsaturn/tzf
-//! [tzf-rel]: https://github.com/ringsaturn/tzf-rel
-//! [tzfpy]: https://github.com/ringsaturn/tzfpy
-//
+#![doc = include_str!("../README.md")]
+
 use geometry_rs::{Point, Polygon};
 use std::collections::HashMap;
 use std::f64::consts::PI;
@@ -45,6 +23,8 @@ impl Item {
     }
 }
 
+/// Finder works anywhere.
+///
 /// Finder use a fine tuned Ray casting algorithm implement [geometry-rs]
 /// which is Rust port of [geometry] by [Josh Baker].
 ///
@@ -203,6 +183,9 @@ pub fn deg2num(lng: f64, lat: f64, zoom: i64) -> (i64, i64) {
     return (xtile as i64, ytile as i64);
 }
 
+/// FuzzyFinder blazing fast for most places on earth, use a preindex data.
+/// Not work for places around borders.
+///
 /// FuzzyFinder store all preindex's tiles data in a HashMap,
 /// It iterate all zoom levels for input's longitude and latitude to build
 /// map key to to check if in map.
@@ -281,7 +264,8 @@ impl FuzzyFinder {
     }
 }
 
-/// It's most recommend to use, combine both [Finder] and [FuzzyFinder].
+/// It's most recommend to use, combine both [Finder] and [FuzzyFinder],
+/// if [FuzzyFinder] got no data, then use [Finder].
 pub struct DefaultFinder {
     finder: Finder,
     fuzzy_finder: FuzzyFinder,

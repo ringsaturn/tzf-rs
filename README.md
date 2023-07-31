@@ -2,6 +2,9 @@
 
 ![](https://github.com/ringsaturn/tzf/blob/gh-pages/docs/tzf-social-media.png?raw=true)
 
+**NOTE**: this package use a simplified shape data so not so accurate around
+border.
+
 ## Build options
 
 By default, the binary is built as well. If you don't want/need it, then build
@@ -56,8 +59,8 @@ Here is what has been done to improve performance:
 1. Using pre-indexing to handle most queries takes approximately 1000
    nanoseconds.
 2. Using a finely-tuned Ray Casting algorithm package
-   <https://github.com/ringsaturn/geometry-rs> to verify whether a polygon
-   contains a point.
+   [`ringsaturn/geometry-rs`](https://github.com/ringsaturn/geometry-rs) to
+   verify whether a polygon contains a point.
 
 That's all. There are no black magic tricks inside the tzf-rs.
 
@@ -68,10 +71,10 @@ ns per query:
 test benches_default::bench_default_finder_random_city ... bench:       2,870 ns/iter (+/- 182)
 ```
 
-| Criterion result | Pic                              |
-| ---------------- | -------------------------------- |
-| PDF              | ![](assets/pdf_small.svg)        |
-| Regression       | ![](assets/regression_small.svg) |
+| Criterion result | Pic                                                                                       |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| PDF              | ![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/main/assets/pdf_small.svg)        |
+| Regression       | ![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/main/assets/regression_small.svg) |
 
 You can view more details from latest benchmark from
 [GitHub Actions logs](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml).
