@@ -5,13 +5,13 @@ use rand::seq::SliceRandom;
 use tzf_rs::{DefaultFinder, Finder};
 
 lazy_static! {
-    static ref DEFAULTFINDER: DefaultFinder = DefaultFinder::new();
+    static ref DEFAULT_FINDER: DefaultFinder = DefaultFinder::new();
     static ref FINDER: Finder = Finder::new();
 }
 
 fn bench_default_finder_random_city(_i: usize) {
     let city = CITIES.choose(&mut rand::thread_rng()).unwrap();
-    let _ = DEFAULTFINDER.get_tz_name(city.lng, city.lat);
+    let _ = DEFAULT_FINDER.get_tz_name(city.lng, city.lat);
 }
 
 fn bench_finder_random_city(_i: usize) {
@@ -23,7 +23,7 @@ fn bench_finders(c: &mut Criterion) {
     let mut group = c.benchmark_group("Finders");
 
     // warmup
-    let _ = DEFAULTFINDER.get_tz_name(116.3883, 39.9289);
+    let _ = DEFAULT_FINDER.get_tz_name(116.3883, 39.9289);
     let _ = FINDER.get_tz_name(116.3883, 39.9289);
 
     let i = &0;
