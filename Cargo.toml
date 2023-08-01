@@ -4,7 +4,6 @@ documentation = "https://docs.rs/tzf-rs"
 edition = "2021"
 homepage = "http://github.com/ringsaturn/tzf-rs"
 keywords = ["timezone", "geo"]
-license-file = "LICENSE"
 license = "MIT"
 name = "tzf-rs"
 readme = "README.md"
