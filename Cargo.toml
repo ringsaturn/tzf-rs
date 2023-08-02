@@ -2,12 +2,12 @@
 description = "Fast convert longitude,latitude to timezone name."
 documentation = "https://docs.rs/tzf-rs"
 edition = "2021"
-homepage = "http://github.com/ringsaturn/tzf-rs"
+homepage = "https://github.com/ringsaturn/tzf-rs"
 keywords = ["timezone", "geo"]
 license = "MIT"
 name = "tzf-rs"
 readme = "README.md"
-repository = "http://github.com/ringsaturn/tzf-rs"
+repository = "https://github.com/ringsaturn/tzf-rs"
 version = "0.4.3"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -19,10 +19,10 @@ clap = {version = "4.3.19", features = ["color", "help", "usage", "derive"], opt
 prost = "0.11"
 rand = "0.8.5"
 
-# tzf-rel = { git =  "http://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
+# tzf-rel = { git =  "https://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
 tzf-rel = "0.0.2023-b"
 
-# geometry-rs = { git =  "http://github.com/ringsaturn/geometry-rs", tag = "v0.1.0"}
+# geometry-rs = { git =  "https://github.com/ringsaturn/geometry-rs", tag = "v0.1.0"}
 geometry-rs = "0.2.1"
 
 [dev-dependencies]
