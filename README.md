@@ -44,7 +44,7 @@ For reuse it,
 good example.
 
 A Redis protocol demo could be used here:
-[redizone](https://github.com/ringsaturn/redizone).
+[`ringsaturn/redizone`](https://github.com/ringsaturn/redizone).
 
 ## Performance
 
@@ -96,8 +96,8 @@ port's Python binding; you can view it
 
 ### Bindings
 
-- Ruby, see [tzf-rb](https://github.com/HarlemSquirrel/tzf-rb)
-- Python, see [tzfpy](https://github.com/ringsaturn/tzfpy)
+- Ruby, see [`HarlemSquirrel/tzf-rb`](https://github.com/HarlemSquirrel/tzf-rb)
+- Python, see [`ringsaturn/tzfpy`](https://github.com/ringsaturn/tzfpy)
 
 ## LICENSE
 
