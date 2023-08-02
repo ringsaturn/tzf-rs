@@ -85,12 +85,14 @@ I have written an article about the history of tzf, its Rust port, and its Rust
 port's Python binding; you can view it
 [here](https://blog.ringsaturn.me/en/posts/2023-01-31-history-of-tzf/).
 
-- Original Go repo: <https://github.com/ringsaturn/tzf>
-- Binary timezone data: <https://github.com/ringsaturn/tzf-rel>
-- Geometry: use <https://github.com/ringsaturn/geometry-rs> which is
-  <https://github.com/tidwall/geometry>'s Rust port.
+- Original Go repo: [`ringsaturn/tzf`](https://github.com/ringsaturn/tzf)
+- Binary timezone data:
+  [`ringsaturn/tzf-rel`](https://github.com/ringsaturn/tzf-rel)
+- Geometry: use
+  [`ringsaturn/geometry-rs`](https://github.com/ringsaturn/geometry-rs) which is
+  [`tidwall/geometry`](https://github.com/tidwall/geometry)'s Rust port.
 - Continuous Benchmark compared with other packages:
-  <https://github.com/ringsaturn/tz-benchmark>
+  [`ringsaturn/tz-benchmark`](https://github.com/ringsaturn/tz-benchmark)
 
 ### Bindings
 
