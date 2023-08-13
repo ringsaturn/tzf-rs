@@ -7,16 +7,17 @@ use tzf_rs::DefaultFinder;
 #[command(name = "tzf")]
 struct Cli {
     /// longitude
-    #[arg(long)]
+    #[arg(long, allow_negative_numbers(true), alias("lon"))]
     lng: f64,
 
     /// latitude
-    #[arg(long)]
+    #[arg(long, allow_negative_numbers(true))]
     lat: f64,
 }
 
 pub fn main() {
     let cli = Cli::parse();
-    let finder = DefaultFinder::new();
-    println!("{:?}", finder.get_tz_name(cli.lng, cli.lat));
+    let finder = DefaultFinder::default();
+    let tz_name = finder.get_tz_name(cli.lng, cli.lat);
+    println!("{tz_name:?}");
 }

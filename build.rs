@@ -6,12 +6,12 @@ fn main() {
         Some(_) => prost_build::Config::new()
             .out_dir("src/gen/")
             .compile_protos(&["./tzinfo.proto"], &["."])
-            .unwrap(),
+            .unwrap_or_default(),
         None => println!("no need for pb"),
     }
 
     Command::new("cargo")
-        .args(&["fmt", "--", "src/*.rs"])
+        .args(["fmt", "--", "src/*.rs"])
         .status()
         .expect("cargo fmt failed");
 }
