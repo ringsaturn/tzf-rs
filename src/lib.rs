@@ -13,7 +13,7 @@ struct Item {
 }
 
 impl Item {
-    fn contain_point(&self, p: &Point) -> bool {
+    fn contains_point(&self, p: &Point) -> bool {
         for poly in &self.polys {
             if poly.contains_point(*p) {
                 return true;
@@ -39,6 +39,14 @@ pub struct Finder {
 impl Finder {
     /// `from_pb` is used when you can use your own timezone data, as long as
     /// it's compatible with Proto's desc.
+    ///
+    /// # Arguments
+    ///
+    /// * `tzs` - Timezones data.
+    ///
+    /// # Returns
+    ///
+    /// * `Finder` - A Finder instance.
     #[must_use]
     pub fn from_pb(tzs: gen::Timezones) -> Self {
         let mut f = Self {
@@ -97,7 +105,7 @@ impl Finder {
         // let p = &Point::new(lng, lat);
         let p = geometry_rs::Point { x: lng, y: lat };
         for item in &self.all {
-            if item.contain_point(&p) {
+            if item.contains_point(&p) {
                 return &item.name;
             }
         }
@@ -114,7 +122,7 @@ impl Finder {
         let mut ret: Vec<&str> = vec![];
         let p = geometry_rs::Point { x: lng, y: lat };
         for item in &self.all {
-            if item.contain_point(&p) {
+            if item.contains_point(&p) {
                 ret.push(&item.name);
             }
         }
@@ -150,9 +158,23 @@ impl Finder {
     pub fn data_version(&self) -> &str {
         &self.data_version
     }
+
+    /// Creates a new, empty `Finder`.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// use tzf_rs::Finder;
+    ///
+    /// let finder = Finder::new();
+    /// ```
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
-/// new is for most general use case.
+/// Creates a new, empty `Finder`.
 ///
 /// Example:
 ///
@@ -214,6 +236,20 @@ pub struct FuzzyFinder {
     data_version: String,
 }
 
+impl Default for FuzzyFinder {
+    /// Creates a new, empty `FuzzyFinder`.
+    ///
+    /// ```rust
+    /// use tzf_rs::FuzzyFinder;
+    ///
+    /// let finder = FuzzyFinder::default();
+    /// ```
+    fn default() -> Self {
+        let file_bytes: Vec<u8> = load_preindex();
+        Self::from_pb(gen::PreindexTimezones::try_from(file_bytes).unwrap_or_default())
+    }
+}
+
 impl FuzzyFinder {
     #[must_use]
     pub fn from_pb(tzs: gen::PreindexTimezones) -> Self {
@@ -232,7 +268,14 @@ impl FuzzyFinder {
         f
     }
 
-    /// Example:
+    /// Retrieves the time zone name for the given longitude and latitude.
+    ///
+    /// # Arguments
+    ///
+    /// * `lng` - Longitude
+    /// * `lat` - Latitude
+    ///
+    /// # Example:
     ///
     /// ```rust
     /// use tzf_rs::FuzzyFinder;
@@ -260,7 +303,13 @@ impl FuzzyFinder {
         ""
     }
 
-    /// Example:
+    /// Gets the version of the data used by this `FuzzyFinder`.
+    ///
+    /// # Returns
+    ///
+    /// The version of the data used by this `FuzzyFinder` as a `&str`.
+    ///
+    /// # Example:
     ///
     /// ```rust
     /// use tzf_rs::FuzzyFinder;
@@ -272,17 +321,17 @@ impl FuzzyFinder {
     pub fn data_version(&self) -> &str {
         &self.data_version
     }
-}
 
-impl Default for FuzzyFinder {
+    /// Creates a new, empty `FuzzyFinder`.
+    ///
     /// ```rust
     /// use tzf_rs::FuzzyFinder;
     ///
-    /// let finder = FuzzyFinder::new();
+    /// let finder = FuzzyFinder::default();
     /// ```
-    fn default() -> Self {
-        let file_bytes: Vec<u8> = load_preindex();
-        Self::from_pb(gen::PreindexTimezones::try_from(file_bytes).unwrap_or_default())
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 
@@ -294,6 +343,10 @@ pub struct DefaultFinder {
 }
 
 impl Default for DefaultFinder {
+    /// Creates a new, empty `DefaultFinder`.
+    ///
+    /// # Example
+    ///
     /// ```rust
     /// use tzf_rs::DefaultFinder;
     /// let finder = DefaultFinder::new();
@@ -334,6 +387,8 @@ impl DefaultFinder {
         self.finder.get_tz_names(lng, lat)
     }
 
+    /// Returns all time zone names as a `Vec<&str>`.
+    ///
     /// ```rust
     /// use tzf_rs::DefaultFinder;
     /// let finder = DefaultFinder::new();
@@ -344,6 +399,8 @@ impl DefaultFinder {
         self.finder.timezonenames()
     }
 
+    /// Returns the version of the data used by this `DefaultFinder` as a `&str`.
+    ///
     /// Example:
     ///
     /// ```rust
@@ -355,5 +412,16 @@ impl DefaultFinder {
     #[must_use]
     pub fn data_version(&self) -> &str {
         &self.finder.data_version
+    }
+
+    /// Creates a new instance of `DefaultFinder`.
+    ///
+    /// ```rust
+    /// use tzf_rs::DefaultFinder;
+    /// let finder = DefaultFinder::new();
+    /// ```
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
     }
 }

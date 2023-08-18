@@ -17,7 +17,7 @@ struct Cli {
 
 pub fn main() {
     let cli = Cli::parse();
-    let finder = DefaultFinder::default();
+    let finder = DefaultFinder::new();
     let tz_name = finder.get_tz_name(cli.lng, cli.lat);
     println!("{tz_name:?}");
 }
