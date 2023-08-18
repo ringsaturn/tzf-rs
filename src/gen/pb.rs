@@ -7,8 +7,7 @@ pub struct Point {
     #[prost(float, tag = "2")]
     pub lat: f32,
 }
-
-/// Define a polygon, mostly based on `GeoJSON`'s Polygon define.
+/// Define a polygon, mostly based on GeoJSON's Polygon define.
 ///
 /// Excerpt from RFC-9476 section 'Polygon'
 ///
@@ -48,7 +47,6 @@ pub struct Polygon {
     #[prost(message, repeated, tag = "2")]
     pub holes: ::prost::alloc::vec::Vec<Polygon>,
 }
-
 /// Timezone is a timezone's all data.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -58,7 +56,6 @@ pub struct Timezone {
     #[prost(string, tag = "2")]
     pub name: ::prost::alloc::string::String,
 }
-
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Timezones {
@@ -70,7 +67,6 @@ pub struct Timezones {
     #[prost(string, tag = "3")]
     pub version: ::prost::alloc::string::String,
 }
-
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CompressedPolygon {
@@ -79,8 +75,7 @@ pub struct CompressedPolygon {
     #[prost(message, repeated, tag = "2")]
     pub holes: ::prost::alloc::vec::Vec<CompressedPolygon>,
 }
-
-/// `CompressedTimezonesItem` designed for binary file as small as possible.
+/// CompressedTimezonesItem designed for binary file as small as possible.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CompressedTimezone {
@@ -89,7 +84,6 @@ pub struct CompressedTimezone {
     #[prost(string, tag = "2")]
     pub name: ::prost::alloc::string::String,
 }
-
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CompressedTimezones {
@@ -100,8 +94,7 @@ pub struct CompressedTimezones {
     #[prost(string, tag = "3")]
     pub version: ::prost::alloc::string::String,
 }
-
-/// `PreindexTimezone` tile item.
+/// PreindexTimezone tile item.
 ///
 /// The X/Y/Z are OSM style like map tile index values.
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -116,8 +109,7 @@ pub struct PreindexTimezone {
     #[prost(int32, tag = "4")]
     pub z: i32,
 }
-
-/// `PreindexTimezones` is all preindex timezone's dumps.
+/// PreindexTimezones is all preindex timezone's dumps.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreindexTimezones {
@@ -132,7 +124,6 @@ pub struct PreindexTimezones {
     #[prost(string, tag = "4")]
     pub version: ::prost::alloc::string::String,
 }
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum CompressMethod {
@@ -141,18 +132,17 @@ pub enum CompressMethod {
     Polyline = 1,
 }
 impl CompressMethod {
-    /// String value of the enum field names used in the `ProtoBuf` definition.
+    /// String value of the enum field names used in the ProtoBuf definition.
     ///
     /// The values are not transformed in any way and thus are considered stable
-    /// (if the `ProtoBuf` definition does not change) and safe for programmatic use.
-    pub const fn as_str_name(self) -> &'static str {
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
         match self {
-            Self::Unknown => "Unknown",
-            Self::Polyline => "Polyline",
+            CompressMethod::Unknown => "Unknown",
+            CompressMethod::Polyline => "Polyline",
         }
     }
-
-    /// Creates an enum from field names used in the `ProtoBuf` definition.
+    /// Creates an enum from field names used in the ProtoBuf definition.
     pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
         match value {
             "Unknown" => Some(Self::Unknown),
