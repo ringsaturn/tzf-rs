@@ -25,16 +25,16 @@ Update docs
   [#69](https://github.com/ringsaturn/tzf-rs/pull/69)
 - Bump deps
 
-## [v0.4.0] - 2023-05-27
+## [0.4.0] - 2023-05-27
 
 - Bump tzf-rel to v0.0.2023-b and add data_version method
   [#57](https://github.com/ringsaturn/tzf-rs/pull/57)
 
-## [v0.3.1] - 2023-05-21
+## [0.3.1] - 2023-05-21
 
 Bump deps
 
-## [v0.3.0] - 2023-01-29
+## [0.3.0] - 2023-01-29
 
 - Fix [preindex bug](https://github.com/ringsaturn/tzf/issues/76) by bump
   tzf-rel version
