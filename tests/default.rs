@@ -20,7 +20,7 @@ mod tests {
         assert_eq!(finder.get_tz_name(-73.7729, 38.3530), "Etc/GMT+5");
         assert_eq!(finder.get_tz_name(114.1594, 22.3173), "Asia/Hong_Kong");
         assert_eq!(
-            finder.get_tz_name(12.452899553691935, 41.903699636969634),
+            finder.get_tz_name(12.452_899_553_691_935, 41.903_699_636_969_634),
             "Europe/Vatican"
         );
     }

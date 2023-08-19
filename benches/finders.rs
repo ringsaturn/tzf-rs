@@ -5,8 +5,8 @@ use rand::seq::SliceRandom;
 use tzf_rs::{DefaultFinder, Finder};
 
 lazy_static! {
-    static ref DEFAULT_FINDER: DefaultFinder = DefaultFinder::new();
-    static ref FINDER: Finder = Finder::new();
+    static ref DEFAULT_FINDER: DefaultFinder = DefaultFinder::default();
+    static ref FINDER: Finder = Finder::default();
 }
 
 fn bench_default_finder_random_city(_i: usize) {
@@ -28,10 +28,10 @@ fn bench_finders(c: &mut Criterion) {
 
     let i = &0;
     group.bench_with_input(BenchmarkId::new("Default", i), i, |b, _i| {
-        b.iter(|| bench_default_finder_random_city(black_box(1)))
+        b.iter(|| bench_default_finder_random_city(black_box(1)));
     });
     group.bench_with_input(BenchmarkId::new("Finder", i), i, |b, _i| {
-        b.iter(|| bench_finder_random_city(black_box(1)))
+        b.iter(|| bench_finder_random_city(black_box(1)));
     });
 
     group.finish();
