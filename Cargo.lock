@@ -853,6 +853,7 @@ checksum = "978385d59daf9269189d052ca8a84c1acfd0715c0599a5d5188d4acc078ca46a"
 dependencies = [
  "backtrace",
  "cfg-if",
+ "criterion",
  "findshlibs",
  "inferno",
  "libc",
@@ -860,6 +861,7 @@ dependencies = [
  "nix",
  "once_cell",
  "parking_lot",
+ "protobuf",
  "smallvec",
  "symbolic-demangle",
  "tempfile",
@@ -944,6 +946,12 @@ checksum = "213622a1460818959ac1181aaeb2dc9c7f63df720db7d788b3e24eacd1983e13"
 dependencies = [
  "prost",
 ]
+
+[[package]]
+name = "protobuf"
+version = "2.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "106dd99e98437432fed6519dedecfade6a06a73bb7b2a1e019fdd2bee5778d94"
 
 [[package]]
 name = "quick-xml"

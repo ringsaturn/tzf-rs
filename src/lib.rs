@@ -14,7 +14,7 @@ struct Item {
 
 impl Item {
     fn contains_point(&self, p: &Point) -> bool {
-        return self.mpoly.contains(p);
+        self.mpoly.contains(p)
     }
 }
 
@@ -80,12 +80,12 @@ impl Finder {
 
             let item: Item = Item {
                 name: tz.name.to_string(),
-                mpoly: mpoly,
+                mpoly,
             };
 
             f.all.push(item);
         }
-        return f;
+        f
     }
 
     /// Example:
@@ -104,7 +104,7 @@ impl Finder {
                 return &item.name;
             }
         }
-        return "";
+        ""
     }
 
     /// ```rust
@@ -117,7 +117,7 @@ impl Finder {
         let mut ret: Vec<&str> = vec![];
         let p = &Point::new(lng, lat);
         for item in &self.all {
-            if item.contains_point(&p) {
+            if item.contains_point(p) {
                 ret.push(&item.name);
             }
         }
