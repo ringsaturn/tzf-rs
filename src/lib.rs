@@ -232,7 +232,7 @@ pub fn deg2num(lng: f64, lat: f64, zoom: i64) -> (i64, i64) {
 pub struct FuzzyFinder {
     min_zoom: i64,
     max_zoom: i64,
-    all: HashMap<(i64, i64, i64), String>, // K: <x,y,z>
+    all: HashMap<(i64, i64, i64), Vec<String>>, // K: <x,y,z>
     data_version: String,
 }
 
@@ -260,10 +260,10 @@ impl FuzzyFinder {
             data_version: tzs.version,
         };
         for item in &tzs.keys {
-            f.all.insert(
-                (i64::from(item.x), i64::from(item.y), i64::from(item.z)),
-                item.name.to_string(),
-            );
+            let key = (i64::from(item.x), i64::from(item.y), i64::from(item.z));
+            f.all.entry(key).or_insert_with(std::vec::Vec::new);
+            f.all.get_mut(&key).unwrap().push(item.name.to_string());
+            f.all.get_mut(&key).unwrap().sort();
         }
         f
     }
@@ -297,10 +297,25 @@ impl FuzzyFinder {
             if ret.is_none() {
                 continue;
             }
-            // Be explicit about crashing if we get a None value.
-            return ret.expect("Yikes! Got a None value for the TZ name. That shouldn't happen.");
+            return ret.unwrap().first().unwrap();
         }
         ""
+    }
+
+    pub fn get_tz_names(&self, lng: f64, lat: f64) -> Vec<&str> {
+        let mut names: Vec<&str> = vec![];
+        for zoom in self.min_zoom..self.max_zoom {
+            let idx = deg2num(lng, lat, zoom);
+            let k = &(idx.0, idx.1, zoom);
+            let ret = self.all.get(k);
+            if ret.is_none() {
+                continue;
+            }
+            for item in ret.unwrap() {
+                names.push(item);
+            }
+        }
+        names
     }
 
     /// Gets the version of the data used by this `FuzzyFinder`.
