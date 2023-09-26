@@ -15,7 +15,7 @@ version = "0.4.4"
 [dependencies]
 anyhow = "1"
 bytes = "1"
-clap = {version = "4.3.23", features = ["color", "help", "usage", "derive"], optional = true}
+clap = {version = "4.4.5", features = ["color", "help", "usage", "derive"], optional = true}
 prost = "0.11"
 rand = "0.8.5"
 
