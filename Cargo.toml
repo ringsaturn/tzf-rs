@@ -22,8 +22,7 @@ rand = "0.8.5"
 # tzf-rel = { git =  "https://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
 tzf-rel = "0.0.2023-b"
 
-# geometry-rs = { git =  "https://github.com/ringsaturn/geometry-rs", tag = "v0.1.0"}
-geometry-rs = "0.2.1"
+geo = "0.26.0"
 
 [dev-dependencies]
 lazy_static = "1.4.0"
@@ -52,4 +51,4 @@ prost-build = "0.12"
 lto = true
 
 [target.'cfg(not(target_env = "msvc"))'.dev-dependencies]
-pprof = {version = "0.12", features = ["flamegraph"]}
+pprof = {version = "0.12", features = ["flamegraph", "protobuf", "criterion"]}
