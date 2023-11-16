@@ -46,7 +46,7 @@ harness = false
 name = "finders"
 
 [build-dependencies]
-prost-build = "0.12.1"
+prost-build = "0.12.2"
 
 [profile.bench]
 lto = true
