@@ -2,7 +2,7 @@
 
 ![Time zone map of the world](https://github.com/ringsaturn/tzf/blob/gh-pages/docs/tzf-social-media.png?raw=true)
 
-> **NOTE**
+> [!NOTE]
 >
 > This package uses simplified shape data so it is not entirely accurate around
 > the border.
