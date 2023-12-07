@@ -1,8 +1,6 @@
-#![feature(test)]
 #[cfg(test)]
 mod tests {
     use tzf_rs::Finder;
-    extern crate test;
 
     #[test]
     fn smoke_test() {

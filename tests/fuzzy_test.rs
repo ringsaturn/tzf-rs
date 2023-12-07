@@ -1,9 +1,7 @@
-#![feature(test)]
 #[cfg(test)]
 mod tests {
     use tzf_rs::deg2num;
     use tzf_rs::FuzzyFinder;
-    extern crate test;
 
     #[test]
     fn test_deg2num() {
