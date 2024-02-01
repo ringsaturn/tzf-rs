@@ -206,9 +206,9 @@ dependencies = [
 
 [[package]]
 name = "cities-json"
-version = "0.5.1"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24396574ad0a81ebd3e57dd3007c8e447a730a38567683b2dcff6b96967df4f5"
+checksum = "2176ba7194355f3ed80054b5caff175b895dd2502ee07993901ed13d300b4545"
 dependencies = [
  "lazy_static",
  "rand",
@@ -1117,7 +1117,7 @@ checksum = "6f07a0f286fe439ee06a322c948699f4f40c68e877cf9614aac251d4c6d35a11"
 
 [[package]]
 name = "tzf-rs"
-version = "0.4.4"
+version = "0.4.5"
 dependencies = [
  "anyhow",
  "bytes",
