@@ -7,6 +7,10 @@
 > This package uses simplified shape data so it is not entirely accurate around
 > the border.
 
+- Released documentation: [docs.rs/tzf-rs](https://docs.rs/tzf-rs)
+- Latest documentation(not released yet):
+  [ringsaturn.github.io/tzf-rs](https://ringsaturn.github.io/tzf-rs/tzf_rs/)
+
 ## Build options
 
 By default, the binary is built as well. If you don't want/need it, you can omit
