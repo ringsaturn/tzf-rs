@@ -1,5 +1,4 @@
 use std::env;
-use std::process::Command;
 
 fn main() {
     match env::var_os("TZF_RS_BUILD_PB") {
@@ -9,9 +8,4 @@ fn main() {
             .unwrap_or_default(),
         None => println!("no need for pb"),
     }
-
-    Command::new("cargo")
-        .args(["fmt", "--", "src/*.rs"])
-        .status()
-        .expect("cargo fmt failed");
 }
