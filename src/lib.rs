@@ -385,11 +385,25 @@ impl DefaultFinder {
     /// ```
     #[must_use]
     pub fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
-        let fuzzy_name = self.fuzzy_finder.get_tz_name(lng, lat);
-        if !fuzzy_name.is_empty() {
-            return fuzzy_name;
+        // The simplified polygon data contains some empty areas where not covered by any timezone.
+        // It's not a bug but a limitation of the simplified algorithm.
+        //
+        // To handle this, auto shift the point a little bit to find the nearest timezone.
+        for &dx in &[0.0, -0.001, 0.001] {
+            for &dy in &[0.0, -0.001, 0.001] {
+                let dlng = dx + lng;
+                let dlat = dy + lat;
+                let fuzzy_name = self.fuzzy_finder.get_tz_name(dlng, dlat);
+                if !fuzzy_name.is_empty() {
+                    return fuzzy_name;
+                }
+                let name = self.finder.get_tz_name(dlng, dlat);
+                if !name.is_empty() {
+                    return name;
+                }
+            }
         }
-        self.finder.get_tz_name(lng, lat)
+        ""
     }
 
     /// ```rust
