@@ -18,8 +18,12 @@ mod tests {
         assert_eq!(finder.get_tz_name(-73.7729, 38.3530), "Etc/GMT+5");
         assert_eq!(finder.get_tz_name(114.1594, 22.3173), "Asia/Hong_Kong");
 
-        // Shenzhen actually, but we used a simplified polygon data.
-        assert_eq!(finder.get_tz_name(114.0668, 22.5153), "Asia/Hong_Kong");
+        // Original GCJ-02 coordinates: [114.0668, 22.5153], which is in Shenzhen, China,
+        // and very close to the border with Hong Kong.
+        // Revert it to WGS-84 coordinates to get the correct timezone.
+        //
+        // AMAP link: https://surl.amap.com/uJcx40w1e6bd
+        assert_eq!(finder.get_tz_name(114.0617, 22.5180), "Asia/Shanghai");
 
         assert_eq!(
             finder.get_tz_name(12.452_899_553_691_935, 41.903_699_636_969_634),
