@@ -16,7 +16,7 @@ version = "0.4.8"
 anyhow = "1"
 bytes = "1"
 clap = {version = "4", features = ["color", "help", "usage", "derive"], optional = true}
-prost = "0.12"
+prost = "0.13"
 rand = "0.8.5"
 
 # tzf-rel = { git =  "https://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
@@ -26,7 +26,7 @@ tzf-rel = "0.0.2024-a"
 geometry-rs = "0.2.1"
 
 [dev-dependencies]
-lazy_static = "1.4.0"
+lazy_static = "1.5.0"
 
 criterion = {version = "0.5", features = ["html_reports"]}
 
@@ -46,7 +46,7 @@ harness = false
 name = "finders"
 
 [build-dependencies]
-prost-build = "0.12.6"
+prost-build = "0.13.1"
 
 [profile.bench]
 lto = true
