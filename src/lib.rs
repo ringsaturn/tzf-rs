@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::f64::consts::PI;
 use std::vec;
 use tzf_rel::{load_preindex, load_reduced};
-mod gen;
+pub mod gen;
 
 struct Item {
     polys: Vec<Polygon>,
