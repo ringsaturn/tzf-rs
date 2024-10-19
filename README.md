@@ -10,6 +10,7 @@
 - Released documentation: [docs.rs/tzf-rs](https://docs.rs/tzf-rs)
 - Latest documentation(not released yet):
   [ringsaturn.github.io/tzf-rs](https://ringsaturn.github.io/tzf-rs/tzf_rs/)
+- Try it online: [tzf-web](https://ringsaturn.github.io/tzf-web/)
 
 ## Build options
 
@@ -105,6 +106,7 @@ Rust port's Python binding; you can view it
 
 - Ruby, see [`HarlemSquirrel/tzf-rb`](https://github.com/HarlemSquirrel/tzf-rb)
 - Python, see [`ringsaturn/tzfpy`](https://github.com/ringsaturn/tzfpy)
+- Wasm, see [`ringsaturn/tzf-web`](https://github.com/ringsaturn/tzf-web)
 
 ## LICENSE
 
