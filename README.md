@@ -106,7 +106,7 @@ Rust port's Python binding; you can view it
 
 - Ruby, see [`HarlemSquirrel/tzf-rb`](https://github.com/HarlemSquirrel/tzf-rb)
 - Python, see [`ringsaturn/tzfpy`](https://github.com/ringsaturn/tzfpy)
-- Wasm, see [`ringsaturn/tzf-web`](https://github.com/ringsaturn/tzf-web)
+- Wasm, see [`ringsaturn/tzf-wasm`](https://github.com/ringsaturn/tzf-wasm)
 
 ## LICENSE
 
