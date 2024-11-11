@@ -75,14 +75,36 @@ That's all. There are no black magic tricks inside the tzf-rs.
 Below is a benchmark run on global cities(about 14K), and avg time is about
 3,000 ns per query:
 
-```txt
-test benches_default::bench_default_finder_random_city ... bench:       2,870 ns/iter (+/- 182)
+```rust,ignore
+// require toolchain.channel=nightly 
+
+#![feature(test)]
+#[cfg(test)]
+mod benches_default {
+
+    use tzf_rs::DefaultFinder;
+    extern crate test;
+    use test::Bencher;
+    #[bench]
+    fn bench_default_finder_random_city(b: &mut Bencher) {
+        let finder: DefaultFinder = DefaultFinder::default();
+
+        b.iter(|| {
+            let city = cities_json::get_random_cities();
+            let _ = finder.get_tz_name(city.lng, city.lat);
+        });
+    }
+}
 ```
 
-| Criterion result | Pic                                                                                       |
-| ---------------- | ----------------------------------------------------------------------------------------- |
-| PDF              | ![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/main/assets/pdf_small.svg)        |
-| Regression       | ![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/main/assets/regression_small.svg) |
+```console
+test benches_default::bench_default_finder_random_city ... bench:       1,220.19 ns/iter (+/- 54.36)
+```
+
+| Criterion result | Pic                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| PDF              | ![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/main/assets/pdf_small.webp)        |
+| Regression       | ![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/main/assets/regression_small.webp) |
 
 You can view more details from latest benchmark from
 [GitHub Actions logs](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml).
