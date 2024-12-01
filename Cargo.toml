@@ -52,4 +52,4 @@ prost-build = "0.13.3"
 lto = true
 
 [target.'cfg(not(target_env = "msvc"))'.dev-dependencies]
-pprof = {version = "0.13", features = ["flamegraph"]}
+pprof = {version = "0.14", features = ["flamegraph"]}
