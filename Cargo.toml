@@ -17,7 +17,7 @@ anyhow = "1"
 bytes = "1"
 clap = {version = "4", features = ["color", "help", "usage", "derive"], optional = true}
 prost = "0.13"
-rand = "0.8.5"
+rand = "0.9.0"
 
 # tzf-rel = { git =  "https://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
 tzf-rel = "0.0.2025-a"
