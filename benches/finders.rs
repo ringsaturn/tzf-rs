@@ -1,7 +1,6 @@
-use cities_json::CITIES;
+use cities_json::get_random_cities;
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use lazy_static::lazy_static;
-use rand::seq::SliceRandom;
 use tzf_rs::{DefaultFinder, Finder};
 
 lazy_static! {
@@ -10,12 +9,12 @@ lazy_static! {
 }
 
 fn bench_default_finder_random_city(_i: usize) {
-    let city = CITIES.choose(&mut rand::thread_rng()).unwrap();
+    let city = get_random_cities();
     let _ = DEFAULT_FINDER.get_tz_name(city.lng, city.lat);
 }
 
 fn bench_finder_random_city(_i: usize) {
-    let city = CITIES.choose(&mut rand::thread_rng()).unwrap();
+    let city = get_random_cities();
     let _ = FINDER.get_tz_name(city.lng, city.lat);
 }
 
