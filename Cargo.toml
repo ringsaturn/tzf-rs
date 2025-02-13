@@ -29,6 +29,8 @@ tzf-rel = "0.0.2025-a"
 # geometry-rs = { git =  "https://github.com/ringsaturn/geometry-rs", tag = "v0.1.0"}
 geometry-rs = "0.3.0"
 
+geo = "0.29.3"
+
 [dev-dependencies]
 lazy_static = "1.5.0"
 
@@ -56,4 +58,4 @@ prost-build = "0.13.4"
 lto = true
 
 [target.'cfg(not(target_env = "msvc"))'.dev-dependencies]
-pprof = { version = "0.14", features = ["flamegraph"] }
+pprof = {version = "0.14", features = ["flamegraph", "protobuf", "criterion"]}

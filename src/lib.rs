@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 
-use geometry_rs::{Point, Polygon};
+use geo::{Contains, Coord, LineString, MultiPolygon, Point, Polygon};
 use std::collections::HashMap;
 use std::f64::consts::PI;
 use std::vec;
@@ -8,18 +8,13 @@ use tzf_rel::{load_preindex, load_reduced};
 pub mod gen;
 
 struct Item {
-    polys: Vec<Polygon>,
+    mpoly: MultiPolygon,
     name: String,
 }
 
 impl Item {
     fn contains_point(&self, p: &Point) -> bool {
-        for poly in &self.polys {
-            if poly.contains_point(*p) {
-                return true;
-            }
-        }
-        false
+        self.mpoly.contains(p)
     }
 }
 
@@ -48,43 +43,44 @@ impl Finder {
     ///
     /// * `Finder` - A Finder instance.
     #[must_use]
-    pub fn from_pb(tzs: gen::Timezones) -> Self {
-        let mut f = Self {
+    pub fn from_pb(tzs: gen::Timezones) -> Finder {
+        let mut f: Finder = Finder {
             all: vec![],
-            data_version: tzs.version,
+            data_version: tzs.version.to_string(),
         };
-        for tz in &tzs.timezones {
+        for tz in tzs.timezones.iter() {
             let mut polys: Vec<Polygon> = vec![];
 
-            for pbpoly in &tz.polygons {
-                let mut exterior: Vec<Point> = vec![];
-                for pbpoint in &pbpoly.points {
-                    exterior.push(Point {
-                        x: f64::from(pbpoint.lng),
-                        y: f64::from(pbpoint.lat),
-                    });
+            for pbpoly in tz.polygons.iter() {
+                let mut exterior: Vec<Coord> = vec![];
+                for pbpoint in pbpoly.points.iter() {
+                    exterior.push(Coord {
+                        x: pbpoint.lng as f64,
+                        y: pbpoint.lat as f64,
+                    })
                 }
+                let mut interior: Vec<LineString> = vec![];
 
-                let mut interior: Vec<Vec<Point>> = vec![];
-
-                for holepoly in &pbpoly.holes {
-                    let mut holeextr: Vec<Point> = vec![];
-                    for holepoint in &holepoly.points {
-                        holeextr.push(Point {
-                            x: f64::from(holepoint.lng),
-                            y: f64::from(holepoint.lat),
-                        });
+                for holepoly in pbpoly.holes.iter() {
+                    let mut holeextr: Vec<Coord> = vec![];
+                    for holepoint in holepoly.points.iter() {
+                        holeextr.push(Coord {
+                            x: holepoint.lng as f64,
+                            y: holepoint.lat as f64,
+                        })
                     }
-                    interior.push(holeextr);
+                    interior.push(LineString::new(holeextr));
                 }
 
-                let geopoly = geometry_rs::Polygon::new(exterior, interior);
+                let geopoly = Polygon::new(LineString::new(exterior), interior);
                 polys.push(geopoly);
             }
 
+            let mpoly = MultiPolygon::new(polys);
+
             let item: Item = Item {
                 name: tz.name.to_string(),
-                polys,
+                mpoly,
             };
 
             f.all.push(item);
@@ -102,10 +98,9 @@ impl Finder {
     /// ```
     #[must_use]
     pub fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
-        // let p = &Point::new(lng, lat);
-        let p = geometry_rs::Point { x: lng, y: lat };
-        for item in &self.all {
-            if item.contains_point(&p) {
+        let p = &Point::new(lng, lat);
+        for item in self.all.iter() {
+            if item.contains_point(p) {
                 return &item.name;
             }
         }
@@ -120,9 +115,9 @@ impl Finder {
     #[must_use]
     pub fn get_tz_names(&self, lng: f64, lat: f64) -> Vec<&str> {
         let mut ret: Vec<&str> = vec![];
-        let p = geometry_rs::Point { x: lng, y: lat };
+        let p = &Point::new(lng, lat);
         for item in &self.all {
-            if item.contains_point(&p) {
+            if item.contains_point(p) {
                 ret.push(&item.name);
             }
         }
