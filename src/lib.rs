@@ -102,7 +102,25 @@ impl Finder {
     /// ```
     #[must_use]
     pub fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
-        // let p = &Point::new(lng, lat);
+        let direct_res = self._get_tz_name(lng, lat);
+        if !direct_res.is_empty() {
+            return direct_res;
+        }
+
+        for &dx in &[0.0, -0.01, 0.01, -0.02, 0.02] {
+            for &dy in &[0.0, -0.01, 0.01, -0.02, 0.02] {
+                let dlng = dx + lng;
+                let dlat = dy + lat;
+                let name = self._get_tz_name(dlng, dlat);
+                if !name.is_empty() {
+                    return name;
+                }
+            }
+        }
+        ""
+    }
+
+    fn _get_tz_name(&self, lng: f64, lat: f64) -> &str {
         let p = geometry_rs::Point { x: lng, y: lat };
         for item in &self.all {
             if item.contains_point(&p) {
@@ -389,8 +407,8 @@ impl DefaultFinder {
         // It's not a bug but a limitation of the simplified algorithm.
         //
         // To handle this, auto shift the point a little bit to find the nearest timezone.
-        for &dx in &[0.0, -0.001, 0.001] {
-            for &dy in &[0.0, -0.001, 0.001] {
+        for &dx in &[0.0, -0.01, 0.01, -0.02, 0.02] {
+            for &dy in &[0.0, -0.01, 0.01, -0.02, 0.02] {
                 let dlng = dx + lng;
                 let dlat = dy + lat;
                 let fuzzy_name = self.fuzzy_finder.get_tz_name(dlng, dlat);
