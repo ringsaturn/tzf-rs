@@ -17,5 +17,6 @@ mod tests {
         assert_eq!(finder.get_tz_name(-4.5706, 46.2747), "Etc/GMT");
         assert_eq!(finder.get_tz_name(-73.7729, 38.3530), "Etc/GMT+5");
         assert_eq!(finder.get_tz_name(114.1594, 22.3173), "Asia/Hong_Kong");
+        assert_eq!(finder.get_tz_name(9.8198, 27.5775), "Africa/Tripoli");
     }
 }
