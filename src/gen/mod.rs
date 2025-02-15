@@ -1,7 +1,11 @@
 use prost::Message;
 
-pub mod pb;
-pub use pb::*;
+pub mod tzf {
+    pub mod v1 {
+        include!("tzf.v1.rs");
+    }
+}
+pub use tzf::v1::*;
 
 impl TryFrom<Vec<u8>> for Timezones {
     type Error = anyhow::Error;
