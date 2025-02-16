@@ -407,19 +407,9 @@ impl DefaultFinder {
         // It's not a bug but a limitation of the simplified algorithm.
         //
         // To handle this, auto shift the point a little bit to find the nearest timezone.
-        for &dx in &[0.0, -0.01, 0.01, -0.02, 0.02] {
-            for &dy in &[0.0, -0.01, 0.01, -0.02, 0.02] {
-                let dlng = dx + lng;
-                let dlat = dy + lat;
-                let fuzzy_name = self.fuzzy_finder.get_tz_name(dlng, dlat);
-                if !fuzzy_name.is_empty() {
-                    return fuzzy_name;
-                }
-                let name = self.finder.get_tz_name(dlng, dlat);
-                if !name.is_empty() {
-                    return name;
-                }
-            }
+        let res = self.get_tz_names(lng, lat);
+        if !res.is_empty() {
+            return res.first().unwrap();
         }
         ""
     }
@@ -431,7 +421,21 @@ impl DefaultFinder {
     /// ```
     #[must_use]
     pub fn get_tz_names(&self, lng: f64, lat: f64) -> Vec<&str> {
-        self.finder.get_tz_names(lng, lat)
+        for &dx in &[0.0, -0.01, 0.01, -0.02, 0.02] {
+            for &dy in &[0.0, -0.01, 0.01, -0.02, 0.02] {
+                let dlng = dx + lng;
+                let dlat = dy + lat;
+                let fuzzy_names = self.fuzzy_finder.get_tz_names(dlng, dlat);
+                if !fuzzy_names.is_empty() {
+                    return fuzzy_names;
+                }
+                let names = self.finder.get_tz_names(dlng, dlat);
+                if !names.is_empty() {
+                    return names;
+                }
+            }
+        }
+        Vec::new() // Return empty vector if no timezone is found
     }
 
     /// Returns all time zone names as a `Vec<&str>`.

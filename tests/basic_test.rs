@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use tzf_rs::DefaultFinder;
     use tzf_rs::Finder;
 
     #[test]
@@ -18,5 +19,25 @@ mod tests {
         assert_eq!(finder.get_tz_name(-73.7729, 38.3530), "Etc/GMT+5");
         assert_eq!(finder.get_tz_name(114.1594, 22.3173), "Asia/Hong_Kong");
         assert_eq!(finder.get_tz_name(9.8198, 27.5775), "Africa/Tripoli");
+
+        // lng: 8.61231565, lat: 47.66148548
+
+        assert_eq!(finder.get_tz_name(8.61280918, 47.66097966) != "", true);
+        assert_eq!(finder.get_tz_name(8.61231565, 47.66148548) != "", true);
+    }
+
+    #[test]
+    fn no_empty() {
+        let finder = DefaultFinder::new();
+        // ensure not empty
+        assert_eq!(
+            finder.get_tz_name(8.61231564999999932297, 47.66148548000000317870) != "",
+            true
+        );
+        assert_eq!(
+            finder.get_tz_name(8.61280917999999928725, 47.66097966000000241138) != "",
+            true
+        );
+        assert_eq!(finder.get_tz_name(8.61231565, 47.66148548) != "", true);
     }
 }
