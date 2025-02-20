@@ -130,6 +130,18 @@ Rust port's Python binding; you can view it
 - Python, see [`ringsaturn/tzfpy`](https://github.com/ringsaturn/tzfpy)
 - Wasm, see [`ringsaturn/tzf-wasm`](https://github.com/ringsaturn/tzf-wasm)
 
+## Command line
+
+The binary helps in debugging tzf-rs and using it in (scripting) languages
+without bindings. Either specify the coordinates as parameters to get a single
+time zone, or to look up multiple coordinates efficiently specify the ordering
+and pipe them to the binary one pair of coordinates per line.
+
+```shell
+tzf --lng 116.3883 --lat 39.9289
+echo -e "116.3883 39.9289\n116.3883, 39.9289" | tzf --stdin-order lng-lat
+```
+
 ## LICENSE
 
 This project is licensed under the [MIT license](./LICENSE). The data is
