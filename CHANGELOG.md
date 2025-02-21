@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.13] - 2025-02-21
+
+* add option to lookup multiple coordinates from stdin by @DvdGiessen in https://github.com/ringsaturn/tzf-rs/pull/166
+
+## [0.4.12] - 2025-02-16
+
+* fix empty result around borders by @ringsaturn
+
+## [0.4.11] - 2025-02-15
+
+* fix empty result around borders by @ringsaturn in https://github.com/ringsaturn/tzf-rs/pull/164
+* fix proto build by @ringsaturn in https://github.com/ringsaturn/tzf-rs/pull/165
+
 ## [0.4.10] - 2025-02-01
 
 * Bump the dependencies group across 1 directory with 6 updates by @dependabot in https://github.com/ringsaturn/tzf-rs/pull/159
