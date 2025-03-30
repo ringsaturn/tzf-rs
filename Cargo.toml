@@ -8,7 +8,7 @@ license = "MIT"
 name = "tzf-rs"
 readme = "README.md"
 repository = "https://github.com/ringsaturn/tzf-rs"
-version = "1.0.0"
+version = "1.0.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -22,12 +22,15 @@ clap = { version = "4", features = [
     "derive",
 ], optional = true }
 prost = "0.13"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 # tzf-rel = { git =  "https://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
 tzf-rel = "0.0.2025-b"
 
-# geometry-rs = { git =  "https://github.com/ringsaturn/geometry-rs", tag = "v0.1.0"}
-geometry-rs = "0.3.0"
+# tag = "v0.3.1"
+geometry-rs = { git =  "https://github.com/ringsaturn/geometry-rs", rev = "4ffd4e8"} 
+# geometry-rs = "0.3.0"
 
 [dev-dependencies]
 lazy_static = "1.5.0"
