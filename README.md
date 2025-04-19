@@ -57,9 +57,12 @@ A Redis protocol demo could be used here:
 
 ### Setup 100% Accurate Lookup
 
-By default, tzf-rs uses a simplified shape data. If you need 100% accurate lookup, you can use the following code to setup.
+By default, tzf-rs uses a simplified shape data. If you need 100% accurate
+lookup, you can use the following code to setup.
 
-1. Download full data set, about 90MB.
+1. Download
+   [full data set](https://github.com/ringsaturn/tzf-rel/blob/main/combined-with-oceans.bin),
+   about 90MB.
 2. Use the following code to setup.
 
 ```rust,ignore
@@ -80,7 +83,8 @@ fn main() {
 }
 ```
 
-A full example can be found [here](https://github.com/ringsaturn/tzf-rs/pull/170).
+A full example can be found
+[here](https://github.com/ringsaturn/tzf-rs/pull/170).
 
 ## Performance
 
