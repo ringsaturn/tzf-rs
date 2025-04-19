@@ -55,6 +55,33 @@ a good example.
 A Redis protocol demo could be used here:
 [`ringsaturn/redizone`](https://github.com/ringsaturn/redizone).
 
+### Setup 100% Accurate Lookup
+
+By default, tzf-rs uses a simplified shape data. If you need 100% accurate lookup, you can use the following code to setup.
+
+1. Download full data set, about 90MB.
+2. Use the following code to setup.
+
+```rust,ignore
+use tzf_rs::Finder;
+use tzf_rs::gen::tzf::v1::Timezones;
+
+pub fn load_full() -> Vec<u8> {
+    include_bytes!("./combined-with-oceans.bin").to_vec()
+}
+
+fn main() {
+    println!("Hello, world!");
+    let file_bytes: Vec<u8> = load_full();
+    
+    let finder = Finder::from_pb(Timezones::try_from(file_bytes).unwrap_or_default());
+    let tz_name = finder.get_tz_name(139.767125, 35.681236);
+    println!("tz_name: {}", tz_name);
+}
+```
+
+A full example can be found [here](https://github.com/ringsaturn/tzf-rs/pull/170).
+
 ## Performance
 
 The tzf-rs package is intended for high-performance geospatial query services,
@@ -77,7 +104,7 @@ Below is a benchmark run on global cities(about 14K), and avg time is about
 3,000 ns per query:
 
 ```rust,ignore
-// require toolchain.channel=nightly 
+// require toolchain.channel=nightly
 
 #![feature(test)]
 #[cfg(test)]
