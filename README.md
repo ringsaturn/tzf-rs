@@ -161,6 +161,7 @@ Rust port's Python binding; you can view it
 - Ruby, see [`HarlemSquirrel/tzf-rb`](https://github.com/HarlemSquirrel/tzf-rb)
 - Python, see [`ringsaturn/tzfpy`](https://github.com/ringsaturn/tzfpy)
 - Wasm, see [`ringsaturn/tzf-wasm`](https://github.com/ringsaturn/tzf-wasm)
+- PostgreSQL extension, see [`ringsaturn/pg_tzf`](https://github.com/ringsaturn/pg_tzf)
 
 ## Command line
 
