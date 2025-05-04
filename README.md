@@ -161,7 +161,8 @@ Rust port's Python binding; you can view it
 - Ruby, see [`HarlemSquirrel/tzf-rb`](https://github.com/HarlemSquirrel/tzf-rb)
 - Python, see [`ringsaturn/tzfpy`](https://github.com/ringsaturn/tzfpy)
 - Wasm, see [`ringsaturn/tzf-wasm`](https://github.com/ringsaturn/tzf-wasm)
-- PostgreSQL extension, see [`ringsaturn/pg_tzf`](https://github.com/ringsaturn/pg_tzf)
+- PostgreSQL extension, see
+  [`ringsaturn/pg_tzf`](https://github.com/ringsaturn/pg_tzf)
 
 ## Command line
 
@@ -174,6 +175,10 @@ and pipe them to the binary one pair of coordinates per line.
 tzf --lng 116.3883 --lat 39.9289
 echo -e "116.3883 39.9289\n116.3883, 39.9289" | tzf --stdin-order lng-lat
 ```
+
+If you are using Nixpkgs, you can install the `tzf` command line tool via
+unstable channel, please see more in
+[Nixpkgs](https://search.nixos.org/packages?channel=unstable&type=packages&query=tzf-rs).
 
 ## LICENSE
 
