@@ -1,6 +1,7 @@
 use cities_json::get_random_cities;
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use lazy_static::lazy_static;
+use std::hint::black_box;
 use tzf_rs::{DefaultFinder, Finder};
 
 lazy_static! {
