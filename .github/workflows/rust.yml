@@ -22,7 +22,7 @@ jobs:
         with:
           comment_on_pr: false
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: cargo fmt --check
       - run: cargo build
