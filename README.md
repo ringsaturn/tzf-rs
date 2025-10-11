@@ -67,7 +67,7 @@ lookup, you can use the following code to setup.
 
 ```rust,ignore
 use tzf_rs::Finder;
-use tzf_rs::gen::tzf::v1::Timezones;
+use tzf_rs::pbgen::tzf::v1::Timezones;
 
 pub fn load_full() -> Vec<u8> {
     include_bytes!("./combined-with-oceans.bin").to_vec()
