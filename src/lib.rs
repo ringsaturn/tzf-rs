@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::f64::consts::PI;
 use std::vec;
 use tzf_rel::{load_preindex, load_reduced};
-pub mod gen;
+pub mod pbgen;
 
 struct Item {
     polys: Vec<Polygon>,
@@ -48,7 +48,7 @@ impl Finder {
     ///
     /// * `Finder` - A Finder instance.
     #[must_use]
-    pub fn from_pb(tzs: gen::Timezones) -> Self {
+    pub fn from_pb(tzs: pbgen::Timezones) -> Self {
         let mut f = Self {
             all: vec![],
             data_version: tzs.version,
@@ -205,7 +205,7 @@ impl Default for Finder {
     fn default() -> Self {
         // let file_bytes = include_bytes!("data/combined-with-oceans.reduce.pb").to_vec();
         let file_bytes: Vec<u8> = load_reduced();
-        Self::from_pb(gen::Timezones::try_from(file_bytes).unwrap_or_default())
+        Self::from_pb(pbgen::Timezones::try_from(file_bytes).unwrap_or_default())
     }
 }
 
@@ -264,13 +264,13 @@ impl Default for FuzzyFinder {
     /// ```
     fn default() -> Self {
         let file_bytes: Vec<u8> = load_preindex();
-        Self::from_pb(gen::PreindexTimezones::try_from(file_bytes).unwrap_or_default())
+        Self::from_pb(pbgen::PreindexTimezones::try_from(file_bytes).unwrap_or_default())
     }
 }
 
 impl FuzzyFinder {
     #[must_use]
-    pub fn from_pb(tzs: gen::PreindexTimezones) -> Self {
+    pub fn from_pb(tzs: pbgen::PreindexTimezones) -> Self {
         let mut f = Self {
             min_zoom: i64::from(tzs.agg_zoom),
             max_zoom: i64::from(tzs.idx_zoom),

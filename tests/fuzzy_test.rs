@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use tzf_rs::deg2num;
     use tzf_rs::FuzzyFinder;
+    use tzf_rs::deg2num;
 
     #[test]
     fn test_deg2num() {
