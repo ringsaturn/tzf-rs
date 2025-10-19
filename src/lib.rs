@@ -1,6 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 use geometry_rs::{Point, Polygon};
+#[cfg(feature = "export-geojson")]
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::f64::consts::PI;
@@ -193,6 +194,7 @@ impl Finder {
     }
 
     /// Helper method to convert an Item to a FeatureItem.
+    #[cfg(feature = "export-geojson")]
     fn item_to_feature(&self, item: &Item) -> FeatureItem {
         // Convert internal Item to pbgen::Timezone format
         let mut pbpolys = Vec::new();
@@ -250,6 +252,7 @@ impl Finder {
     /// let json_string = serde_json::to_string(&geojson).unwrap();
     /// ```
     #[must_use]
+    #[cfg(feature = "export-geojson")]
     pub fn to_geojson(&self) -> BoundaryFile {
         let mut output = BoundaryFile {
             collection_type: "FeatureCollection".to_string(),
@@ -288,6 +291,7 @@ impl Finder {
     /// }
     /// ```
     #[must_use]
+    #[cfg(feature = "export-geojson")]
     pub fn get_tz_geojson(&self, timezone_name: &str) -> Option<BoundaryFile> {
         let mut output = BoundaryFile {
             collection_type: "FeatureCollection".to_string(),
@@ -353,9 +357,12 @@ pub fn deg2num(lng: f64, lat: f64, zoom: i64) -> (i64, i64) {
 }
 
 /// GeoJSON type definitions for conversion
+#[cfg(feature = "export-geojson")]
 pub type PolygonCoordinates = Vec<Vec<[f64; 2]>>;
+#[cfg(feature = "export-geojson")]
 pub type MultiPolygonCoordinates = Vec<PolygonCoordinates>;
 
+#[cfg(feature = "export-geojson")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeometryDefine {
     #[serde(rename = "type")]
@@ -363,11 +370,13 @@ pub struct GeometryDefine {
     pub coordinates: MultiPolygonCoordinates,
 }
 
+#[cfg(feature = "export-geojson")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PropertiesDefine {
     pub tzid: String,
 }
 
+#[cfg(feature = "export-geojson")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FeatureItem {
     #[serde(rename = "type")]
@@ -376,6 +385,7 @@ pub struct FeatureItem {
     pub geometry: GeometryDefine,
 }
 
+#[cfg(feature = "export-geojson")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BoundaryFile {
     #[serde(rename = "type")]
@@ -384,6 +394,7 @@ pub struct BoundaryFile {
 }
 
 /// Convert protobuf Polygon array to GeoJSON MultiPolygon coordinates
+#[cfg(feature = "export-geojson")]
 fn from_pb_polygon_to_geo_multipolygon(pbpoly: &[pbgen::Polygon]) -> MultiPolygonCoordinates {
     let mut res = MultiPolygonCoordinates::new();
     for poly in pbpoly {
@@ -410,6 +421,7 @@ fn from_pb_polygon_to_geo_multipolygon(pbpoly: &[pbgen::Polygon]) -> MultiPolygo
 }
 
 /// Convert a protobuf Timezone to a GeoJSON FeatureItem
+#[cfg(feature = "export-geojson")]
 fn revert_item(input: &pbgen::Timezone) -> FeatureItem {
     FeatureItem {
         feature_type: "Feature".to_string(),
@@ -424,6 +436,7 @@ fn revert_item(input: &pbgen::Timezone) -> FeatureItem {
 }
 
 /// Convert protobuf Timezones to GeoJSON BoundaryFile (FeatureCollection)
+#[cfg(feature = "export-geojson")]
 pub fn revert_timezones(input: &pbgen::Timezones) -> BoundaryFile {
     let mut output = BoundaryFile {
         collection_type: "FeatureCollection".to_string(),
@@ -583,6 +596,7 @@ impl FuzzyFinder {
     /// let json_string = serde_json::to_string(&geojson).unwrap();
     /// ```
     #[must_use]
+    #[cfg(feature = "export-geojson")]
     pub fn to_geojson(&self) -> BoundaryFile {
         let mut name_to_keys: HashMap<&String, Vec<(i64, i64, i64)>> = HashMap::new();
 
@@ -642,6 +656,7 @@ impl FuzzyFinder {
     /// }
     /// ```
     #[must_use]
+    #[cfg(feature = "export-geojson")]
     pub fn get_tz_geojson(&self, timezone_name: &str) -> Option<FeatureItem> {
         let mut keys = Vec::new();
 
@@ -678,6 +693,7 @@ impl FuzzyFinder {
 }
 
 /// Convert tile coordinates (x, y, z) to a polygon representing the tile bounds.
+#[cfg(feature = "export-geojson")]
 #[allow(clippy::cast_precision_loss)]
 fn tile_to_polygon(x: i64, y: i64, z: i64) -> Vec<[f64; 2]> {
     let n = f64::powf(2.0, z as f64);
@@ -826,6 +842,7 @@ impl DefaultFinder {
     /// let json_string = serde_json::to_string(&geojson).unwrap();
     /// ```
     #[must_use]
+    #[cfg(feature = "export-geojson")]
     pub fn to_geojson(&self) -> BoundaryFile {
         self.finder.to_geojson()
     }
@@ -857,6 +874,7 @@ impl DefaultFinder {
     /// }
     /// ```
     #[must_use]
+    #[cfg(feature = "export-geojson")]
     pub fn get_tz_geojson(&self, timezone_name: &str) -> Option<BoundaryFile> {
         self.finder.get_tz_geojson(timezone_name)
     }

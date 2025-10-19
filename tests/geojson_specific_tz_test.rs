@@ -1,3 +1,5 @@
+#![cfg(feature = "export-geojson")]
+
 use tzf_rs::{DefaultFinder, Finder, FuzzyFinder};
 
 #[test]
