@@ -26,11 +26,10 @@ fn main() {
 
     for tz_name in &timezones {
         if let Some(collection) = finder.get_tz_geojson(tz_name) {
-            let json_string =
-                serde_json::to_string_pretty(&collection).expect("Failed to serialize to JSON");
+            let json_string = collection.to_string_pretty();
 
             let safe_name = tz_name.replace('/', "_");
-            let filename = format!("tmp/{}_finder.geojson", safe_name);
+            let filename: String = format!("tmp/{}_finder.geojson", safe_name);
 
             fs::write(&filename, &json_string).expect("Failed to write file");
 
@@ -59,8 +58,7 @@ fn main() {
 
     for tz_name in &timezones {
         if let Some(feature) = fuzzy_finder.get_tz_geojson(tz_name) {
-            let json_string =
-                serde_json::to_string_pretty(&feature).expect("Failed to serialize to JSON");
+            let json_string = feature.to_string_pretty();
 
             let safe_name = tz_name.replace('/', "_");
             let filename = format!("tmp/{}_fuzzy.geojson", safe_name);
@@ -86,8 +84,7 @@ fn main() {
     // Just export one as example
     let example_tz = "Asia/Tokyo";
     if let Some(collection) = default_finder.get_tz_geojson(example_tz) {
-        let json_string =
-            serde_json::to_string_pretty(&collection).expect("Failed to serialize to JSON");
+        let json_string = collection.to_string_pretty();
 
         let filename = "tmp/tokyo_default.geojson";
         fs::write(filename, &json_string).expect("Failed to write file");

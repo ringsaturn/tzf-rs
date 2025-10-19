@@ -22,7 +22,7 @@ fn main() {
     }
 
     // Serialize to JSON string
-    let json_string = serde_json::to_string_pretty(&geojson).unwrap();
+    let json_string = geojson.to_string_pretty();
     println!("\nGeoJSON preview (first 500 chars):");
     println!("{}", &json_string[..json_string.len().min(500)]);
 
@@ -55,7 +55,7 @@ fn main() {
 
     if let Some(feature) = shanghai_feature {
         println!("Found timezone: {}", feature.properties.tzid);
-        let single_feature_json = serde_json::to_string_pretty(feature).unwrap();
+        let single_feature_json = feature.to_string_pretty();
         println!("Feature JSON (first 300 chars):");
         println!(
             "{}",

@@ -19,7 +19,7 @@ fn test_finder_get_tz_geojson_found() {
     assert!(!first_feature.geometry.coordinates.is_empty());
 
     // Verify we can serialize to JSON
-    let json_string = serde_json::to_string(&collection).unwrap();
+    let json_string = collection.to_string_pretty();
     assert!(!json_string.is_empty());
 }
 
@@ -44,7 +44,7 @@ fn test_fuzzy_finder_get_tz_geojson_found() {
     assert!(!feature.geometry.coordinates.is_empty());
 
     // Verify we can serialize to JSON
-    let json_string = serde_json::to_string(&feature).unwrap();
+    let json_string = feature.to_string_pretty();
     assert!(!json_string.is_empty());
 }
 

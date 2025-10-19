@@ -31,7 +31,7 @@ test-examples:
 
 .PHONY: doc
 doc:
-	cargo +nightly doc --no-deps --features export-geojson
+	cargo +nightly doc --no-deps --all-features
 
 .PHONY: ci
 ci: test-all test-examples

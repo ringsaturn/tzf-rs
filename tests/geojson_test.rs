@@ -11,7 +11,7 @@ fn test_finder_to_geojson() {
     assert!(!geojson.features.is_empty());
 
     // Verify we can serialize to JSON
-    let json_string = serde_json::to_string(&geojson).unwrap();
+    let json_string = geojson.to_string();
     assert!(!json_string.is_empty());
 
     // Verify structure
@@ -32,7 +32,7 @@ fn test_fuzzy_finder_to_geojson() {
     assert!(!geojson.features.is_empty());
 
     // Verify we can serialize to JSON
-    let json_string = serde_json::to_string(&geojson).unwrap();
+    let json_string = geojson.to_string();
     assert!(!json_string.is_empty());
 
     // Verify structure
@@ -53,7 +53,7 @@ fn test_default_finder_to_geojson() {
     assert!(!geojson.features.is_empty());
 
     // Verify we can serialize to JSON
-    let json_string = serde_json::to_string(&geojson).unwrap();
+    let json_string = geojson.to_string();
     assert!(!json_string.is_empty());
 }
 
