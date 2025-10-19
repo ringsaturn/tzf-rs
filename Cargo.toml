@@ -8,7 +8,9 @@ license = "MIT"
 name = "tzf-rs"
 readme = "README.md"
 repository = "https://github.com/ringsaturn/tzf-rs"
-version = "1.0.1"
+authors = ["ringsaturn <ringsaturn.me@gmail.com>"]
+version = "1.1.0"
+categories = ["science::geo", "date-and-time","command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -22,6 +24,8 @@ clap = { version = "4", features = [
     "derive",
 ], optional = true }
 prost = "0.14.1"
+serde = { version = "1.0.228", features = ["derive"] , optional = true }
+serde_json = { version = "1.0.145", optional = true }
 
 # tzf-rel = { git =  "https://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
 tzf-rel = "0.0.2025-b"
@@ -39,11 +43,27 @@ cities-json = "0.6.8"
 
 [features]
 default = ["clap"]
+export-geojson = [
+    "serde",
+    "serde_json",
+]
 
 [[bin]]
 name = "tzf"
 required-features = ["clap"]
 doc = false
+
+[[example]]
+name = "geojson_conversion"
+required-features = ["export-geojson"]
+
+[[example]]
+name = "export_tokyo"
+required-features = ["export-geojson"]
+
+[[example]]
+name = "export_specific_timezones"
+required-features = ["export-geojson"]
 
 [[bench]]
 harness = false

@@ -21,7 +21,8 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: nightly
-      - run: cargo +nightly doc --no-deps
+      - name: Build documentation with all features
+        run: make doc
 
       # https://github.com/actions/deploy-pages/issues/303
       - name: Fix permissions
