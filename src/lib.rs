@@ -250,7 +250,7 @@ impl Finder {
     ///
     /// let finder = Finder::new();
     /// let geojson = finder.to_geojson();
-    /// let json_string = serde_json::to_string(&geojson).unwrap();
+    /// let json_string = geojson.to_string();
     /// ```
     #[must_use]
     #[cfg(feature = "export-geojson")]
@@ -284,7 +284,7 @@ impl Finder {
     ///
     /// let finder = Finder::new();
     /// if let Some(collection) = finder.get_tz_geojson("Asia/Tokyo") {
-    ///     let json_string = serde_json::to_string(&collection).unwrap();
+    ///     let json_string = collection.to_string();
     ///     println!("Found {} feature(s)", collection.features.len());
     ///     if let Some(first_feature) = collection.features.first() {
     ///         println!("Timezone ID: {}", first_feature.properties.tzid);
@@ -616,7 +616,7 @@ impl FuzzyFinder {
     ///
     /// let finder = FuzzyFinder::new();
     /// let geojson = finder.to_geojson();
-    /// let json_string = serde_json::to_string(&geojson).unwrap();
+    /// let json_string = geojson.to_string();
     /// ```
     #[must_use]
     #[cfg(feature = "export-geojson")]
@@ -674,7 +674,7 @@ impl FuzzyFinder {
     ///
     /// let finder = FuzzyFinder::new();
     /// if let Some(feature) = finder.get_tz_geojson("Asia/Tokyo") {
-    ///     let json_string = serde_json::to_string(&feature).unwrap();
+    ///     let json_string = feature.to_string();
     ///     println!("Found {} tiles for timezone", feature.geometry.coordinates.len());
     /// }
     /// ```
@@ -862,7 +862,7 @@ impl DefaultFinder {
     ///
     /// let finder = DefaultFinder::new();
     /// let geojson = finder.to_geojson();
-    /// let json_string = serde_json::to_string(&geojson).unwrap();
+    /// let json_string = geojson.to_string();
     /// ```
     #[must_use]
     #[cfg(feature = "export-geojson")]
@@ -889,7 +889,7 @@ impl DefaultFinder {
     ///
     /// let finder = DefaultFinder::new();
     /// if let Some(collection) = finder.get_tz_geojson("Asia/Tokyo") {
-    ///     let json_string = serde_json::to_string(&collection).unwrap();
+    ///     let json_string = collection.to_string();
     ///     println!("Found {} feature(s)", collection.features.len());
     ///     if let Some(first_feature) = collection.features.first() {
     ///         println!("Timezone ID: {}", first_feature.properties.tzid);
