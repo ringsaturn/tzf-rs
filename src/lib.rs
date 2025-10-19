@@ -1,4 +1,5 @@
 #![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 use geometry_rs::{Point, Polygon};
 #[cfg(feature = "export-geojson")]
@@ -386,11 +387,33 @@ pub struct FeatureItem {
 }
 
 #[cfg(feature = "export-geojson")]
+impl FeatureItem {
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap_or_default()
+    }
+
+    pub fn to_string_pretty(&self) -> String {
+        serde_json::to_string_pretty(self).unwrap_or_default()
+    }
+}
+
+#[cfg(feature = "export-geojson")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BoundaryFile {
     #[serde(rename = "type")]
     pub collection_type: String,
     pub features: Vec<FeatureItem>,
+}
+
+#[cfg(feature = "export-geojson")]
+impl BoundaryFile {
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap_or_default()
+    }
+
+    pub fn to_string_pretty(&self) -> String {
+        serde_json::to_string_pretty(self).unwrap_or_default()
+    }
 }
 
 /// Convert protobuf Polygon array to GeoJSON MultiPolygon coordinates

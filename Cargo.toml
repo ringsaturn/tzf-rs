@@ -25,6 +25,7 @@ clap = { version = "4", features = [
 ], optional = true }
 prost = "0.14.1"
 serde = { version = "1.0.228", features = ["derive"] , optional = true }
+serde_json = { version = "1.0.145", optional = true }
 
 # tzf-rel = { git =  "https://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
 tzf-rel = "0.0.2025-b"
@@ -40,11 +41,10 @@ criterion = { version = "0.7", features = ["html_reports"] }
 # cities-json = { git = "https://github.com/ringsaturn/go-cities.json" , rev = "0660039" }
 cities-json = "0.6.8"
 
-serde_json = { version = "1.0.145"}
 
 [features]
 default = ["clap"]
-export-geojson = ["serde"]
+export-geojson = ["serde", "serde_json"]
 
 [[bin]]
 name = "tzf"
@@ -75,3 +75,10 @@ lto = true
 
 [target.'cfg(not(target_env = "msvc"))'.dev-dependencies]
 pprof = { version = "0.15", features = ["flamegraph"] }
+
+[package.metadata.docs.rs]
+# To doc all features
+all-features = true
+# You would see why we do this later
+# As a side note, docs.rs build doc with nightly cargo 
+rustdoc-args = ["--cfg", "docsrs"]

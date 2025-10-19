@@ -30,8 +30,7 @@ fn main() {
             features: vec![feature.clone()],
         };
 
-        let json_string = serde_json::to_string_pretty(&single_feature_collection)
-            .expect("Failed to serialize to JSON");
+        let json_string = single_feature_collection.to_string_pretty();
 
         fs::write("tmp/tokyo_finder.geojson", &json_string)
             .expect("Failed to write finder GeoJSON file");
@@ -66,8 +65,7 @@ fn main() {
             features: vec![feature.clone()],
         };
 
-        let json_string = serde_json::to_string_pretty(&single_feature_collection)
-            .expect("Failed to serialize to JSON");
+        let json_string = single_feature_collection.to_string_pretty();
 
         fs::write("tmp/tokyo_fuzzy_finder.geojson", &json_string)
             .expect("Failed to write fuzzy finder GeoJSON file");
