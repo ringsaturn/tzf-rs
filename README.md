@@ -76,7 +76,7 @@ pub fn load_full() -> Vec<u8> {
 fn main() {
     println!("Hello, world!");
     let file_bytes: Vec<u8> = load_full();
-    
+
     let finder = Finder::from_pb(Timezones::try_from(file_bytes).unwrap_or_default());
     let tz_name = finder.get_tz_name(139.767125, 35.681236);
     println!("tz_name: {}", tz_name);
@@ -85,6 +85,78 @@ fn main() {
 
 A full example can be found
 [here](https://github.com/ringsaturn/tzf-rs/pull/170).
+
+## Advanced Usage - Export GeoJSON
+
+It's a common use case make some visualization of timezone boundaries. For this
+purpose, tzf-rs provides methods to export the preindex tile data or specific
+timezone polygons as GeoJSON format.
+
+To enable this feature, you need to build tzf-rs with `export-geojson` feature:
+
+```toml
+# Please note that >= 1.1.1 is required to have full GeoJSON functionality.
+tzf-rs = { version = "{version}", features = ["export-geojson"]}
+```
+
+Then you can use the following methods:
+
+```rust,ignore
+// examples/query_tokyo.rs
+use tzf_rs::DefaultFinder;
+
+fn main() {
+    let default_finder = DefaultFinder::new();
+    let lng = 139.6917;
+    let lat = 35.6895;
+
+    let tz_name = default_finder.get_tz_name(lng, lat).to_owned();
+    println!(
+        "The timezone at longitude {}, latitude {} is: {}",
+        lng, lat, tz_name
+    );
+
+    // Get the Polygon boundary for the timezone
+    if let Some(boundary_file) = default_finder.finder.get_tz_geojson(&tz_name) {
+        // It's GeoJSON Feature Collection, and the features contains "MultiPolygon" geometry for the timezone.
+        println!("Found GeoJSON feature for timezone: {}", tz_name);
+        let mut polygons: usize = 0;
+        for feature in boundary_file.features {
+            polygons += feature.geometry.coordinates.len();
+        }
+        println!(
+            "Total number of polygons in feature collection: {}",
+            polygons
+        );
+    }
+
+    // Get the Index polygon boundary for the timezone
+    if let Some(index_boundary_file) = default_finder.fuzzy_finder.get_tz_geojson(&tz_name) {
+        // It's GeoJSON Feature, and the geometry contains "MultiPolygon" for the timezone index.
+        // But the Polygons are actually map tiles.
+        println!("Found Index GeoJSON feature for timezone: {}", tz_name);
+        let mut polygons: usize = 0;
+        for polygon in index_boundary_file.geometry.coordinates {
+            polygons += polygon.len();
+        }
+        println!(
+            "Total number of tile polygons in index feature: {}",
+            polygons
+        );
+    }
+}
+```
+
+```bash
+cargo run --example query_tokyo --features export-geojson
+```
+
+```console
+The timezone at longitude 139.6917, latitude 35.6895 is: Asia/Tokyo
+Found GeoJSON feature for timezone: Asia/Tokyo
+Total number of polygons in feature collection: 24
+Found Index GeoJSON feature for timezone: Asia/Tokyo
+```
 
 ## Performance
 

@@ -25,9 +25,10 @@ test-all: test test-export-geojson
 
 .PHONY: test-examples
 test-examples:
-	cargo build --example geojson_conversion --features export-geojson
-	cargo build --example export_tokyo --features export-geojson
-	cargo build --example export_specific_timezones --features export-geojson
+	cargo run --example geojson_conversion --features export-geojson
+	cargo run --example export_tokyo --features export-geojson
+	cargo run --example export_specific_timezones --features export-geojson
+	cargo run --example query_tokyo --features export-geojson
 
 .PHONY: doc
 doc:
