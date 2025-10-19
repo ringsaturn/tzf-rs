@@ -88,6 +88,14 @@ A full example can be found
 
 ## Advanced Usage - Export GeoJSON
 
+> [!NOTE]
+>
+> This feature is designed for **data visualization purposes** and I can't
+> guarantee the performance when using it in high-performance scenarios. Please
+> do proper performance tests and necessary optimizations before using it in
+> high performace production, for example caching the exported GeoJSON data or
+> push to CDN.
+
 It's a common use case make some visualization of timezone boundaries. For this
 purpose, tzf-rs provides methods to export the preindex tile data or specific
 timezone polygons as GeoJSON format.
@@ -157,6 +165,11 @@ Found GeoJSON feature for timezone: Asia/Tokyo
 Total number of polygons in feature collection: 24
 Found Index GeoJSON feature for timezone: Asia/Tokyo
 ```
+
+For now, tzf-rs' binding in Wasm, named
+[tzf-wasm](https://github.com/ringsaturn/tzf-wasm)), has exported this feature
+and it has been deployed to the [tzf-web](https://ringsaturn.github.io/tzf-web/)
+for online usage.
 
 ## Performance
 
