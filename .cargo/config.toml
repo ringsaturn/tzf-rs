@@ -1,10 +1,4 @@
-# Cargo configuration for local development
-# This file is not committed to git (add to .gitignore)
-
-# Uncomment to build with export-geojson feature by default
-# [build]
-default-features = ["default", "export-geojson"]
-
-# Alternative: Set specific features for build/test
-# [target.'cfg(all())']
-# rustflags = ["--cfg", "feature=\"export-geojson\""]
+[alias]
+build-all = "build --features default,export-geojson"
+test-all = "test --all-features"
+doc-all = "doc --no-deps --all-features"

@@ -12,16 +12,7 @@ pb:
 # Test commands
 .PHONY: test
 test:
-	cargo test
-
-.PHONY: test-export-geojson
-test-export-geojson:
-	cargo build --features export-geojson
-	cargo test --features export-geojson
-
-.PHONY: test-all
-test-all: test test-export-geojson
-	@echo "All test configurations passed!"
+	cargo test-all
 
 .PHONY: test-examples
 test-examples:
@@ -35,6 +26,6 @@ doc:
 	cargo +nightly doc --no-deps --all-features
 
 .PHONY: ci
-ci: test-all test-examples
+ci: test test-examples
 	cargo fmt --check
 	cargo bench
