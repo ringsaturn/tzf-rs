@@ -51,18 +51,6 @@ name = "tzf"
 required-features = ["clap"]
 doc = false
 
-[[example]]
-name = "geojson_conversion"
-required-features = ["export-geojson"]
-
-[[example]]
-name = "export_tokyo"
-required-features = ["export-geojson"]
-
-[[example]]
-name = "export_specific_timezones"
-required-features = ["export-geojson"]
-
 [[bench]]
 harness = false
 name = "finders"
