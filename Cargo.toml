@@ -25,7 +25,6 @@ clap = { version = "4", features = [
 ], optional = true }
 prost = "0.14.1"
 serde = { version = "1.0.228", features = ["derive"] , optional = true }
-serde_json = { version = "1.0.145", optional = true }
 
 # tzf-rel = { git =  "https://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
 tzf-rel = "0.0.2025-b"
@@ -41,12 +40,11 @@ criterion = { version = "0.7", features = ["html_reports"] }
 # cities-json = { git = "https://github.com/ringsaturn/go-cities.json" , rev = "0660039" }
 cities-json = "0.6.8"
 
+serde_json = { version = "1.0.145"}
+
 [features]
 default = ["clap"]
-export-geojson = [
-    "serde",
-    "serde_json",
-]
+export-geojson = ["serde"]
 
 [[bin]]
 name = "tzf"
