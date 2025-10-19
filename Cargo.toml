@@ -1,55 +1,67 @@
 [package]
+authors = [
+  "ringsaturn <ringsaturn.me@gmail.com>",
+]
+categories = [
+  "science::geo",
+  "date-and-time",
+  "command-line-utilities",
+]
 description = "Fast convert longitude,latitude to timezone name."
 documentation = "https://docs.rs/tzf-rs"
 edition = "2024"
 homepage = "https://github.com/ringsaturn/tzf-rs"
-keywords = ["timezone", "geo"]
+keywords = [
+  "timezone",
+  "geo",
+]
 license = "MIT"
 name = "tzf-rs"
 readme = "README.md"
 repository = "https://github.com/ringsaturn/tzf-rs"
-authors = ["ringsaturn <ringsaturn.me@gmail.com>"]
 version = "1.1.2"
-categories = ["science::geo", "date-and-time","command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1"
 bytes = "1"
-clap = { version = "4", features = [
-    "color",
-    "help",
-    "usage",
-    "derive",
-], optional = true }
+clap = {version = "4", features = [
+  "color",
+  "help",
+  "usage",
+  "derive",
+], optional = true}
+geometry-rs = "0.3.3"
 prost = "0.14.1"
-serde = { version = "1.0.228", features = ["derive"] , optional = true }
-serde_json = { version = "1.0.145", optional = true }
-
-# tzf-rel = { git =  "https://github.com/ringsaturn/tzf-rel", tag = "v0.0.2022-f5"}
+serde = {version = "1.0.228", features = [
+  "derive",
+], optional = true}
+serde_json = {version = "1.0.145", optional = true}
 tzf-rel = "0.0.2025-b"
 
-# geometry-rs = { git =  "https://github.com/ringsaturn/geometry-rs", rev = "1c7231d"}
-geometry-rs = "0.3.3"
-
 [dev-dependencies]
+cities-json = "0.6.8"
+criterion = {version = "0.7", features = [
+  "html_reports",
+]}
 lazy_static = "1.5.0"
 
-criterion = { version = "0.7", features = ["html_reports"] }
-
-# cities-json = { git = "https://github.com/ringsaturn/go-cities.json" , rev = "0660039" }
-cities-json = "0.6.8"
-
-
 [features]
-default = ["clap"]
-export-geojson = ["serde", "serde_json"]
+default = [
+  "clap",
+]
+export-geojson = [
+  "serde",
+  "serde_json",
+]
 
 [[bin]]
-name = "tzf"
-required-features = ["clap"]
 doc = false
+name = "tzf"
+required-features = [
+  "clap",
+]
 
 [[bench]]
 harness = false
@@ -62,11 +74,16 @@ prost-build = "0.14.1"
 lto = true
 
 [target.'cfg(not(target_env = "msvc"))'.dev-dependencies]
-pprof = { version = "0.15", features = ["flamegraph"] }
+pprof = {version = "0.15", features = [
+  "flamegraph",
+]}
 
 [package.metadata.docs.rs]
 # To doc all features
 all-features = true
 # You would see why we do this later
 # As a side note, docs.rs build doc with nightly cargo 
-rustdoc-args = ["--cfg", "docsrs"]
+rustdoc-args = [
+  "--cfg",
+  "docsrs",
+]
