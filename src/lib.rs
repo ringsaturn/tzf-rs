@@ -1,6 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 use geometry_rs::{Point, Polygon};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::f64::consts::PI;
 use std::vec;
@@ -190,6 +191,120 @@ impl Finder {
     pub fn new() -> Self {
         Self::default()
     }
+
+    /// Helper method to convert an Item to a FeatureItem.
+    fn item_to_feature(&self, item: &Item) -> FeatureItem {
+        // Convert internal Item to pbgen::Timezone format
+        let mut pbpolys = Vec::new();
+        for poly in &item.polys {
+            let mut pbpoly = pbgen::Polygon {
+                points: Vec::new(),
+                holes: Vec::new(),
+            };
+
+            // Convert exterior points
+            for point in &poly.exterior {
+                pbpoly.points.push(pbgen::Point {
+                    lng: point.x as f32,
+                    lat: point.y as f32,
+                });
+            }
+
+            // Convert holes
+            for hole in &poly.holes {
+                let mut hole_poly = pbgen::Polygon {
+                    points: Vec::new(),
+                    holes: Vec::new(),
+                };
+                for point in hole {
+                    hole_poly.points.push(pbgen::Point {
+                        lng: point.x as f32,
+                        lat: point.y as f32,
+                    });
+                }
+                pbpoly.holes.push(hole_poly);
+            }
+
+            pbpolys.push(pbpoly);
+        }
+
+        let pbtz = pbgen::Timezone {
+            polygons: pbpolys,
+            name: item.name.clone(),
+        };
+
+        revert_item(&pbtz)
+    }
+
+    /// Convert the Finder's data to GeoJSON format.
+    ///
+    /// Returns a `BoundaryFile` (FeatureCollection) containing all timezone polygons.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tzf_rs::Finder;
+    ///
+    /// let finder = Finder::new();
+    /// let geojson = finder.to_geojson();
+    /// let json_string = serde_json::to_string(&geojson).unwrap();
+    /// ```
+    #[must_use]
+    pub fn to_geojson(&self) -> BoundaryFile {
+        let mut output = BoundaryFile {
+            collection_type: "FeatureCollection".to_string(),
+            features: Vec::new(),
+        };
+
+        for item in &self.all {
+            output.features.push(self.item_to_feature(item));
+        }
+
+        output
+    }
+
+    /// Convert a specific timezone to GeoJSON format.
+    ///
+    /// Returns `Some(BoundaryFile)` containing a FeatureCollection with all features
+    /// for the timezone if found, `None` otherwise. The returned FeatureCollection
+    /// may contain multiple features if the timezone has multiple geographic boundaries.
+    ///
+    /// # Arguments
+    ///
+    /// * `timezone_name` - The timezone name to export (e.g., "Asia/Tokyo")
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tzf_rs::Finder;
+    ///
+    /// let finder = Finder::new();
+    /// if let Some(collection) = finder.get_tz_geojson("Asia/Tokyo") {
+    ///     let json_string = serde_json::to_string(&collection).unwrap();
+    ///     println!("Found {} feature(s)", collection.features.len());
+    ///     if let Some(first_feature) = collection.features.first() {
+    ///         println!("Timezone ID: {}", first_feature.properties.tzid);
+    ///     }
+    /// }
+    /// ```
+    #[must_use]
+    pub fn get_tz_geojson(&self, timezone_name: &str) -> Option<BoundaryFile> {
+        let mut output = BoundaryFile {
+            collection_type: "FeatureCollection".to_string(),
+            features: Vec::new(),
+        };
+        for item in &self.all {
+            if item.name == timezone_name {
+                output.features.push(self.item_to_feature(item));
+            }
+        }
+
+        if output.features.is_empty() {
+            None
+        } else {
+            Some(output)
+        }
+    }
 }
 
 /// Creates a new, empty `Finder`.
@@ -235,6 +350,90 @@ pub fn deg2num(lng: f64, lat: f64, zoom: i64) -> (i64, i64) {
 
     // Possible precision loss here
     (xtile as i64, ytile as i64)
+}
+
+/// GeoJSON type definitions for conversion
+pub type PolygonCoordinates = Vec<Vec<[f64; 2]>>;
+pub type MultiPolygonCoordinates = Vec<PolygonCoordinates>;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GeometryDefine {
+    #[serde(rename = "type")]
+    pub geometry_type: String,
+    pub coordinates: MultiPolygonCoordinates,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PropertiesDefine {
+    pub tzid: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FeatureItem {
+    #[serde(rename = "type")]
+    pub feature_type: String,
+    pub properties: PropertiesDefine,
+    pub geometry: GeometryDefine,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BoundaryFile {
+    #[serde(rename = "type")]
+    pub collection_type: String,
+    pub features: Vec<FeatureItem>,
+}
+
+/// Convert protobuf Polygon array to GeoJSON MultiPolygon coordinates
+fn from_pb_polygon_to_geo_multipolygon(pbpoly: &[pbgen::Polygon]) -> MultiPolygonCoordinates {
+    let mut res = MultiPolygonCoordinates::new();
+    for poly in pbpoly {
+        let mut new_geo_poly = PolygonCoordinates::new();
+
+        // Main polygon (exterior ring)
+        let mut mainpoly = Vec::new();
+        for point in &poly.points {
+            mainpoly.push([f64::from(point.lng), f64::from(point.lat)]);
+        }
+        new_geo_poly.push(mainpoly);
+
+        // Holes (interior rings)
+        for holepoly in &poly.holes {
+            let mut holepoly_coords = Vec::new();
+            for point in &holepoly.points {
+                holepoly_coords.push([f64::from(point.lng), f64::from(point.lat)]);
+            }
+            new_geo_poly.push(holepoly_coords);
+        }
+        res.push(new_geo_poly);
+    }
+    res
+}
+
+/// Convert a protobuf Timezone to a GeoJSON FeatureItem
+fn revert_item(input: &pbgen::Timezone) -> FeatureItem {
+    FeatureItem {
+        feature_type: "Feature".to_string(),
+        properties: PropertiesDefine {
+            tzid: input.name.clone(),
+        },
+        geometry: GeometryDefine {
+            geometry_type: "MultiPolygon".to_string(),
+            coordinates: from_pb_polygon_to_geo_multipolygon(&input.polygons),
+        },
+    }
+}
+
+/// Convert protobuf Timezones to GeoJSON BoundaryFile (FeatureCollection)
+pub fn revert_timezones(input: &pbgen::Timezones) -> BoundaryFile {
+    let mut output = BoundaryFile {
+        collection_type: "FeatureCollection".to_string(),
+        features: Vec::new(),
+    };
+    for timezone in &input.timezones {
+        let item = revert_item(timezone);
+        output.features.push(item);
+    }
+    output
 }
 
 /// `FuzzyFinder` blazing fast for most places on earth, use a preindex data.
@@ -366,13 +565,148 @@ impl FuzzyFinder {
     pub fn new() -> Self {
         Self::default()
     }
+
+    /// Convert the FuzzyFinder's preindex data to GeoJSON format.
+    ///
+    /// This method generates polygons for each tile in the preindex,
+    /// representing the geographic bounds of each tile.
+    ///
+    /// Returns a `BoundaryFile` (FeatureCollection) containing all timezone tile polygons.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tzf_rs::FuzzyFinder;
+    ///
+    /// let finder = FuzzyFinder::new();
+    /// let geojson = finder.to_geojson();
+    /// let json_string = serde_json::to_string(&geojson).unwrap();
+    /// ```
+    #[must_use]
+    pub fn to_geojson(&self) -> BoundaryFile {
+        let mut name_to_keys: HashMap<&String, Vec<(i64, i64, i64)>> = HashMap::new();
+
+        // Group tiles by timezone name
+        for (key, names) in &self.all {
+            for name in names {
+                name_to_keys.entry(name).or_insert_with(Vec::new).push(*key);
+            }
+        }
+
+        let mut features = Vec::new();
+
+        for (name, keys) in name_to_keys {
+            let mut multi_polygon_coords = MultiPolygonCoordinates::new();
+
+            for (x, y, z) in keys {
+                // Convert tile coordinates to lat/lng bounds
+                let tile_poly = tile_to_polygon(x, y, z);
+                multi_polygon_coords.push(vec![tile_poly]);
+            }
+
+            let feature = FeatureItem {
+                feature_type: "Feature".to_string(),
+                properties: PropertiesDefine { tzid: name.clone() },
+                geometry: GeometryDefine {
+                    geometry_type: "MultiPolygon".to_string(),
+                    coordinates: multi_polygon_coords,
+                },
+            };
+
+            features.push(feature);
+        }
+
+        BoundaryFile {
+            collection_type: "FeatureCollection".to_string(),
+            features,
+        }
+    }
+
+    /// Convert a specific timezone's preindex data to GeoJSON format.
+    ///
+    /// Returns `Some(FeatureItem)` if the timezone is found in the preindex, `None` otherwise.
+    ///
+    /// # Arguments
+    ///
+    /// * `timezone_name` - The timezone name to export (e.g., "Asia/Tokyo")
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tzf_rs::FuzzyFinder;
+    ///
+    /// let finder = FuzzyFinder::new();
+    /// if let Some(feature) = finder.get_tz_geojson("Asia/Tokyo") {
+    ///     let json_string = serde_json::to_string(&feature).unwrap();
+    ///     println!("Found {} tiles for timezone", feature.geometry.coordinates.len());
+    /// }
+    /// ```
+    #[must_use]
+    pub fn get_tz_geojson(&self, timezone_name: &str) -> Option<FeatureItem> {
+        let mut keys = Vec::new();
+
+        // Find all tiles that contain this timezone
+        for (key, names) in &self.all {
+            if names.iter().any(|n| n == timezone_name) {
+                keys.push(*key);
+            }
+        }
+
+        if keys.is_empty() {
+            return None;
+        }
+
+        let mut multi_polygon_coords = MultiPolygonCoordinates::new();
+
+        for (x, y, z) in keys {
+            // Convert tile coordinates to lat/lng bounds
+            let tile_poly = tile_to_polygon(x, y, z);
+            multi_polygon_coords.push(vec![tile_poly]);
+        }
+
+        Some(FeatureItem {
+            feature_type: "Feature".to_string(),
+            properties: PropertiesDefine {
+                tzid: timezone_name.to_string(),
+            },
+            geometry: GeometryDefine {
+                geometry_type: "MultiPolygon".to_string(),
+                coordinates: multi_polygon_coords,
+            },
+        })
+    }
+}
+
+/// Convert tile coordinates (x, y, z) to a polygon representing the tile bounds.
+#[allow(clippy::cast_precision_loss)]
+fn tile_to_polygon(x: i64, y: i64, z: i64) -> Vec<[f64; 2]> {
+    let n = f64::powf(2.0, z as f64);
+
+    // Calculate min (west, south) corner
+    let lng_min = (x as f64) / n * 360.0 - 180.0;
+    let lat_min_rad = ((1.0 - ((y + 1) as f64) / n * 2.0) * PI).sinh().atan();
+    let lat_min = lat_min_rad.to_degrees();
+
+    // Calculate max (east, north) corner
+    let lng_max = ((x + 1) as f64) / n * 360.0 - 180.0;
+    let lat_max_rad = ((1.0 - (y as f64) / n * 2.0) * PI).sinh().atan();
+    let lat_max = lat_max_rad.to_degrees();
+
+    // Create a closed polygon (5 points, first == last)
+    vec![
+        [lng_min, lat_min],
+        [lng_max, lat_min],
+        [lng_max, lat_max],
+        [lng_min, lat_max],
+        [lng_min, lat_min],
+    ]
 }
 
 /// It's most recommend to use, combine both [`Finder`] and [`FuzzyFinder`],
 /// if [`FuzzyFinder`] got no data, then use [`Finder`].
 pub struct DefaultFinder {
-    finder: Finder,
-    fuzzy_finder: FuzzyFinder,
+    pub finder: Finder,
+    pub fuzzy_finder: FuzzyFinder,
 }
 
 impl Default for DefaultFinder {
@@ -474,5 +808,56 @@ impl DefaultFinder {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Convert the DefaultFinder's data to GeoJSON format.
+    ///
+    /// This uses the underlying `Finder`'s data for the GeoJSON conversion.
+    ///
+    /// Returns a `BoundaryFile` (FeatureCollection) containing all timezone polygons.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tzf_rs::DefaultFinder;
+    ///
+    /// let finder = DefaultFinder::new();
+    /// let geojson = finder.to_geojson();
+    /// let json_string = serde_json::to_string(&geojson).unwrap();
+    /// ```
+    #[must_use]
+    pub fn to_geojson(&self) -> BoundaryFile {
+        self.finder.to_geojson()
+    }
+
+    /// Convert a specific timezone to GeoJSON format.
+    ///
+    /// This uses the underlying `Finder`'s data for the GeoJSON conversion.
+    ///
+    /// Returns `Some(BoundaryFile)` containing a FeatureCollection with all features
+    /// for the timezone if found, `None` otherwise. The returned FeatureCollection
+    /// may contain multiple features if the timezone has multiple geographic boundaries.
+    ///
+    /// # Arguments
+    ///
+    /// * `timezone_name` - The timezone name to export (e.g., "Asia/Tokyo")
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tzf_rs::DefaultFinder;
+    ///
+    /// let finder = DefaultFinder::new();
+    /// if let Some(collection) = finder.get_tz_geojson("Asia/Tokyo") {
+    ///     let json_string = serde_json::to_string(&collection).unwrap();
+    ///     println!("Found {} feature(s)", collection.features.len());
+    ///     if let Some(first_feature) = collection.features.first() {
+    ///         println!("Timezone ID: {}", first_feature.properties.tzid);
+    ///     }
+    /// }
+    /// ```
+    #[must_use]
+    pub fn get_tz_geojson(&self, timezone_name: &str) -> Option<BoundaryFile> {
+        self.finder.get_tz_geojson(timezone_name)
     }
 }
