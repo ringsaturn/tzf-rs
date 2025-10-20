@@ -38,7 +38,7 @@ serde = {version = "1.0.228", features = [
   "derive",
 ], optional = true}
 serde_json = {version = "1.0.145", optional = true}
-tzf-rel = "0.0.2025-b"
+tzf-rel = "0.0.2025-b1"
 
 [dev-dependencies]
 cities-json = "0.6.8"
