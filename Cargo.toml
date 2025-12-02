@@ -42,7 +42,7 @@ tzf-rel = "0.0.2025-b2"
 
 [dev-dependencies]
 cities-json = "0.6.8"
-criterion = {version = "0.7", features = [
+criterion = {version = "0.8", features = [
   "html_reports",
 ]}
 lazy_static = "1.5.0"
