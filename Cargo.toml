@@ -37,7 +37,7 @@ prost = "0.14.1"
 serde = {version = "1.0.228", features = [
   "derive",
 ], optional = true}
-serde_json = {version = "1.0.145", optional = true}
+serde_json = {version = "1.0.148", optional = true}
 tzf-rel = "0.0.2025-b2"
 
 [dev-dependencies]
