@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-use geometry_rs::{Point, Polygon};
+use geometry_rs::{Point, Polygon, PolygonBuildOptions};
 #[cfg(feature = "export-geojson")]
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -81,7 +81,14 @@ impl Finder {
                     interior.push(holeextr);
                 }
 
-                let geopoly = geometry_rs::Polygon::new(exterior, interior);
+                let geopoly = geometry_rs::Polygon::new(
+                    exterior,
+                    interior,
+                    Some(PolygonBuildOptions {
+                        enable_rtree: true,
+                        rtree_min_segments: 64,
+                    }),
+                );
                 polys.push(geopoly);
             }
 
@@ -206,7 +213,7 @@ impl Finder {
             };
 
             // Convert exterior points
-            for point in &poly.exterior {
+            for point in poly.exterior() {
                 pbpoly.points.push(pbgen::Point {
                     lng: point.x as f32,
                     lat: point.y as f32,
@@ -214,7 +221,7 @@ impl Finder {
             }
 
             // Convert holes
-            for hole in &poly.holes {
+            for hole in poly.holes() {
                 let mut hole_poly = pbgen::Polygon {
                     points: Vec::new(),
                     holes: Vec::new(),

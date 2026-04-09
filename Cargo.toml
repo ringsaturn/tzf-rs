@@ -32,7 +32,8 @@ clap = {version = "4", features = [
   "usage",
   "derive",
 ], optional = true}
-geometry-rs = "0.3.3"
+# geometry-rs = "0.3.3"
+geometry-rs = { git = "https://github.com/ringsaturn/geometry-rs", branch = "rtree-index" }
 prost = "0.14.1"
 serde = {version = "1.0.228", features = [
   "derive",
