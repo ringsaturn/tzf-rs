@@ -86,6 +86,41 @@ fn main() {
 A full example can be found
 [here](https://github.com/ringsaturn/tzf-rs/pull/170).
 
+## Advanced Usage - Speed up with RTree/QuadTree Index
+
+`tzf-rs` builds polygon index structures through `geometry-rs`.
+`Finder::from_pb` uses `IndexMode::QuadTree` by default.
+
+If you need to tune build time and query latency for your own workload, use an
+explicit index mode.
+
+```rust,ignore
+use tzf_rs::{DefaultFinder, Finder, IndexMode};
+use tzf_rs::pbgen::tzf::v1::Timezones;
+
+pub fn load_full() -> Vec<u8> {
+    include_bytes!("./combined-with-oceans.bin").to_vec()
+}
+
+fn main() {
+    let mode = IndexMode::RTree;
+
+    // Build Finder from your own protobuf data.
+    let full_pb = Timezones::try_from(load_full()).unwrap_or_default();
+    let finder = Finder::from_pb_with_index(full_pb, mode);
+    println!("{}", finder.get_tz_name(139.767125, 35.681236));
+
+    // Or apply the same mode to DefaultFinder.
+    let default_finder = DefaultFinder::new_with_index(mode);
+    println!("{}", default_finder.get_tz_name(139.767125, 35.681236));
+}
+```
+
+Tuning notes:
+
+1. Use `IndexMode::RTree` for RTree only.
+2. Use `IndexMode::QuadTree` for QuadTree only.
+
 ## Advanced Usage - Export GeoJSON
 
 > [!NOTE]
@@ -186,6 +221,8 @@ Here is what has been done to improve performance:
 2. Using a finely-tuned Ray Casting algorithm package
    [`ringsaturn/geometry-rs`](https://github.com/ringsaturn/geometry-rs) to
    verify whether a polygon contains a point.
+3. Optinally using RTree or QuadTree index to further speed up queries, which
+   can be configured by users.
 
 That's all. There are no black magic tricks inside the tzf-rs.
 
@@ -195,22 +232,21 @@ Below is a benchmark run on global cities(about 14K), and avg time is about
 ```rust,ignore
 // require toolchain.channel=nightly
 
-#![feature(test)]
-#[cfg(test)]
-mod benches_default {
+fn bench_default_finder_index_modes(c: &mut Criterion) {
+    let mut group = c.benchmark_group("DefaultFinderIndexModes");
 
-    use tzf_rs::DefaultFinder;
-    extern crate test;
-    use test::Bencher;
-    #[bench]
-    fn bench_default_finder_random_city(b: &mut Bencher) {
-        let finder: DefaultFinder = DefaultFinder::default();
+    let _ = DEFAULT_FINDER_RTREE_ONLY.get_tz_name(116.3883, 39.9289);
+    let _ = DEFAULT_FINDER_QUAD_ONLY.get_tz_name(116.3883, 39.9289);
 
-        b.iter(|| {
-            let city = cities_json::get_random_cities();
-            let _ = finder.get_tz_name(city.lng, city.lat);
-        });
-    }
+    let i = &0;
+    group.bench_with_input(BenchmarkId::new("RTreeOnly", i), i, |b, _i| {
+        b.iter(|| bench_default_finder_rtree_only_random_city());
+    });
+    group.bench_with_input(BenchmarkId::new("QuadOnly", i), i, |b, _i| {
+        b.iter(|| bench_default_finder_quad_only_random_city());
+    });
+
+    group.finish();
 }
 ```
 
