@@ -40,18 +40,7 @@ pub struct Finder {
 }
 
 impl Finder {
-    /// `from_pb` is used when you can use your own timezone data, as long as
-    /// it's compatible with Proto's desc.
-    ///
-    /// # Arguments
-    ///
-    /// * `tzs` - Timezones data.
-    ///
-    /// # Returns
-    ///
-    /// * `Finder` - A Finder instance.
-    #[must_use]
-    pub fn from_pb(tzs: pbgen::Timezones) -> Self {
+    fn from_pb_with_polygon_options(tzs: pbgen::Timezones, options: PolygonBuildOptions) -> Self {
         let mut f = Self {
             all: vec![],
             data_version: tzs.version,
@@ -81,14 +70,7 @@ impl Finder {
                     interior.push(holeextr);
                 }
 
-                let geopoly = geometry_rs::Polygon::new(
-                    exterior,
-                    interior,
-                    Some(PolygonBuildOptions {
-                        enable_rtree: true,
-                        rtree_min_segments: 64,
-                    }),
-                );
+                let geopoly = geometry_rs::Polygon::new(exterior, interior, Some(options));
                 polys.push(geopoly);
             }
 
@@ -100,6 +82,34 @@ impl Finder {
             f.all.push(item);
         }
         f
+    }
+
+    /// `from_pb` is used when you can use your own timezone data, as long as
+    /// it's compatible with Proto's desc.
+    ///
+    /// # Arguments
+    ///
+    /// * `tzs` - Timezones data.
+    ///
+    /// # Returns
+    ///
+    /// * `Finder` - A Finder instance.
+    #[must_use]
+    pub fn from_pb(tzs: pbgen::Timezones) -> Self {
+        Self::from_pb_with_polygon_options(
+            tzs,
+            PolygonBuildOptions {
+                enable_rtree: true,
+                enable_compressed_quad: true,
+                rtree_min_segments: 64,
+            },
+        )
+    }
+
+    /// Create a finder from protobuf data with explicit polygon index options.
+    #[must_use]
+    pub fn from_pb_with_index_options(tzs: pbgen::Timezones, options: PolygonBuildOptions) -> Self {
+        Self::from_pb_with_polygon_options(tzs, options)
     }
 
     /// Example:

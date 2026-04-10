@@ -29,6 +29,24 @@ jobs:
 
       - run: make ci
 
+      - name: Publish benchmark report to job summary
+        if: always()
+        run: |
+          if [ -f benchmark_report.md ]; then
+            cat benchmark_report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "benchmark_report.md not found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload benchmark report artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark_report
+          path: |
+            benchmark_report.md
+            benchmark_result.txt
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
