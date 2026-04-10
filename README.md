@@ -120,7 +120,13 @@ Tuning notes:
 
 1. Use `IndexMode::RTree` for RTree only.
 2. Use `IndexMode::QuadTree` for QuadTree only.
-3. Use `IndexMode::NoIndex` to disable polygon acceleration indexes.
+3. **Use `IndexMode::NoIndex` to explicitly specify no index.** By default, no
+   index is used, which has the fastest build time but slowest query time. But
+   may be changed in the future, so it's better to explicitly specify it if you
+   want no index.
+
+For the performance comparison of different index modes, please see the
+[Performance](#performance) section below.
 
 ## Advanced Usage - Export GeoJSON
 
@@ -211,9 +217,7 @@ for online usage.
 
 The tzf-rs package is intended for high-performance geospatial query services,
 such as weather forecasting APIs. Most queries can be returned within a very
-short time, averaging around 3,000 nanoseconds (about 1,000ns slower than with
-Go repo `tzf`. I will continue improving this - you can track progress
-[here](https://github.com/ringsaturn/geometry-rs/issues/3)).
+short time, averaging around 1,500 nanoseconds.
 
 Here is what has been done to improve performance:
 
@@ -222,13 +226,13 @@ Here is what has been done to improve performance:
 2. Using a finely-tuned Ray Casting algorithm package
    [`ringsaturn/geometry-rs`](https://github.com/ringsaturn/geometry-rs) to
    verify whether a polygon contains a point.
-3. Optinally using RTree or QuadTree index to further speed up queries, which
-   can be configured by users.
+3. Optional index acceleration is available via RTree or QuadTree, and users can
+   choose the mode based on their workload. This polygon index works when the
+   pre-indexing missing, especially for queries around the border.
 
 That's all. There are no black magic tricks inside the tzf-rs.
 
-Below is a benchmark run on global cities(about 14K), and avg time is about
-3,000 ns per query:
+Below is a benchmark run on random cities:
 
 ```bash
 make bench
@@ -244,10 +248,13 @@ cat benchmark_report.md
 | DefaultFinder | Quad only  |               1.2850 |                   778,210 |             109.92 |
 | DefaultFinder | No index   |               1.6786 |                   595,735 |              74.28 |
 
-<details>
-<summary>Benchmark charts (click to expand)</summary>
+NOTE: The `FuzzyFinder` is not included in the benchmark, since it's query time is
+consistent.
 
-Basic compare violin plot:
+<details>
+<summary>DefaultFinder's Benchmark charts (click to expand)</summary>
+
+Violin plot:
 
 ![](assets/violin.svg)
 
