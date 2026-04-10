@@ -10,6 +10,7 @@ on:
       - "build.rs"
       - "rust-toolchain.toml"
       - ".cargo/**"
+      - ".github/workflows/rust.yml"
   pull_request:
     branches: ["main"]
     paths:
@@ -19,6 +20,8 @@ on:
       - "build.rs"
       - "rust-toolchain.toml"
       - ".cargo/**"
+      - ".github/workflows/rust.yml"
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always

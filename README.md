@@ -221,7 +221,7 @@ short time, averaging around 1,500 nanoseconds.
 
 Here is what has been done to improve performance:
 
-1. Using pre-indexing to handle most queries takes approximately 1000
+1. Using pre-indexing to handle most queries takes approximately 500
    nanoseconds.
 2. Using a finely-tuned Ray Casting algorithm package
    [`ringsaturn/geometry-rs`](https://github.com/ringsaturn/geometry-rs) to
@@ -248,8 +248,8 @@ cat benchmark_report.md
 | DefaultFinder | Quad only  |               1.2850 |                   778,210 |             109.92 |
 | DefaultFinder | No index   |               1.6786 |                   595,735 |              74.28 |
 
-NOTE: The `FuzzyFinder` is not included in the benchmark, since it's query time is
-consistent.
+NOTE: The `FuzzyFinder` is not included in the benchmark, since it's query time
+is consistent.
 
 <details>
 <summary>DefaultFinder's Benchmark charts (click to expand)</summary>
