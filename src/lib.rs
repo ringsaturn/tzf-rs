@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-use geometry_rs::{Point, Polygon};
+use geometry_rs::{Point, Polygon, PolygonBuildOptions};
 #[cfg(feature = "export-geojson")]
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -40,18 +40,7 @@ pub struct Finder {
 }
 
 impl Finder {
-    /// `from_pb` is used when you can use your own timezone data, as long as
-    /// it's compatible with Proto's desc.
-    ///
-    /// # Arguments
-    ///
-    /// * `tzs` - Timezones data.
-    ///
-    /// # Returns
-    ///
-    /// * `Finder` - A Finder instance.
-    #[must_use]
-    pub fn from_pb(tzs: pbgen::Timezones) -> Self {
+    fn from_pb_with_polygon_options(tzs: pbgen::Timezones, options: PolygonBuildOptions) -> Self {
         let mut f = Self {
             all: vec![],
             data_version: tzs.version,
@@ -81,7 +70,7 @@ impl Finder {
                     interior.push(holeextr);
                 }
 
-                let geopoly = geometry_rs::Polygon::new(exterior, interior);
+                let geopoly = geometry_rs::Polygon::new(exterior, interior, Some(options));
                 polys.push(geopoly);
             }
 
@@ -93,6 +82,34 @@ impl Finder {
             f.all.push(item);
         }
         f
+    }
+
+    /// `from_pb` is used when you can use your own timezone data, as long as
+    /// it's compatible with Proto's desc.
+    ///
+    /// # Arguments
+    ///
+    /// * `tzs` - Timezones data.
+    ///
+    /// # Returns
+    ///
+    /// * `Finder` - A Finder instance.
+    #[must_use]
+    pub fn from_pb(tzs: pbgen::Timezones) -> Self {
+        Self::from_pb_with_polygon_options(
+            tzs,
+            PolygonBuildOptions {
+                enable_rtree: true,
+                enable_compressed_quad: true,
+                rtree_min_segments: 64,
+            },
+        )
+    }
+
+    /// Create a finder from protobuf data with explicit polygon index options.
+    #[must_use]
+    pub fn from_pb_with_index_options(tzs: pbgen::Timezones, options: PolygonBuildOptions) -> Self {
+        Self::from_pb_with_polygon_options(tzs, options)
     }
 
     /// Example:
@@ -206,7 +223,7 @@ impl Finder {
             };
 
             // Convert exterior points
-            for point in &poly.exterior {
+            for point in poly.exterior() {
                 pbpoly.points.push(pbgen::Point {
                     lng: point.x as f32,
                     lat: point.y as f32,
@@ -214,7 +231,7 @@ impl Finder {
             }
 
             // Convert holes
-            for hole in &poly.holes {
+            for hole in poly.holes() {
                 let mut hole_poly = pbgen::Polygon {
                     points: Vec::new(),
                     holes: Vec::new(),
@@ -769,6 +786,22 @@ impl Default for DefaultFinder {
 }
 
 impl DefaultFinder {
+    /// Creates a new `DefaultFinder` with explicit polygon index options.
+    ///
+    /// These options are applied to the internal `Finder`.
+    #[must_use]
+    pub fn new_with_index_options(options: PolygonBuildOptions) -> Self {
+        let reduced_bytes: Vec<u8> = load_reduced();
+        let preindex_bytes: Vec<u8> = load_preindex();
+        let tzs = pbgen::Timezones::try_from(reduced_bytes).unwrap_or_default();
+        let preindex_tzs = pbgen::PreindexTimezones::try_from(preindex_bytes).unwrap_or_default();
+        // Self::from_pb_with_index_options(tzs, preindex_tzs, options)
+        Self {
+            finder: Finder::from_pb_with_index_options(tzs, options),
+            fuzzy_finder: FuzzyFinder::from_pb(preindex_tzs),
+        }
+    }
+
     /// ```rust
     /// use tzf_rs::DefaultFinder;
     /// let finder = DefaultFinder::new();

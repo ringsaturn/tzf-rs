@@ -1,3 +1,5 @@
 /target
 src/data/*.pb
 tmp/
+benchmark_result.txt
+benchmark_report.md

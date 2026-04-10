@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use geometry_rs::PolygonBuildOptions;
     use tzf_rs::DefaultFinder;
 
     #[test]
@@ -29,5 +30,16 @@ mod tests {
             finder.get_tz_name(12.452_899_553_691_935, 41.903_699_636_969_634),
             "Europe/Vatican"
         );
+    }
+
+    #[test]
+    fn new_with_index_options_smoke_test() {
+        let finder = DefaultFinder::new_with_index_options(PolygonBuildOptions {
+            enable_rtree: false,
+            enable_compressed_quad: true,
+            rtree_min_segments: 64,
+        });
+
+        assert_eq!(finder.get_tz_name(116.3883, 39.9289), "Asia/Shanghai");
     }
 }

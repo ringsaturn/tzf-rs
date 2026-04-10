@@ -25,7 +25,12 @@ test-examples:
 doc:
 	cargo +nightly doc --no-deps --all-features
 
+.PHONY: bench
+bench:
+	cargo bench | tee benchmark_result.txt
+	./scripts/bench_memory.sh benchmark_result.txt | tee benchmark_report.md
+
 .PHONY: ci
 ci: test test-examples
 	cargo fmt --check
-	cargo bench
+	make bench
