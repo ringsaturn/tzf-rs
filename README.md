@@ -235,25 +235,34 @@ make bench
 cat benchmark_report.md
 ```
 
-| Target | Scenario | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
-| --- |---|---:|---:|---:|
-| Finder | RTree only | 2.9622 | 337,587 | 147.51 |
-| Finder | Quad only | 3.3877 | 295,186 | 87.04 |
-| Finder | No index | 5.3982 | 185,247 | 51.88 |
-| DefaultFinder | RTree only | 1.1118 | 899,442 | 169.50 |
-| DefaultFinder | Quad only | 1.2850 | 778,210 | 109.92 |
-| DefaultFinder | No index | 1.6786 | 595,735 | 74.28 |
+| Target        | Scenario   | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
+| ------------- | ---------- | -------------------: | ------------------------: | -----------------: |
+| Finder        | RTree only |               2.9622 |                   337,587 |             147.51 |
+| Finder        | Quad only  |               3.3877 |                   295,186 |              87.04 |
+| Finder        | No index   |               5.3982 |                   185,247 |              51.88 |
+| DefaultFinder | RTree only |               1.1118 |                   899,442 |             169.50 |
+| DefaultFinder | Quad only  |               1.2850 |                   778,210 |             109.92 |
+| DefaultFinder | No index   |               1.6786 |                   595,735 |              74.28 |
 
 <details>
 <summary>Benchmark charts (click to expand)</summary>
 
+Basic compare violin plot:
+
 ![](assets/violin.svg)
+
+No Index:
 
 ![](assets/no_index.pdf.svg)
 
+RTree only:
+
 ![](assets/rtree_only.pdf.svg)
 
+QuadTree only:
+
 ![](assets/quad_only.pdf.svg)
+
 </details>
 
 You can view more details from latest benchmark from
