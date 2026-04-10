@@ -247,6 +247,12 @@ cat benchmark_report.md
 
 ![](assets/violin.svg)
 
+![](assets/no_index.pdf.svg)
+
+![](assets/rtree_only.pdf.svg)
+
+![](assets/quad_only.pdf.svg)
+
 You can view more details from latest benchmark from
 [GitHub Actions logs](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml).
 
