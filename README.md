@@ -86,6 +86,48 @@ fn main() {
 A full example can be found
 [here](https://github.com/ringsaturn/tzf-rs/pull/170).
 
+## Advanced Usage - Speed up with RTree/QuadTree Index
+
+`tzf-rs` builds polygon index structures through `geometry-rs`.
+`Finder::from_pb` uses `IndexMode::NoIndex` by default.
+
+If you need to tune build time and query latency for your own workload, use an
+explicit index mode.
+
+```rust,ignore
+use tzf_rs::{DefaultFinder, Finder, IndexMode};
+use tzf_rs::pbgen::tzf::v1::Timezones;
+
+pub fn load_full() -> Vec<u8> {
+    include_bytes!("./combined-with-oceans.bin").to_vec()
+}
+
+fn main() {
+    let mode = IndexMode::RTree;
+
+    // Build Finder from your own protobuf data.
+    let full_pb = Timezones::try_from(load_full()).unwrap_or_default();
+    let finder = Finder::from_pb_with_index(full_pb, mode);
+    println!("{}", finder.get_tz_name(139.767125, 35.681236));
+
+    // Or apply the same mode to DefaultFinder.
+    let default_finder = DefaultFinder::new_with_index(mode);
+    println!("{}", default_finder.get_tz_name(139.767125, 35.681236));
+}
+```
+
+Tuning notes:
+
+1. Use `IndexMode::RTree` for RTree only.
+2. Use `IndexMode::QuadTree` for QuadTree only.
+3. **Use `IndexMode::NoIndex` to explicitly specify no index.** By default, no
+   index is used, which has the fastest build time but slowest query time. But
+   may be changed in the future, so it's better to explicitly specify it if you
+   want no index.
+
+For the performance comparison of different index modes, please see the
+[Performance](#performance) section below.
+
 ## Advanced Usage - Export GeoJSON
 
 > [!NOTE]
@@ -175,53 +217,60 @@ for online usage.
 
 The tzf-rs package is intended for high-performance geospatial query services,
 such as weather forecasting APIs. Most queries can be returned within a very
-short time, averaging around 3,000 nanoseconds (about 1,000ns slower than with
-Go repo `tzf`. I will continue improving this - you can track progress
-[here](https://github.com/ringsaturn/geometry-rs/issues/3)).
+short time, averaging around 1,500 nanoseconds.
 
 Here is what has been done to improve performance:
 
-1. Using pre-indexing to handle most queries takes approximately 1000
+1. Using pre-indexing to handle most queries takes approximately 500
    nanoseconds.
 2. Using a finely-tuned Ray Casting algorithm package
    [`ringsaturn/geometry-rs`](https://github.com/ringsaturn/geometry-rs) to
    verify whether a polygon contains a point.
+3. Optional index acceleration is available via RTree or QuadTree, and users can
+   choose the mode based on their workload. This polygon index works when the
+   pre-indexing missing, especially for queries around the border.
 
 That's all. There are no black magic tricks inside the tzf-rs.
 
-Below is a benchmark run on global cities(about 14K), and avg time is about
-3,000 ns per query:
+Below is a benchmark run on my MacBook Pro with Apple M3 Max:
 
-```rust,ignore
-// require toolchain.channel=nightly
-
-#![feature(test)]
-#[cfg(test)]
-mod benches_default {
-
-    use tzf_rs::DefaultFinder;
-    extern crate test;
-    use test::Bencher;
-    #[bench]
-    fn bench_default_finder_random_city(b: &mut Bencher) {
-        let finder: DefaultFinder = DefaultFinder::default();
-
-        b.iter(|| {
-            let city = cities_json::get_random_cities();
-            let _ = finder.get_tz_name(city.lng, city.lat);
-        });
-    }
-}
+```bash
+make bench
+cat benchmark_report.md
 ```
 
-```console
-test benches_default::bench_default_finder_random_city ... bench:       1,220.19 ns/iter (+/- 54.36)
-```
+| Target        | Scenario   | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
+| ------------- | ---------- | -------------------: | ------------------------: | -----------------: |
+| Finder        | RTree only |               2.9606 |                   337,769 |             147.50 |
+| Finder        | Quad only  |               3.6279 |                   275,642 |              87.11 |
+| Finder        | No index   |               5.5073 |                   181,577 |              51.90 |
+| DefaultFinder | RTree only |               1.2610 |                   793,021 |             171.52 |
+| DefaultFinder | Quad only  |               1.4249 |                   701,804 |             110.53 |
+| DefaultFinder | No index   |               1.7644 |                   566,765 |              76.52 |
 
-| Criterion result | Pic                                                                                        |
-| ---------------- | ------------------------------------------------------------------------------------------ |
-| PDF              | ![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/main/assets/pdf_small.webp)        |
-| Regression       | ![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/main/assets/regression_small.webp) |
+NOTE: The `FuzzyFinder` is not included in the benchmark, since it's query time
+is consistent.
+
+<details>
+<summary>DefaultFinder's Benchmark charts (click to expand)</summary>
+
+Violin plot:
+
+![](assets/violin.svg)
+
+No Index:
+
+![](assets/no_index.pdf.svg)
+
+RTree only:
+
+![](assets/rtree_only.pdf.svg)
+
+QuadTree only:
+
+![](assets/quad_only.pdf.svg)
+
+</details>
 
 You can view more details from latest benchmark from
 [GitHub Actions logs](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml).

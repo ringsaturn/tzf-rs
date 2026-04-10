@@ -19,12 +19,12 @@ def main() -> int:
     rows = build_rows(bench_text, runs=5)
 
     print(
-        "| Target | Scenario | Config | Finder time range (µs) | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) | Peak RSS raw values (bytes, 5 runs) |"
+        "| Target | Scenario | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |"
     )
-    print("| --- |---|---|---:|---:|---:|---:|---|")
+    print("| --- |---|---:|---:|---:|")
     for row in rows:
         print(
-            f"| {row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]} | {row[5]} | {row[6]} | {row[7]} |"
+            f"| {row[0]} | {row[1]} | {row[4]} | {row[5]} | {row[6]} |"
         )
 
     return 0

@@ -39,6 +39,40 @@ pub struct Finder {
     data_version: String,
 }
 
+/// Select exactly one polygon acceleration index for timezone boundary query.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum IndexMode {
+    #[default]
+    /// Disable polygon acceleration indexes.
+    NoIndex,
+    /// Use compressed QuadTree index.
+    QuadTree,
+    /// Use RTree index.
+    RTree,
+}
+
+impl IndexMode {
+    fn to_polygon_build_options(self) -> PolygonBuildOptions {
+        match self {
+            Self::QuadTree => PolygonBuildOptions {
+                enable_rtree: false,
+                enable_compressed_quad: true,
+                rtree_min_segments: 64,
+            },
+            Self::RTree => PolygonBuildOptions {
+                enable_rtree: true,
+                enable_compressed_quad: false,
+                rtree_min_segments: 64,
+            },
+            Self::NoIndex => PolygonBuildOptions {
+                enable_rtree: false,
+                enable_compressed_quad: false,
+                rtree_min_segments: 64,
+            },
+        }
+    }
+}
+
 impl Finder {
     fn from_pb_with_polygon_options(tzs: pbgen::Timezones, options: PolygonBuildOptions) -> Self {
         let mut f = Self {
@@ -96,20 +130,13 @@ impl Finder {
     /// * `Finder` - A Finder instance.
     #[must_use]
     pub fn from_pb(tzs: pbgen::Timezones) -> Self {
-        Self::from_pb_with_polygon_options(
-            tzs,
-            PolygonBuildOptions {
-                enable_rtree: true,
-                enable_compressed_quad: true,
-                rtree_min_segments: 64,
-            },
-        )
+        Self::from_pb_with_index(tzs, IndexMode::default())
     }
 
-    /// Create a finder from protobuf data with explicit polygon index options.
+    /// Create a finder from protobuf data with one index mode.
     #[must_use]
-    pub fn from_pb_with_index_options(tzs: pbgen::Timezones, options: PolygonBuildOptions) -> Self {
-        Self::from_pb_with_polygon_options(tzs, options)
+    pub fn from_pb_with_index(tzs: pbgen::Timezones, mode: IndexMode) -> Self {
+        Self::from_pb_with_polygon_options(tzs, mode.to_polygon_build_options())
     }
 
     /// Example:
@@ -786,18 +813,17 @@ impl Default for DefaultFinder {
 }
 
 impl DefaultFinder {
-    /// Creates a new `DefaultFinder` with explicit polygon index options.
+    /// Creates a new `DefaultFinder` with one explicit polygon index mode.
     ///
-    /// These options are applied to the internal `Finder`.
+    /// The selected index mode is applied to the internal `Finder`.
     #[must_use]
-    pub fn new_with_index_options(options: PolygonBuildOptions) -> Self {
+    pub fn new_with_index(mode: IndexMode) -> Self {
         let reduced_bytes: Vec<u8> = load_reduced();
         let preindex_bytes: Vec<u8> = load_preindex();
         let tzs = pbgen::Timezones::try_from(reduced_bytes).unwrap_or_default();
         let preindex_tzs = pbgen::PreindexTimezones::try_from(preindex_bytes).unwrap_or_default();
-        // Self::from_pb_with_index_options(tzs, preindex_tzs, options)
         Self {
-            finder: Finder::from_pb_with_index_options(tzs, options),
+            finder: Finder::from_pb_with_index(tzs, mode),
             fuzzy_finder: FuzzyFinder::from_pb(preindex_tzs),
         }
     }

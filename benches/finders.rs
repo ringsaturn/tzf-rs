@@ -1,85 +1,43 @@
 use cities_json::get_random_cities;
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
-use geometry_rs::PolygonBuildOptions;
 use lazy_static::lazy_static;
 use tzf_rel::load_reduced;
-use tzf_rs::{DefaultFinder, Finder, FuzzyFinder, pbgen};
+use tzf_rs::{DefaultFinder, Finder, FuzzyFinder, IndexMode, pbgen};
 
 lazy_static! {
     static ref DEFAULT_FINDER: DefaultFinder = DefaultFinder::default();
     static ref FINDER: Finder = Finder::default();
+    static ref FUZZY_FINDER: FuzzyFinder = FuzzyFinder::default();
     static ref FINDER_RTREE_ONLY: Finder = {
         let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
-        Finder::from_pb_with_index_options(
-            tzs,
-            PolygonBuildOptions {
-                enable_rtree: true,
-                enable_compressed_quad: false,
-                rtree_min_segments: 64,
-            },
-        )
+        Finder::from_pb_with_index(tzs, IndexMode::RTree)
     };
     static ref FINDER_QUAD_ONLY: Finder = {
         let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
-        Finder::from_pb_with_index_options(
-            tzs,
-            PolygonBuildOptions {
-                enable_rtree: false,
-                enable_compressed_quad: true,
-                rtree_min_segments: 64,
-            },
-        )
+        Finder::from_pb_with_index(tzs, IndexMode::QuadTree)
     };
     static ref FINDER_NO_INDEX: Finder = {
         let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
-        Finder::from_pb_with_index_options(
-            tzs,
-            PolygonBuildOptions {
-                enable_rtree: false,
-                enable_compressed_quad: false,
-                rtree_min_segments: 64,
-            },
-        )
+        Finder::from_pb_with_index(tzs, IndexMode::NoIndex)
     };
     static ref DEFAULT_FINDER_RTREE_ONLY: DefaultFinder = DefaultFinder {
         finder: {
             let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
-            Finder::from_pb_with_index_options(
-                tzs,
-                PolygonBuildOptions {
-                    enable_rtree: true,
-                    enable_compressed_quad: false,
-                    rtree_min_segments: 64,
-                },
-            )
+            Finder::from_pb_with_index(tzs, IndexMode::RTree)
         },
         fuzzy_finder: FuzzyFinder::default(),
     };
     static ref DEFAULT_FINDER_QUAD_ONLY: DefaultFinder = DefaultFinder {
         finder: {
             let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
-            Finder::from_pb_with_index_options(
-                tzs,
-                PolygonBuildOptions {
-                    enable_rtree: false,
-                    enable_compressed_quad: true,
-                    rtree_min_segments: 64,
-                },
-            )
+            Finder::from_pb_with_index(tzs, IndexMode::QuadTree)
         },
         fuzzy_finder: FuzzyFinder::default(),
     };
     static ref DEFAULT_FINDER_NO_INDEX: DefaultFinder = DefaultFinder {
         finder: {
             let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
-            Finder::from_pb_with_index_options(
-                tzs,
-                PolygonBuildOptions {
-                    enable_rtree: false,
-                    enable_compressed_quad: false,
-                    rtree_min_segments: 64,
-                },
-            )
+            Finder::from_pb_with_index(tzs, IndexMode::NoIndex)
         },
         fuzzy_finder: FuzzyFinder::default(),
     };
@@ -125,6 +83,11 @@ fn bench_default_finder_no_index_random_city() {
     let _ = DEFAULT_FINDER_NO_INDEX.get_tz_name(city.lng, city.lat);
 }
 
+fn bench_fuzzy_finder_random_city() {
+    let city = get_random_cities();
+    let _ = FUZZY_FINDER.get_tz_name(city.lng, city.lat);
+}
+
 fn bench_finders(c: &mut Criterion) {
     let mut group = c.benchmark_group("Finders");
 
@@ -133,11 +96,14 @@ fn bench_finders(c: &mut Criterion) {
     let _ = FINDER.get_tz_name(116.3883, 39.9289);
 
     let i = &0;
-    group.bench_with_input(BenchmarkId::new("Default", i), i, |b, _i| {
+    group.bench_with_input(BenchmarkId::new("DefaultFinder", i), i, |b, _i| {
         b.iter(|| bench_default_finder_random_city());
     });
-    group.bench_with_input(BenchmarkId::new("Finder", i), i, |b, _i| {
+    group.bench_with_input(BenchmarkId::new("Finder_NoIndex", i), i, |b, _i| {
         b.iter(|| bench_finder_random_city());
+    });
+    group.bench_with_input(BenchmarkId::new("FuzzyFinder", i), i, |b, _i| {
+        b.iter(|| bench_fuzzy_finder_random_city());
     });
 
     group.finish();

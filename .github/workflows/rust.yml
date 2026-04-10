@@ -3,8 +3,25 @@ name: Rust
 on:
   push:
     branches: ["main"]
+    paths:
+      - "**/*.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "build.rs"
+      - "rust-toolchain.toml"
+      - ".cargo/**"
+      - ".github/workflows/rust.yml"
   pull_request:
     branches: ["main"]
+    paths:
+      - "**/*.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "build.rs"
+      - "rust-toolchain.toml"
+      - ".cargo/**"
+      - ".github/workflows/rust.yml"
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -12,6 +29,10 @@ env:
 permissions:
   contents: write
   deployments: write
+
+concurrency:
+  group: publish-${{ github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   build:
