@@ -15,6 +15,10 @@ lazy_static! {
         let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
         Finder::from_pb_with_index(tzs, IndexMode::QuadTree)
     };
+    static ref FINDER_NO_INDEX: Finder = {
+        let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
+        Finder::from_pb_with_index(tzs, IndexMode::NoIndex)
+    };
     static ref DEFAULT_FINDER_RTREE_ONLY: DefaultFinder = DefaultFinder {
         finder: {
             let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
@@ -26,6 +30,13 @@ lazy_static! {
         finder: {
             let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
             Finder::from_pb_with_index(tzs, IndexMode::QuadTree)
+        },
+        fuzzy_finder: FuzzyFinder::default(),
+    };
+    static ref DEFAULT_FINDER_NO_INDEX: DefaultFinder = DefaultFinder {
+        finder: {
+            let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
+            Finder::from_pb_with_index(tzs, IndexMode::NoIndex)
         },
         fuzzy_finder: FuzzyFinder::default(),
     };
@@ -51,6 +62,11 @@ fn bench_finder_quad_only_random_city() {
     let _ = FINDER_QUAD_ONLY.get_tz_name(city.lng, city.lat);
 }
 
+fn bench_finder_no_index_random_city() {
+    let city = get_random_cities();
+    let _ = FINDER_NO_INDEX.get_tz_name(city.lng, city.lat);
+}
+
 fn bench_default_finder_rtree_only_random_city() {
     let city = get_random_cities();
     let _ = DEFAULT_FINDER_RTREE_ONLY.get_tz_name(city.lng, city.lat);
@@ -61,6 +77,11 @@ fn bench_default_finder_quad_only_random_city() {
     let _ = DEFAULT_FINDER_QUAD_ONLY.get_tz_name(city.lng, city.lat);
 }
 
+fn bench_default_finder_no_index_random_city() {
+    let city = get_random_cities();
+    let _ = DEFAULT_FINDER_NO_INDEX.get_tz_name(city.lng, city.lat);
+}
+
 fn bench_finders(c: &mut Criterion) {
     let mut group = c.benchmark_group("Finders");
 
@@ -69,10 +90,10 @@ fn bench_finders(c: &mut Criterion) {
     let _ = FINDER.get_tz_name(116.3883, 39.9289);
 
     let i = &0;
-    group.bench_with_input(BenchmarkId::new("Default", i), i, |b, _i| {
+    group.bench_with_input(BenchmarkId::new("DefaultFinder", i), i, |b, _i| {
         b.iter(|| bench_default_finder_random_city());
     });
-    group.bench_with_input(BenchmarkId::new("Finder", i), i, |b, _i| {
+    group.bench_with_input(BenchmarkId::new("Finder_NoIndex", i), i, |b, _i| {
         b.iter(|| bench_finder_random_city());
     });
 
@@ -84,6 +105,7 @@ fn bench_finder_index_modes(c: &mut Criterion) {
 
     let _ = FINDER_RTREE_ONLY.get_tz_name(116.3883, 39.9289);
     let _ = FINDER_QUAD_ONLY.get_tz_name(116.3883, 39.9289);
+    let _ = FINDER_NO_INDEX.get_tz_name(116.3883, 39.9289);
 
     let i = &0;
     group.bench_with_input(BenchmarkId::new("RTreeOnly", i), i, |b, _i| {
@@ -91,6 +113,9 @@ fn bench_finder_index_modes(c: &mut Criterion) {
     });
     group.bench_with_input(BenchmarkId::new("QuadOnly", i), i, |b, _i| {
         b.iter(|| bench_finder_quad_only_random_city());
+    });
+    group.bench_with_input(BenchmarkId::new("NoIndex", i), i, |b, _i| {
+        b.iter(|| bench_finder_no_index_random_city());
     });
 
     group.finish();
@@ -101,17 +126,17 @@ fn bench_default_finder_index_modes(c: &mut Criterion) {
 
     let _ = DEFAULT_FINDER_RTREE_ONLY.get_tz_name(116.3883, 39.9289);
     let _ = DEFAULT_FINDER_QUAD_ONLY.get_tz_name(116.3883, 39.9289);
-    let _ = DEFAULT_FINDER.get_tz_name(116.3883, 39.9289);
+    let _ = DEFAULT_FINDER_NO_INDEX.get_tz_name(116.3883, 39.9289);
 
     let i = &0;
-    group.bench_with_input(BenchmarkId::new("Default", i), i, |b, _i| {
-        b.iter(|| bench_default_finder_random_city());
-    });
     group.bench_with_input(BenchmarkId::new("RTreeOnly", i), i, |b, _i| {
         b.iter(|| bench_default_finder_rtree_only_random_city());
     });
     group.bench_with_input(BenchmarkId::new("QuadOnly", i), i, |b, _i| {
         b.iter(|| bench_default_finder_quad_only_random_city());
+    });
+    group.bench_with_input(BenchmarkId::new("NoIndex", i), i, |b, _i| {
+        b.iter(|| bench_default_finder_no_index_random_city());
     });
 
     group.finish();

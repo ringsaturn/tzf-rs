@@ -42,8 +42,10 @@ pub struct Finder {
 /// Select exactly one polygon acceleration index for timezone boundary query.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum IndexMode {
-    /// Use compressed QuadTree index.
     #[default]
+    /// Disable polygon acceleration indexes.
+    NoIndex,
+    /// Use compressed QuadTree index.
     QuadTree,
     /// Use RTree index.
     RTree,
@@ -59,6 +61,11 @@ impl IndexMode {
             },
             Self::RTree => PolygonBuildOptions {
                 enable_rtree: true,
+                enable_compressed_quad: false,
+                rtree_min_segments: 64,
+            },
+            Self::NoIndex => PolygonBuildOptions {
+                enable_rtree: false,
                 enable_compressed_quad: false,
                 rtree_min_segments: 64,
             },

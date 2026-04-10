@@ -5,6 +5,7 @@ use tzf_rs::{DefaultFinder, Finder, IndexMode, pbgen};
 fn parse_mode(mode: &str) -> IndexMode {
     match mode {
         "rtree" => IndexMode::RTree,
+        "noindex" => IndexMode::NoIndex,
         _ => IndexMode::QuadTree,
     }
 }

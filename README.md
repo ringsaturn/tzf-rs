@@ -89,7 +89,7 @@ A full example can be found
 ## Advanced Usage - Speed up with RTree/QuadTree Index
 
 `tzf-rs` builds polygon index structures through `geometry-rs`.
-`Finder::from_pb` uses `IndexMode::QuadTree` by default.
+`Finder::from_pb` uses `IndexMode::NoIndex` by default.
 
 If you need to tune build time and query latency for your own workload, use an
 explicit index mode.
@@ -120,6 +120,7 @@ Tuning notes:
 
 1. Use `IndexMode::RTree` for RTree only.
 2. Use `IndexMode::QuadTree` for QuadTree only.
+3. Use `IndexMode::NoIndex` to disable polygon acceleration indexes.
 
 ## Advanced Usage - Export GeoJSON
 
@@ -229,35 +230,22 @@ That's all. There are no black magic tricks inside the tzf-rs.
 Below is a benchmark run on global cities(about 14K), and avg time is about
 3,000 ns per query:
 
-```rust,ignore
-// require toolchain.channel=nightly
-
-fn bench_default_finder_index_modes(c: &mut Criterion) {
-    let mut group = c.benchmark_group("DefaultFinderIndexModes");
-
-    let _ = DEFAULT_FINDER_RTREE_ONLY.get_tz_name(116.3883, 39.9289);
-    let _ = DEFAULT_FINDER_QUAD_ONLY.get_tz_name(116.3883, 39.9289);
-
-    let i = &0;
-    group.bench_with_input(BenchmarkId::new("RTreeOnly", i), i, |b, _i| {
-        b.iter(|| bench_default_finder_rtree_only_random_city());
-    });
-    group.bench_with_input(BenchmarkId::new("QuadOnly", i), i, |b, _i| {
-        b.iter(|| bench_default_finder_quad_only_random_city());
-    });
-
-    group.finish();
-}
+```bash
+make bench
+cat benchmark_report.md
 ```
 
-```console
-test benches_default::bench_default_finder_random_city ... bench:       1,220.19 ns/iter (+/- 54.36)
-```
+| Target | Scenario | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
+| --- |---|---:|---:|---:|
+| Finder | RTree only | 2.9621 | 337,598 | 147.47 |
+| Finder | Quad only | 3.4163 | 292,714 | 86.53 |
+| Finder | No index | 5.4008 | 185,158 | 51.83 |
+| DefaultFinder | RTree only | 1.1259 | 888,178 | 170.41 |
+| DefaultFinder | Quad only | 1.2824 | 779,788 | 110.43 |
+| DefaultFinder | No index | 1.6711 | 598,408 | 75.82 |
 
-| Criterion result | Pic                                                                                        |
-| ---------------- | ------------------------------------------------------------------------------------------ |
-| PDF              | ![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/main/assets/pdf_small.webp)        |
-| Regression       | ![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/main/assets/regression_small.webp) |
+
+![](assets/violin.svg)
 
 You can view more details from latest benchmark from
 [GitHub Actions logs](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml).
