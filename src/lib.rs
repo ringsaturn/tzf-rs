@@ -786,6 +786,22 @@ impl Default for DefaultFinder {
 }
 
 impl DefaultFinder {
+    /// Creates a new `DefaultFinder` with explicit polygon index options.
+    ///
+    /// These options are applied to the internal `Finder`.
+    #[must_use]
+    pub fn new_with_index_options(options: PolygonBuildOptions) -> Self {
+        let reduced_bytes: Vec<u8> = load_reduced();
+        let preindex_bytes: Vec<u8> = load_preindex();
+        let tzs = pbgen::Timezones::try_from(reduced_bytes).unwrap_or_default();
+        let preindex_tzs = pbgen::PreindexTimezones::try_from(preindex_bytes).unwrap_or_default();
+        // Self::from_pb_with_index_options(tzs, preindex_tzs, options)
+        Self {
+            finder: Finder::from_pb_with_index_options(tzs, options),
+            fuzzy_finder: FuzzyFinder::from_pb(preindex_tzs),
+        }
+    }
+
     /// ```rust
     /// use tzf_rs::DefaultFinder;
     /// let finder = DefaultFinder::new();
