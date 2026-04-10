@@ -1,7 +1,7 @@
 use geometry_rs::PolygonBuildOptions;
 use std::env;
 use tzf_rel::load_reduced;
-use tzf_rs::{pbgen, DefaultFinder, Finder, FuzzyFinder};
+use tzf_rs::{DefaultFinder, Finder, FuzzyFinder, pbgen};
 
 fn parse_mode(mode: &str) -> PolygonBuildOptions {
     match mode {
