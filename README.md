@@ -232,7 +232,7 @@ Here is what has been done to improve performance:
 
 That's all. There are no black magic tricks inside the tzf-rs.
 
-Below is a benchmark run on random cities:
+Below is a benchmark run on my MacBook Pro with Apple M3 Max:
 
 ```bash
 make bench
@@ -241,12 +241,12 @@ cat benchmark_report.md
 
 | Target        | Scenario   | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
 | ------------- | ---------- | -------------------: | ------------------------: | -----------------: |
-| Finder        | RTree only |               2.9622 |                   337,587 |             147.51 |
-| Finder        | Quad only  |               3.3877 |                   295,186 |              87.04 |
-| Finder        | No index   |               5.3982 |                   185,247 |              51.88 |
-| DefaultFinder | RTree only |               1.1118 |                   899,442 |             169.50 |
-| DefaultFinder | Quad only  |               1.2850 |                   778,210 |             109.92 |
-| DefaultFinder | No index   |               1.6786 |                   595,735 |              74.28 |
+| Finder        | RTree only |               2.9606 |                   337,769 |             147.50 |
+| Finder        | Quad only  |               3.6279 |                   275,642 |              87.11 |
+| Finder        | No index   |               5.5073 |                   181,577 |              51.90 |
+| DefaultFinder | RTree only |               1.2610 |                   793,021 |             171.52 |
+| DefaultFinder | Quad only  |               1.4249 |                   701,804 |             110.53 |
+| DefaultFinder | No index   |               1.7644 |                   566,765 |              76.52 |
 
 NOTE: The `FuzzyFinder` is not included in the benchmark, since it's query time
 is consistent.
