@@ -1,12 +1,12 @@
 use std::env;
 use tzf_rel::load_reduced;
-use tzf_rs::{DefaultFinder, Finder, IndexMode, pbgen};
+use tzf_rs::{DefaultFinder, Finder, FinderOptions, pbgen};
 
-fn parse_mode(mode: &str) -> IndexMode {
+fn parse_mode(mode: &str) -> FinderOptions {
     match mode {
-        "rtree" => IndexMode::RTree,
-        "noindex" => IndexMode::NoIndex,
-        _ => IndexMode::QuadTree,
+        "rtree" => FinderOptions::rtree(),
+        "noindex" => FinderOptions::no_index(),
+        _ => FinderOptions::quad_tree(),
     }
 }
 
@@ -16,14 +16,14 @@ fn main() {
 
     match target.as_str() {
         "default" => {
-            let index_mode = parse_mode(&mode);
-            let default_finder = DefaultFinder::new_with_index(index_mode);
+            let options = parse_mode(&mode);
+            let default_finder = DefaultFinder::new_with_options(options);
             println!("{}", default_finder.timezonenames().len());
         }
         _ => {
-            let index_mode = parse_mode(&mode);
+            let options = parse_mode(&mode);
             let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
-            let finder = Finder::from_pb_with_index(tzs, index_mode);
+            let finder = Finder::from_pb_with_options(tzs, options);
             println!("{}", finder.timezonenames().len());
         }
     }

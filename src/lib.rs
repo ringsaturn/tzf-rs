@@ -39,35 +39,59 @@ pub struct Finder {
     data_version: String,
 }
 
-/// Select exactly one polygon acceleration index for timezone boundary query.
+const DEFAULT_RTREE_MIN_SEGMENTS: usize = 64;
+
+/// Finder build options for polygon acceleration indexes.
+///
+/// Default:
+/// - [`FinderOptions::NoIndex`]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum IndexMode {
-    #[default]
+#[non_exhaustive]
+pub enum FinderOptions {
     /// Disable polygon acceleration indexes.
+    #[default]
     NoIndex,
     /// Use compressed QuadTree index.
     QuadTree,
-    /// Use RTree index.
+    /// Use RTree index with the current default internal tuning.
     RTree,
 }
 
-impl IndexMode {
+impl FinderOptions {
+    /// Disable polygon acceleration indexes.
+    #[must_use]
+    pub fn no_index() -> Self {
+        Self::NoIndex
+    }
+
+    /// Use compressed QuadTree index.
+    #[must_use]
+    pub fn quad_tree() -> Self {
+        Self::QuadTree
+    }
+
+    /// Use RTree index with default RTree options.
+    #[must_use]
+    pub fn rtree() -> Self {
+        Self::RTree
+    }
+
     fn to_polygon_build_options(self) -> PolygonBuildOptions {
         match self {
             Self::QuadTree => PolygonBuildOptions {
                 enable_rtree: false,
                 enable_compressed_quad: true,
-                rtree_min_segments: 64,
+                rtree_min_segments: DEFAULT_RTREE_MIN_SEGMENTS,
             },
             Self::RTree => PolygonBuildOptions {
                 enable_rtree: true,
                 enable_compressed_quad: false,
-                rtree_min_segments: 64,
+                rtree_min_segments: DEFAULT_RTREE_MIN_SEGMENTS,
             },
             Self::NoIndex => PolygonBuildOptions {
                 enable_rtree: false,
                 enable_compressed_quad: false,
-                rtree_min_segments: 64,
+                rtree_min_segments: DEFAULT_RTREE_MIN_SEGMENTS,
             },
         }
     }
@@ -130,13 +154,13 @@ impl Finder {
     /// * `Finder` - A Finder instance.
     #[must_use]
     pub fn from_pb(tzs: pbgen::Timezones) -> Self {
-        Self::from_pb_with_index(tzs, IndexMode::default())
+        Self::from_pb_with_options(tzs, FinderOptions::default())
     }
 
-    /// Create a finder from protobuf data with one index mode.
+    /// Create a finder from protobuf data with explicit polygon build options.
     #[must_use]
-    pub fn from_pb_with_index(tzs: pbgen::Timezones, mode: IndexMode) -> Self {
-        Self::from_pb_with_polygon_options(tzs, mode.to_polygon_build_options())
+    pub fn from_pb_with_options(tzs: pbgen::Timezones, options: FinderOptions) -> Self {
+        Self::from_pb_with_polygon_options(tzs, options.to_polygon_build_options())
     }
 
     /// Example:
@@ -558,9 +582,9 @@ impl FuzzyFinder {
         };
         for item in &tzs.keys {
             let key = (i64::from(item.x), i64::from(item.y), i64::from(item.z));
-            f.all.entry(key).or_insert_with(std::vec::Vec::new);
-            f.all.get_mut(&key).unwrap().push(item.name.to_string());
-            f.all.get_mut(&key).unwrap().sort();
+            let names = f.all.entry(key).or_default();
+            names.push(item.name.to_string());
+            names.sort();
         }
         f
     }
@@ -813,15 +837,15 @@ impl Default for DefaultFinder {
 }
 
 impl DefaultFinder {
-    /// Creates a new `DefaultFinder` with one explicit polygon index mode.
+    /// Creates a new `DefaultFinder` with explicit polygon build options.
     ///
-    /// The selected index mode is applied to the internal `Finder`.
+    /// The selected options are applied to the internal `Finder`.
     #[must_use]
-    pub fn new_with_index(mode: IndexMode) -> Self {
+    pub fn new_with_options(options: FinderOptions) -> Self {
         let reduced_bytes: Vec<u8> = load_reduced();
         let tzs = pbgen::Timezones::try_from(reduced_bytes).unwrap_or_default();
         Self {
-            finder: Finder::from_pb_with_index(tzs, mode),
+            finder: Finder::from_pb_with_options(tzs, options),
             fuzzy_finder: FuzzyFinder::default(),
         }
     }
