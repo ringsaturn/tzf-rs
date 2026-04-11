@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use tzf_rs::{DefaultFinder, IndexMode};
+    use tzf_rs::{DefaultFinder, FinderOptions};
 
     #[test]
     fn smoke_test() {
@@ -32,8 +32,15 @@ mod tests {
     }
 
     #[test]
-    fn new_with_index_smoke_test() {
-        let finder = DefaultFinder::new_with_index(IndexMode::QuadTree);
+    fn new_with_options_smoke_test() {
+        let finder = DefaultFinder::new_with_options(FinderOptions::quad_tree());
+
+        assert_eq!(finder.get_tz_name(116.3883, 39.9289), "Asia/Shanghai");
+    }
+
+    #[test]
+    fn new_with_rtree_smoke_test() {
+        let finder = DefaultFinder::new_with_options(FinderOptions::rtree());
 
         assert_eq!(finder.get_tz_name(116.3883, 39.9289), "Asia/Shanghai");
     }

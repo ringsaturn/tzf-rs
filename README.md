@@ -90,41 +90,38 @@ A full example can be found
 ## Advanced Usage - Speed up with RTree/QuadTree Index
 
 `tzf-rs` builds polygon index structures through `geometry-rs`.
-`Finder::from_pb` uses `IndexMode::NoIndex` by default.
+`Finder::from_pb` uses `FinderOptions::default()`, which is
+`FinderOptions::NoIndex`.
 
 If you need to tune build time and query latency for your own workload, use an
 explicit index mode.
 
 ```rust,ignore
-use tzf_rs::{DefaultFinder, Finder, IndexMode};
-use tzf_rs::pbgen::tzf::v1::Timezones;
-
-pub fn load_full() -> Vec<u8> {
-    include_bytes!("./combined-with-oceans.bin").to_vec()
-}
+use tzf_rs::{DefaultFinder, Finder, FinderOptions};
 
 fn main() {
-    let mode = IndexMode::RTree;
-
-    // Build Finder from your own protobuf data.
-    let full_pb = Timezones::try_from(load_full()).unwrap_or_default();
-    let finder = Finder::from_pb_with_index(full_pb, mode);
-    println!("{}", finder.get_tz_name(139.767125, 35.681236));
-
-    // Or apply the same mode to DefaultFinder.
-    let default_finder = DefaultFinder::new_with_index(mode);
+    let options = FinderOptions::rtree();
+    let default_finder = DefaultFinder::new_with_options(options);
     println!("{}", default_finder.get_tz_name(139.767125, 35.681236));
 }
 ```
 
 Tuning notes:
 
-1. Use `IndexMode::RTree` for RTree only.
-2. Use `IndexMode::QuadTree` for QuadTree only.
-3. **Use `IndexMode::NoIndex` to explicitly specify no index.** By default, no
-   index is used, which has the fastest build time but slowest query time. But
-   may be changed in the future, so it's better to explicitly specify it if you
-   want no index.
+1. Use `FinderOptions::rtree()` for RTree.
+2. Use `FinderOptions::QuadTree` for QuadTree only.
+3. `FinderOptions::NoIndex` explicitly disables polygon indexes. By default, no
+   index is used, which has the fastest build time and the slowest query time.
+   But may be changed in the future, so it's better to explicitly specify it if
+   you want no index.
+4. Additional index requeires more time and memory, below is data from my
+   machine to build the `DefaultFinder` with different index modes:
+
+   | Index mode    | Build time (ms) | Memory usage (MiB) |
+   | ------------- | --------------: | -----------------: |
+   | No index      |             ~60 |                ~80 |
+   | QuadTree only |            ~130 |               ~110 |
+   | RTree only    |            ~100 |               ~170 |
 
 For the performance comparison of different index modes, please see the
 [Performance](#performance) section below.
@@ -325,6 +322,5 @@ under the
 
 [^anti_csdn]: This license is to prevent the use of this project by CSDN, has no
     effect on other use cases.
-
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fringsaturn%2Ftzf-rs.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fringsaturn%2Ftzf-rs?ref=badge_large)
