@@ -819,12 +819,10 @@ impl DefaultFinder {
     #[must_use]
     pub fn new_with_index(mode: IndexMode) -> Self {
         let reduced_bytes: Vec<u8> = load_reduced();
-        let preindex_bytes: Vec<u8> = load_preindex();
         let tzs = pbgen::Timezones::try_from(reduced_bytes).unwrap_or_default();
-        let preindex_tzs = pbgen::PreindexTimezones::try_from(preindex_bytes).unwrap_or_default();
         Self {
             finder: Finder::from_pb_with_index(tzs, mode),
-            fuzzy_finder: FuzzyFinder::from_pb(preindex_tzs),
+            fuzzy_finder: FuzzyFinder::default(),
         }
     }
 
