@@ -308,8 +308,8 @@ tzf --lng 116.3883 --lat 39.9289
 echo -e "116.3883 39.9289\n116.3883, 39.9289" | tzf --stdin-order lng-lat
 ```
 
-If you are using Nixpkgs, you can install the `tzf` command line tool via
-unstable channel, please see more in
+If you are using Nixpkgs, you can install the `tzf` command line tool, please
+see more in
 [Nixpkgs](https://search.nixos.org/packages?channel=unstable&type=packages&query=tzf-rs).
 
 ## LICENSE
