@@ -257,19 +257,19 @@ is consistent.
 
 Violin plot:
 
-![](assets/violin.svg)
+![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/violin.svg)
 
 No Index:
 
-![](assets/no_index.pdf.svg)
+![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/no_index.pdf.svg)
 
 RTree only:
 
-![](assets/rtree_only.pdf.svg)
+![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/rtree_only.pdf.svg)
 
 QuadTree only:
 
-![](assets/quad_only.pdf.svg)
+![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/quad_only.pdf.svg)
 
 </details>
 
