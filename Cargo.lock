@@ -447,8 +447,9 @@ checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 
 [[package]]
 name = "geometry-rs"
-version = "0.4.0"
-source = "git+https://github.com/ringsaturn/geometry-rs?branch=main#25b0bbce71fe0f7c0be8e92a286c114f9e8e5242"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "129657eb16d434a353fb598886464216900994fdbba4af45c36eda11ad0248e9"
 dependencies = [
  "rtree_rs",
 ]
