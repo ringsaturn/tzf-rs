@@ -240,21 +240,15 @@ consistent.
 
 Violin plot:
 
-<!-- TODO: replace https link
-
-https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/
-
--->
-
-![](assets/violin.svg)
+![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/violin.svg)
 
 No Index:
 
-![](assets/no_index.pdf.svg)
+![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/no_index.pdf.svg)
 
 YStripes only:
 
-![](assets/ystripes_only.pdf.svg)
+![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/ystripes_only.pdf.svg)
 
 </details>
 
