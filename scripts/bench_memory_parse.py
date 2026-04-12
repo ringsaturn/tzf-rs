@@ -13,8 +13,8 @@ MODE_MAP = {
 }
 
 CONFIG_MAP = {
-    "YStripesOnly": "`enable_rtree=false`, `enable_compressed_quad=false`, `enable_y_stripes=true`",
-    "NoIndex": "`enable_rtree=false`, `enable_compressed_quad=false`, `enable_y_stripes=false`",
+    "YStripesOnly": "`enable_y_stripes=true`",
+    "NoIndex": "`enable_y_stripes=false`",
 }
 
 TARGETS = [
