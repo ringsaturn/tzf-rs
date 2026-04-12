@@ -11,7 +11,7 @@ if [[ ! -f "$BENCH_FILE" ]]; then
 fi
 
 TARGETS=(finder default)
-MODES=(rtree quad noindex)
+MODES=(ystripes noindex)
 RUNS=5
 
 find /tmp -maxdepth 1 -type f -name "tzf_mem_*" -delete || true

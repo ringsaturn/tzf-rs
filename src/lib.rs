@@ -51,10 +51,8 @@ pub enum FinderOptions {
     /// Disable polygon acceleration indexes.
     #[default]
     NoIndex,
-    /// Use compressed QuadTree index.
-    QuadTree,
-    /// Use RTree index with the current default internal tuning.
-    RTree,
+    /// Use Y stripes index.
+    YStripes,
 }
 
 impl FinderOptions {
@@ -64,33 +62,24 @@ impl FinderOptions {
         Self::NoIndex
     }
 
-    /// Use compressed QuadTree index.
+    /// Use Y stripes index.
     #[must_use]
-    pub fn quad_tree() -> Self {
-        Self::QuadTree
-    }
-
-    /// Use RTree index with default RTree options.
-    #[must_use]
-    pub fn rtree() -> Self {
-        Self::RTree
+    pub fn y_stripes() -> Self {
+        Self::YStripes
     }
 
     fn to_polygon_build_options(self) -> PolygonBuildOptions {
         match self {
-            Self::QuadTree => PolygonBuildOptions {
+            Self::YStripes => PolygonBuildOptions {
                 enable_rtree: false,
-                enable_compressed_quad: true,
-                rtree_min_segments: DEFAULT_RTREE_MIN_SEGMENTS,
-            },
-            Self::RTree => PolygonBuildOptions {
-                enable_rtree: true,
                 enable_compressed_quad: false,
+                enable_y_stripes: true,
                 rtree_min_segments: DEFAULT_RTREE_MIN_SEGMENTS,
             },
             Self::NoIndex => PolygonBuildOptions {
                 enable_rtree: false,
                 enable_compressed_quad: false,
+                enable_y_stripes: false,
                 rtree_min_segments: DEFAULT_RTREE_MIN_SEGMENTS,
             },
         }
@@ -826,7 +815,11 @@ impl Default for DefaultFinder {
     /// let finder = DefaultFinder::new();
     /// ```
     fn default() -> Self {
-        let finder = Finder::default();
+        let options = FinderOptions::y_stripes();
+        let reduced_bytes: Vec<u8> = load_reduced();
+        let tzs = pbgen::Timezones::try_from(reduced_bytes).unwrap_or_default();
+        let finder = Finder::from_pb_with_options(tzs, options);
+
         let fuzzy_finder = FuzzyFinder::default();
 
         Self {

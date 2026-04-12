@@ -4,15 +4,15 @@ use tzf_rs::{DefaultFinder, Finder, FinderOptions, pbgen};
 
 fn parse_mode(mode: &str) -> FinderOptions {
     match mode {
-        "rtree" => FinderOptions::rtree(),
+        "ystripes" => FinderOptions::y_stripes(),
         "noindex" => FinderOptions::no_index(),
-        _ => FinderOptions::quad_tree(),
+        _ => FinderOptions::y_stripes(),
     }
 }
 
 fn main() {
     let target = env::args().nth(1).unwrap_or_else(|| "finder".to_string());
-    let mode = env::args().nth(2).unwrap_or_else(|| "quad".to_string());
+    let mode = env::args().nth(2).unwrap_or_else(|| "ystripes".to_string());
 
     match target.as_str() {
         "default" => {
