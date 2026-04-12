@@ -89,6 +89,13 @@ A full example can be found
 
 ## Advanced Usage - Speed up via YStripes Index
 
+> [!NOTE]
+>
+> This feature is introduced [v1.2.0] and is enabled by default, since the build
+> time is not significantly increased, but the query time is significantly
+> decreased. If you want to disable it, please use `FinderOptions::NoIndex`
+> explicitly.
+
 `tzf-rs` builds polygon index structures through `geometry-rs`.
 `Finder::from_pb` uses `FinderOptions::default()`, which is
 `FinderOptions::NoIndex`.

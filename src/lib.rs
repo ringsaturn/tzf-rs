@@ -815,7 +815,11 @@ impl Default for DefaultFinder {
     /// let finder = DefaultFinder::new();
     /// ```
     fn default() -> Self {
-        let finder = Finder::default();
+        let options = FinderOptions::y_stripes();
+        let reduced_bytes: Vec<u8> = load_reduced();
+        let tzs = pbgen::Timezones::try_from(reduced_bytes).unwrap_or_default();
+        let finder = Finder::from_pb_with_options(tzs, options);
+
         let fuzzy_finder = FuzzyFinder::default();
 
         Self {
