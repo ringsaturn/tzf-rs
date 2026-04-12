@@ -1,7 +1,6 @@
-# tzf-rs: a fast timezone finder for Rust. [![Rust](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml) [![Documentation](https://docs.rs/tzf-rs/badge.svg)](https://docs.rs/tzf-rs) [![Crates.io Version](https://img.shields.io/crates/v/tzf-rs)](https://crates.io/crates/tzf-rs)
+# tzf-rs: a fast timezone finder for Rust. [![Rust](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml) [![Documentation](https://docs.rs/tzf-rs/badge.svg)](https://docs.rs/tzf-rs) [![Crates.io Version](https://img.shields.io/crates/v/tzf-rs)](https://crates.io/crates/tzf-rs) [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fringsaturn%2Ftzf-rs.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fringsaturn%2Ftzf-rs?ref=badge_shield)
 
 ![Time zone map of the world](https://github.com/ringsaturn/tzf/blob/gh-pages/docs/tzf-social-media.png?raw=true)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fringsaturn%2Ftzf-rs.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fringsaturn%2Ftzf-rs?ref=badge_shield)
 
 > [!NOTE]
 >
@@ -42,7 +41,7 @@ lazy_static! {
     static ref FINDER: DefaultFinder = DefaultFinder::new();
 }
 
-fn needless_main() {
+fn main() {
     // Please note coords are lng-lat.
     print!("{:?}\n", FINDER.get_tz_name(116.3883, 39.9289));
     print!("{:?}\n", FINDER.get_tz_names(116.3883, 39.9289));
@@ -87,46 +86,31 @@ fn main() {
 A full example can be found
 [here](https://github.com/ringsaturn/tzf-rs/pull/170).
 
-## Advanced Usage - Speed up via YStripes Index
+## Advanced Usage - Toggle YStripes Index
 
 > [!NOTE]
 >
-> This feature is introduced [v1.2.0] and is enabled by default, since the build
-> time is not significantly increased, but the query time is significantly
+> This feature is introduced `v1.2.0` and is **enabled by default**, since the
+> build time is not significantly increased, but the query time is significantly
 > decreased. If you want to disable it, please use `FinderOptions::NoIndex`
-> explicitly.
+> explicitly. Below is the code example to disable it:
+>
+> ```rust
+> use tzf_rs::{DefaultFinder, FinderOptions};
+>
+> fn main() {
+>     let default_finder = DefaultFinder::new_with_options(FinderOptions::no_index());
+>     println!("{}", default_finder.get_tz_name(139.767125, 35.681236));
+> }
+> ```
 
-`tzf-rs` builds polygon index structures through `geometry-rs`.
-`Finder::from_pb` uses `FinderOptions::default()`, which is
-`FinderOptions::NoIndex`.
+YStripes needs more time and memory than NoIndex, below is data from my machine
+to build the `DefaultFinder` with currently supported index modes:
 
-If you need to tune build time and query latency for your own workload, use an
-explicit index mode.
-
-```rust,ignore
-use tzf_rs::{DefaultFinder, Finder, FinderOptions};
-
-fn main() {
-    let options = FinderOptions::y_stripes();
-    let default_finder = DefaultFinder::new_with_options(options);
-    println!("{}", default_finder.get_tz_name(139.767125, 35.681236));
-}
-```
-
-Tuning notes:
-
-1. Use `FinderOptions::y_stripes()` to enable the YStripes polygon index.
-2. `FinderOptions::NoIndex` explicitly disables polygon indexes. By default, no
-   index is used, which has the fastest build time and the slowest query time.
-   But may be changed in the future, so it's better to explicitly specify it if
-   you want no index.
-3. YStripes needs more time and memory than NoIndex, below is data from my
-   machine to build the `DefaultFinder` with currently supported index modes:
-
-   | Index mode    | Build time (ms) | Memory usage (MiB) |
-   | ------------- | --------------: | -----------------: |
-   | No index      |             ~40 |                ~70 |
-   | YStripes only |             ~50 |               ~110 |
+| Index mode    | Build time (ms) | Memory usage (MiB) |
+| ------------- | --------------: | -----------------: |
+| No index      |             ~40 |                ~70 |
+| YStripes only |             ~50 |               ~110 |
 
 For the performance comparison of different index modes, please see the
 [Performance](#performance) section below.
@@ -154,7 +138,7 @@ tzf-rs = { version = "{version}", features = ["export-geojson"]}
 
 Then you can use the following methods:
 
-```rust,ignore
+```rust
 // examples/query_tokyo.rs
 use tzf_rs::DefaultFinder;
 
@@ -212,7 +196,7 @@ Found Index GeoJSON feature for timezone: Asia/Tokyo
 ```
 
 For now, tzf-rs' binding in Wasm, named
-[tzf-wasm](https://github.com/ringsaturn/tzf-wasm)), has exported this feature
+[tzf-wasm](https://github.com/ringsaturn/tzf-wasm), has exported this feature
 and it has been deployed to the [tzf-web](https://ringsaturn.github.io/tzf-web/)
 for online usage.
 
@@ -229,8 +213,8 @@ Here is what has been done to improve performance:
 2. Using a finely-tuned Ray Casting algorithm package
    [`ringsaturn/geometry-rs`](https://github.com/ringsaturn/geometry-rs) to
    verify whether a polygon contains a point.
-3. Using YStripes to accerate polygon queries. This polygon index works when the
-   pre-indexing missing, especially for queries around the border.
+   - Using YStripes to accerate polygon queries. This polygon index works when
+     the pre-indexing missing, especially for queries around the border.
 
 That's all. There are no black magic tricks inside the tzf-rs.
 
@@ -248,8 +232,8 @@ cat benchmark_report.md
 | DefaultFinder | YStripes only |               0.9726 |                 1,028,172 |             111.58 |
 | DefaultFinder | No index      |               1.8955 |                   527,565 |              74.01 |
 
-NOTE: The `FuzzyFinder` is not included in the benchmark, since it's query time
-is consistent.
+The `FuzzyFinder` is not included in the benchmark, since it's query time is
+consistent.
 
 <details>
 <summary>DefaultFinder's Benchmark charts (click to expand)</summary>
