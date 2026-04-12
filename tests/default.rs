@@ -33,14 +33,14 @@ mod tests {
 
     #[test]
     fn new_with_options_smoke_test() {
-        let finder = DefaultFinder::new_with_options(FinderOptions::quad_tree());
+        let finder = DefaultFinder::new_with_options(FinderOptions::y_stripes());
 
         assert_eq!(finder.get_tz_name(116.3883, 39.9289), "Asia/Shanghai");
     }
 
     #[test]
-    fn new_with_rtree_smoke_test() {
-        let finder = DefaultFinder::new_with_options(FinderOptions::rtree());
+    fn new_with_y_stripes_smoke_test() {
+        let finder = DefaultFinder::new_with_options(FinderOptions::y_stripes());
 
         assert_eq!(finder.get_tz_name(116.3883, 39.9289), "Asia/Shanghai");
     }

@@ -87,7 +87,7 @@ fn main() {
 A full example can be found
 [here](https://github.com/ringsaturn/tzf-rs/pull/170).
 
-## Advanced Usage - Speed up with RTree/QuadTree Index
+## Advanced Usage - Speed up via YStripes Index
 
 `tzf-rs` builds polygon index structures through `geometry-rs`.
 `Finder::from_pb` uses `FinderOptions::default()`, which is
@@ -100,7 +100,7 @@ explicit index mode.
 use tzf_rs::{DefaultFinder, Finder, FinderOptions};
 
 fn main() {
-    let options = FinderOptions::rtree();
+    let options = FinderOptions::y_stripes();
     let default_finder = DefaultFinder::new_with_options(options);
     println!("{}", default_finder.get_tz_name(139.767125, 35.681236));
 }
@@ -108,20 +108,18 @@ fn main() {
 
 Tuning notes:
 
-1. Use `FinderOptions::rtree()` for RTree.
-2. Use `FinderOptions::QuadTree` for QuadTree only.
-3. `FinderOptions::NoIndex` explicitly disables polygon indexes. By default, no
+1. Use `FinderOptions::y_stripes()` to enable the YStripes polygon index.
+2. `FinderOptions::NoIndex` explicitly disables polygon indexes. By default, no
    index is used, which has the fastest build time and the slowest query time.
    But may be changed in the future, so it's better to explicitly specify it if
    you want no index.
-4. Additional index requeires more time and memory, below is data from my
-   machine to build the `DefaultFinder` with different index modes:
+3. YStripes needs more time and memory than NoIndex, below is data from my
+   machine to build the `DefaultFinder` with currently supported index modes:
 
    | Index mode    | Build time (ms) | Memory usage (MiB) |
    | ------------- | --------------: | -----------------: |
-   | No index      |             ~60 |                ~80 |
-   | QuadTree only |            ~130 |               ~110 |
-   | RTree only    |            ~100 |               ~170 |
+   | No index      |             ~40 |                ~70 |
+   | YStripes only |             ~50 |               ~110 |
 
 For the performance comparison of different index modes, please see the
 [Performance](#performance) section below.
@@ -224,8 +222,7 @@ Here is what has been done to improve performance:
 2. Using a finely-tuned Ray Casting algorithm package
    [`ringsaturn/geometry-rs`](https://github.com/ringsaturn/geometry-rs) to
    verify whether a polygon contains a point.
-3. Optional index acceleration is available via RTree or QuadTree, and users can
-   choose the mode based on their workload. This polygon index works when the
+3. Using YStripes to accerate polygon queries. This polygon index works when the
    pre-indexing missing, especially for queries around the border.
 
 That's all. There are no black magic tricks inside the tzf-rs.
@@ -237,14 +234,12 @@ make bench
 cat benchmark_report.md
 ```
 
-| Target        | Scenario   | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
-| ------------- | ---------- | -------------------: | ------------------------: | -----------------: |
-| Finder        | RTree only |               2.9606 |                   337,769 |             147.50 |
-| Finder        | Quad only  |               3.6279 |                   275,642 |              87.11 |
-| Finder        | No index   |               5.5073 |                   181,577 |              51.90 |
-| DefaultFinder | RTree only |               1.2610 |                   793,021 |             171.52 |
-| DefaultFinder | Quad only  |               1.4249 |                   701,804 |             110.53 |
-| DefaultFinder | No index   |               1.7644 |                   566,765 |              76.52 |
+| Target        | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
+| ------------- | ------------- | -------------------: | ------------------------: | -----------------: |
+| Finder        | YStripes only |               2.4286 |                   411,760 |              89.75 |
+| Finder        | No index      |               6.0933 |                   164,115 |              53.03 |
+| DefaultFinder | YStripes only |               0.9726 |                 1,028,172 |             111.58 |
+| DefaultFinder | No index      |               1.8955 |                   527,565 |              74.01 |
 
 NOTE: The `FuzzyFinder` is not included in the benchmark, since it's query time
 is consistent.
@@ -254,19 +249,21 @@ is consistent.
 
 Violin plot:
 
-![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/violin.svg)
+<!-- TODO: replace https link
+
+https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/
+
+-->
+
+![](assets/violin.svg)
 
 No Index:
 
-![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/no_index.pdf.svg)
+![](assets/no_index.pdf.svg)
 
-RTree only:
+YStripes only:
 
-![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/rtree_only.pdf.svg)
-
-QuadTree only:
-
-![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/quad_only.pdf.svg)
+![](assets/ystripes_only.pdf.svg)
 
 </details>
 

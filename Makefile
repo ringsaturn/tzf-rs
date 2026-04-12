@@ -34,3 +34,8 @@ bench:
 ci: test test-examples
 	cargo fmt --check
 	make bench
+
+extract-plot: bench
+	cp target/criterion/DefaultFinderIndexModes/0/report/violin.svg assets/violin.svg
+	cp target/criterion/DefaultFinderIndexModes/NoIndex/0/report/pdf.svg assets/no_index.pdf.svg
+	cp target/criterion/DefaultFinderIndexModes/YStripesOnly/0/report/pdf.svg assets/ystripes_only.pdf.svg

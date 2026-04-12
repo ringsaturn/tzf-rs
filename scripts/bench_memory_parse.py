@@ -3,21 +3,18 @@ import re
 from pathlib import Path
 
 SCENARIO_MAP = {
-    "RTreeOnly": "RTree only",
-    "QuadOnly": "Quad only",
+    "YStripesOnly": "YStripes only",
     "NoIndex": "No index",
 }
 
 MODE_MAP = {
-    "RTreeOnly": "rtree",
-    "QuadOnly": "quad",
+    "YStripesOnly": "ystripes",
     "NoIndex": "noindex",
 }
 
 CONFIG_MAP = {
-    "RTreeOnly": "`enable_rtree=true`, `enable_compressed_quad=false`",
-    "QuadOnly": "`enable_rtree=false`, `enable_compressed_quad=true`",
-    "NoIndex": "`enable_rtree=false`, `enable_compressed_quad=false`",
+    "YStripesOnly": "`enable_rtree=false`, `enable_compressed_quad=false`, `enable_y_stripes=true`",
+    "NoIndex": "`enable_rtree=false`, `enable_compressed_quad=false`, `enable_y_stripes=false`",
 }
 
 TARGETS = [
@@ -25,7 +22,7 @@ TARGETS = [
     ("DefaultFinder", "DefaultFinderIndexModes", "default"),
 ]
 
-SCENARIOS = ["RTreeOnly", "QuadOnly", "NoIndex"]
+SCENARIOS = ["YStripesOnly", "NoIndex"]
 
 
 def parse_peak_bytes(path: Path, is_darwin: bool) -> int:

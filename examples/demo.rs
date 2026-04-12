@@ -17,12 +17,10 @@ fn print_init_time(label: &str, elapsed: Duration) {
 
 fn main() {
     let default_finder = build_finder("default", None);
-    let rtree_finder = build_finder("rtree", Some(FinderOptions::rtree()));
-    let quad_tree_finder = build_finder("quad_tree", Some(FinderOptions::quad_tree()));
+    let y_stripes_finder = build_finder("y_stripes", Some(FinderOptions::y_stripes()));
 
     // Please note coords are lng-lat.
     println!("{:?}", default_finder.get_tz_name(116.3883, 39.9289));
     println!("{:?}", default_finder.get_tz_names(87.4160, 44.0400));
-    println!("{:?}", rtree_finder.get_tz_name(139.767125, 35.681236));
-    println!("{:?}", quad_tree_finder.get_tz_name(139.767125, 35.681236));
+    println!("{:?}", y_stripes_finder.get_tz_name(139.767125, 35.681236));
 }
