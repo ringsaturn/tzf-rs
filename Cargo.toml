@@ -40,7 +40,8 @@ serde = {version = "1.0.228", features = [
   "derive",
 ], optional = true}
 serde_json = {version = "1.0.145", optional = true}
-tzf-rel = "0.0.2026-a"
+# tzf-dist = { path = "/Users/ringsaturn/go/src/github.com/ringsaturn/tzf-dist" }
+tzf-dist = { git = "https://github.com/ringsaturn/tzf-dist", branch = "data" }
 
 [dev-dependencies]
 cities-json = "0.6.8"

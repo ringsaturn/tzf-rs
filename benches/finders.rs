@@ -1,7 +1,7 @@
 use cities_json::get_random_cities;
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use lazy_static::lazy_static;
-use tzf_rel::load_reduced;
+use tzf_dist::load_topology_compress_topo;
 use tzf_rs::{DefaultFinder, Finder, FinderOptions, FuzzyFinder, pbgen};
 
 lazy_static! {
@@ -9,12 +9,14 @@ lazy_static! {
     static ref FINDER: Finder = Finder::default();
     static ref FUZZY_FINDER: FuzzyFinder = FuzzyFinder::default();
     static ref FINDER_YSTRIPES_ONLY: Finder = {
-        let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
-        Finder::from_pb_with_options(tzs, FinderOptions::y_stripes())
+        let tzs =
+            pbgen::CompressedTopoTimezones::try_from(load_topology_compress_topo()).unwrap_or_default();
+        Finder::from_compressed_topo_with_options(tzs, FinderOptions::y_stripes())
     };
     static ref FINDER_NO_INDEX: Finder = {
-        let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
-        Finder::from_pb_with_options(tzs, FinderOptions::no_index())
+        let tzs =
+            pbgen::CompressedTopoTimezones::try_from(load_topology_compress_topo()).unwrap_or_default();
+        Finder::from_compressed_topo_with_options(tzs, FinderOptions::no_index())
     };
     static ref DEFAULT_FINDER_YSTRIPES_ONLY: DefaultFinder =
         DefaultFinder::new_with_options(FinderOptions::y_stripes());

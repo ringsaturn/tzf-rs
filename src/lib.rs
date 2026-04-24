@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::f64::consts::PI;
 use std::vec;
-use tzf_rel::{load_preindex, load_reduced};
+use tzf_dist::{load_preindex, load_topology_compress_topo};
 pub mod pbgen;
 
 struct Item {
@@ -86,6 +86,72 @@ impl FinderOptions {
     }
 }
 
+/// Decode a Google Polyline encoded byte slice into a list of Points.
+///
+/// The go-polyline library encodes coordinates as [lng, lat] pairs with 1e5 precision.
+#[allow(clippy::cast_possible_truncation)]
+fn decode_polyline(encoded: &[u8]) -> Vec<Point> {
+    let mut points = Vec::new();
+    let mut index = 0;
+    let mut lng: i64 = 0;
+    let mut lat: i64 = 0;
+
+    while index < encoded.len() {
+        let (dlng, next) = polyline_decode_value(encoded, index);
+        index = next;
+        let (dlat, next) = polyline_decode_value(encoded, index);
+        index = next;
+        lng += dlng;
+        lat += dlat;
+        points.push(Point {
+            x: lng as f64 / 1e5,
+            y: lat as f64 / 1e5,
+        });
+    }
+    points
+}
+
+fn polyline_decode_value(encoded: &[u8], start: usize) -> (i64, usize) {
+    let mut result: i64 = 0;
+    let mut shift = 0;
+    let mut index = start;
+
+    loop {
+        let byte = (encoded[index] as i64) - 63;
+        index += 1;
+        result |= (byte & 0x1F) << shift;
+        shift += 5;
+        if byte < 0x20 {
+            break;
+        }
+    }
+
+    let value = if result & 1 != 0 { !(result >> 1) } else { result >> 1 };
+    (value, index)
+}
+
+fn expand_compressed_ring(
+    segs: &[pbgen::CompressedRingSegment],
+    edges: &[Vec<Point>],
+) -> Vec<Point> {
+    let mut pts = Vec::new();
+    for seg in segs {
+        match &seg.content {
+            Some(pbgen::compressed_ring_segment::Content::Inline(inline)) => {
+                pts.extend(decode_polyline(&inline.points));
+            }
+            Some(pbgen::compressed_ring_segment::Content::EdgeForward(idx)) => {
+                pts.extend_from_slice(&edges[*idx as usize]);
+            }
+            Some(pbgen::compressed_ring_segment::Content::EdgeReversed(idx)) => {
+                pts.extend(edges[*idx as usize].iter().rev().copied());
+            }
+            None => {}
+        }
+    }
+    pts
+}
+
 impl Finder {
     fn from_pb_with_polygon_options(tzs: pbgen::Timezones, options: PolygonBuildOptions) -> Self {
         let mut f = Self {
@@ -131,6 +197,53 @@ impl Finder {
         f
     }
 
+    fn from_compressed_topo_with_polygon_options(
+        tzs: pbgen::CompressedTopoTimezones,
+        options: PolygonBuildOptions,
+    ) -> Self {
+        let mut edges: Vec<Vec<Point>> = vec![Vec::new(); tzs.shared_edges.len()];
+        for edge in &tzs.shared_edges {
+            edges[edge.id as usize] = decode_polyline(&edge.points);
+        }
+
+        let mut f = Self {
+            all: vec![],
+            data_version: tzs.version,
+        };
+
+        for tz in &tzs.timezones {
+            let mut polys: Vec<Polygon> = vec![];
+            for poly in &tz.polygons {
+                let exterior = expand_compressed_ring(&poly.exterior, &edges);
+                let interior: Vec<Vec<Point>> = poly
+                    .holes
+                    .iter()
+                    .map(|hole| expand_compressed_ring(&hole.exterior, &edges))
+                    .collect();
+                polys.push(geometry_rs::Polygon::new(exterior, interior, Some(options)));
+            }
+            f.all.push(Item { name: tz.name.clone(), polys });
+        }
+        f
+    }
+
+    /// Create a Finder from `CompressedTopoTimezones` protobuf data.
+    ///
+    /// This is the preferred constructor when using tzf-dist data.
+    #[must_use]
+    pub fn from_compressed_topo(tzs: pbgen::CompressedTopoTimezones) -> Self {
+        Self::from_compressed_topo_with_options(tzs, FinderOptions::default())
+    }
+
+    /// Create a Finder from `CompressedTopoTimezones` with explicit polygon build options.
+    #[must_use]
+    pub fn from_compressed_topo_with_options(
+        tzs: pbgen::CompressedTopoTimezones,
+        options: FinderOptions,
+    ) -> Self {
+        Self::from_compressed_topo_with_polygon_options(tzs, options.to_polygon_build_options())
+    }
+
     /// `from_pb` is used when you can use your own timezone data, as long as
     /// it's compatible with Proto's desc.
     ///
@@ -165,17 +278,6 @@ impl Finder {
         let direct_res = self._get_tz_name(lng, lat);
         if !direct_res.is_empty() {
             return direct_res;
-        }
-
-        for &dx in &[0.0, -0.01, 0.01, -0.02, 0.02] {
-            for &dy in &[0.0, -0.01, 0.01, -0.02, 0.02] {
-                let dlng = dx + lng;
-                let dlat = dy + lat;
-                let name = self._get_tz_name(dlng, dlat);
-                if !name.is_empty() {
-                    return name;
-                }
-            }
         }
         ""
     }
@@ -380,9 +482,10 @@ impl Finder {
 /// ```
 impl Default for Finder {
     fn default() -> Self {
-        // let file_bytes = include_bytes!("data/combined-with-oceans.reduce.pb").to_vec();
-        let file_bytes: Vec<u8> = load_reduced();
-        Self::from_pb(pbgen::Timezones::try_from(file_bytes).unwrap_or_default())
+        let file_bytes = load_topology_compress_topo();
+        Self::from_compressed_topo(
+            pbgen::CompressedTopoTimezones::try_from(file_bytes).unwrap_or_default(),
+        )
     }
 }
 
@@ -555,8 +658,8 @@ impl Default for FuzzyFinder {
     /// let finder = FuzzyFinder::default();
     /// ```
     fn default() -> Self {
-        let file_bytes: Vec<u8> = load_preindex();
-        Self::from_pb(pbgen::PreindexTimezones::try_from(file_bytes).unwrap_or_default())
+        let file_bytes = load_preindex();
+        Self::from_pb(pbgen::PreindexTimezones::try_from(file_bytes.to_vec()).unwrap_or_default())
     }
 }
 
@@ -816,9 +919,9 @@ impl Default for DefaultFinder {
     /// ```
     fn default() -> Self {
         let options = FinderOptions::y_stripes();
-        let reduced_bytes: Vec<u8> = load_reduced();
-        let tzs = pbgen::Timezones::try_from(reduced_bytes).unwrap_or_default();
-        let finder = Finder::from_pb_with_options(tzs, options);
+        let topo_bytes = load_topology_compress_topo();
+        let tzs = pbgen::CompressedTopoTimezones::try_from(topo_bytes).unwrap_or_default();
+        let finder = Finder::from_compressed_topo_with_options(tzs, options);
 
         let fuzzy_finder = FuzzyFinder::default();
 
@@ -835,10 +938,10 @@ impl DefaultFinder {
     /// The selected options are applied to the internal `Finder`.
     #[must_use]
     pub fn new_with_options(options: FinderOptions) -> Self {
-        let reduced_bytes: Vec<u8> = load_reduced();
-        let tzs = pbgen::Timezones::try_from(reduced_bytes).unwrap_or_default();
+        let topo_bytes = load_topology_compress_topo();
+        let tzs = pbgen::CompressedTopoTimezones::try_from(topo_bytes).unwrap_or_default();
         Self {
-            finder: Finder::from_pb_with_options(tzs, options),
+            finder: Finder::from_compressed_topo_with_options(tzs, options),
             fuzzy_finder: FuzzyFinder::default(),
         }
     }
@@ -868,19 +971,13 @@ impl DefaultFinder {
     /// ```
     #[must_use]
     pub fn get_tz_names(&self, lng: f64, lat: f64) -> Vec<&str> {
-        for &dx in &[0.0, -0.01, 0.01, -0.02, 0.02] {
-            for &dy in &[0.0, -0.01, 0.01, -0.02, 0.02] {
-                let dlng = dx + lng;
-                let dlat = dy + lat;
-                let fuzzy_names = self.fuzzy_finder.get_tz_names(dlng, dlat);
-                if !fuzzy_names.is_empty() {
-                    return fuzzy_names;
-                }
-                let names = self.finder.get_tz_names(dlng, dlat);
-                if !names.is_empty() {
-                    return names;
-                }
-            }
+        let fuzzy_names = self.fuzzy_finder.get_tz_names(lng, lat);
+        if !fuzzy_names.is_empty() {
+            return fuzzy_names;
+        }
+        let names = self.finder.get_tz_names(lng, lat);
+        if !names.is_empty() {
+            return names;
         }
         Vec::new() // Return empty vector if no timezone is found
     }

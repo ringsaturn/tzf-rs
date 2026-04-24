@@ -116,6 +116,124 @@ pub struct PreindexTimezones {
     #[prost(string, tag = "4")]
     pub version: ::prost::alloc::string::String,
 }
+/// Wrapper for a sequence of inline points used inside a RingSegment oneof.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct InlinePoints {
+    #[prost(message, repeated, tag = "1")]
+    pub points: ::prost::alloc::vec::Vec<Point>,
+}
+/// A ring segment: either inline points or a reference to a shared edge.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RingSegment {
+    #[prost(oneof = "ring_segment::Content", tags = "1, 2, 3")]
+    pub content: ::core::option::Option<ring_segment::Content>,
+}
+/// Nested message and enum types in `RingSegment`.
+pub mod ring_segment {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Content {
+        #[prost(message, tag = "1")]
+        Inline(super::InlinePoints),
+        #[prost(int32, tag = "2")]
+        EdgeForward(i32),
+        #[prost(int32, tag = "3")]
+        EdgeReversed(i32),
+    }
+}
+/// A timezone polygon in topology format.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TopoPolygon {
+    #[prost(message, repeated, tag = "1")]
+    pub exterior: ::prost::alloc::vec::Vec<RingSegment>,
+    #[prost(message, repeated, tag = "2")]
+    pub holes: ::prost::alloc::vec::Vec<TopoPolygon>,
+}
+/// A timezone in topology format.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TopoTimezone {
+    #[prost(message, repeated, tag = "1")]
+    pub polygons: ::prost::alloc::vec::Vec<TopoPolygon>,
+    #[prost(string, tag = "2")]
+    pub name: ::prost::alloc::string::String,
+}
+/// A shared boundary edge stored once in the global edge library.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SharedEdge {
+    #[prost(int32, tag = "1")]
+    pub id: i32,
+    #[prost(message, repeated, tag = "2")]
+    pub points: ::prost::alloc::vec::Vec<Point>,
+}
+/// Timezones in topology format with shared-edge deduplication.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TopoTimezones {
+    #[prost(message, repeated, tag = "1")]
+    pub shared_edges: ::prost::alloc::vec::Vec<SharedEdge>,
+    #[prost(message, repeated, tag = "2")]
+    pub timezones: ::prost::alloc::vec::Vec<TopoTimezone>,
+    #[prost(string, tag = "3")]
+    pub version: ::prost::alloc::string::String,
+}
+/// CompressedSharedEdge stores a shared boundary edge with polyline-encoded points.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CompressedSharedEdge {
+    #[prost(int32, tag = "1")]
+    pub id: i32,
+    #[prost(bytes = "vec", tag = "2")]
+    pub points: ::prost::alloc::vec::Vec<u8>,
+}
+/// CompressedInlinePoints stores a short inline ring segment as polyline bytes.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CompressedInlinePoints {
+    #[prost(bytes = "vec", tag = "1")]
+    pub points: ::prost::alloc::vec::Vec<u8>,
+}
+/// CompressedRingSegment mirrors RingSegment with polyline-encoded inline points.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct CompressedRingSegment {
+    #[prost(oneof = "compressed_ring_segment::Content", tags = "1, 2, 3")]
+    pub content: ::core::option::Option<compressed_ring_segment::Content>,
+}
+/// Nested message and enum types in `CompressedRingSegment`.
+pub mod compressed_ring_segment {
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    pub enum Content {
+        #[prost(message, tag = "1")]
+        Inline(super::CompressedInlinePoints),
+        #[prost(int32, tag = "2")]
+        EdgeForward(i32),
+        #[prost(int32, tag = "3")]
+        EdgeReversed(i32),
+    }
+}
+/// CompressedTopoPolygon mirrors TopoPolygon with compressed ring segments.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CompressedTopoPolygon {
+    #[prost(message, repeated, tag = "1")]
+    pub exterior: ::prost::alloc::vec::Vec<CompressedRingSegment>,
+    #[prost(message, repeated, tag = "2")]
+    pub holes: ::prost::alloc::vec::Vec<CompressedTopoPolygon>,
+}
+/// CompressedTopoTimezone mirrors TopoTimezone with compressed polygons.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CompressedTopoTimezone {
+    #[prost(message, repeated, tag = "1")]
+    pub polygons: ::prost::alloc::vec::Vec<CompressedTopoPolygon>,
+    #[prost(string, tag = "2")]
+    pub name: ::prost::alloc::string::String,
+}
+/// CompressedTopoTimezones combines shared-edge deduplication with polyline compression.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CompressedTopoTimezones {
+    #[prost(enumeration = "CompressMethod", tag = "1")]
+    pub method: i32,
+    #[prost(message, repeated, tag = "2")]
+    pub shared_edges: ::prost::alloc::vec::Vec<CompressedSharedEdge>,
+    #[prost(message, repeated, tag = "3")]
+    pub timezones: ::prost::alloc::vec::Vec<CompressedTopoTimezone>,
+    #[prost(string, tag = "4")]
+    pub version: ::prost::alloc::string::String,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum CompressMethod {

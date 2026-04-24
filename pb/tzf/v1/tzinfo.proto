@@ -116,3 +116,82 @@ message PreindexTimezones {
   repeated PreindexTimezone keys = 3;
   string version = 4;
 }
+
+// Wrapper for a sequence of inline points used inside a RingSegment oneof.
+message InlinePoints {
+  repeated Point points = 1;
+}
+
+// A ring segment: either inline points or a reference to a shared edge.
+message RingSegment {
+  oneof content {
+    InlinePoints inline = 1;
+    int32 edge_forward = 2;
+    int32 edge_reversed = 3;
+  }
+}
+
+// A timezone polygon in topology format.
+message TopoPolygon {
+  repeated RingSegment exterior = 1;
+  repeated TopoPolygon holes = 2;
+}
+
+// A timezone in topology format.
+message TopoTimezone {
+  repeated TopoPolygon polygons = 1;
+  string name = 2;
+}
+
+// A shared boundary edge stored once in the global edge library.
+message SharedEdge {
+  int32 id = 1;
+  repeated Point points = 2;
+}
+
+// Timezones in topology format with shared-edge deduplication.
+message TopoTimezones {
+  repeated SharedEdge shared_edges = 1;
+  repeated TopoTimezone timezones = 2;
+  string version = 3;
+}
+
+// CompressedSharedEdge stores a shared boundary edge with polyline-encoded points.
+message CompressedSharedEdge {
+  int32 id = 1;
+  bytes points = 2;
+}
+
+// CompressedInlinePoints stores a short inline ring segment as polyline bytes.
+message CompressedInlinePoints {
+  bytes points = 1;
+}
+
+// CompressedRingSegment mirrors RingSegment with polyline-encoded inline points.
+message CompressedRingSegment {
+  oneof content {
+    CompressedInlinePoints inline = 1;
+    int32 edge_forward = 2;
+    int32 edge_reversed = 3;
+  }
+}
+
+// CompressedTopoPolygon mirrors TopoPolygon with compressed ring segments.
+message CompressedTopoPolygon {
+  repeated CompressedRingSegment exterior = 1;
+  repeated CompressedTopoPolygon holes = 2;
+}
+
+// CompressedTopoTimezone mirrors TopoTimezone with compressed polygons.
+message CompressedTopoTimezone {
+  repeated CompressedTopoPolygon polygons = 1;
+  string name = 2;
+}
+
+// CompressedTopoTimezones combines shared-edge deduplication with polyline compression.
+message CompressedTopoTimezones {
+  CompressMethod method = 1;
+  repeated CompressedSharedEdge shared_edges = 2;
+  repeated CompressedTopoTimezone timezones = 3;
+  string version = 4;
+}
