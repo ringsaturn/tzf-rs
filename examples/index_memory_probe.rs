@@ -22,8 +22,8 @@ fn main() {
         }
         _ => {
             let options = parse_mode(&mode);
-            let tzs =
-                pbgen::CompressedTopoTimezones::try_from(load_topology_compress_topo()).unwrap_or_default();
+            let tzs = pbgen::CompressedTopoTimezones::try_from(load_topology_compress_topo())
+                .unwrap_or_default();
             let finder = Finder::from_compressed_topo_with_options(tzs, options);
             println!("{}", finder.timezonenames().len());
         }

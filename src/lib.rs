@@ -126,7 +126,11 @@ fn polyline_decode_value(encoded: &[u8], start: usize) -> (i64, usize) {
         }
     }
 
-    let value = if result & 1 != 0 { !(result >> 1) } else { result >> 1 };
+    let value = if result & 1 != 0 {
+        !(result >> 1)
+    } else {
+        result >> 1
+    };
     (value, index)
 }
 
@@ -222,7 +226,10 @@ impl Finder {
                     .collect();
                 polys.push(geometry_rs::Polygon::new(exterior, interior, Some(options)));
             }
-            f.all.push(Item { name: tz.name.clone(), polys });
+            f.all.push(Item {
+                name: tz.name.clone(),
+                polys,
+            });
         }
         f
     }
