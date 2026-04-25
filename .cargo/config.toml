@@ -1,4 +1,4 @@
 [alias]
 build-all = "build --features default,export-geojson"
-test-all = "test --all-features"
-doc-all = "doc --no-deps --all-features"
+test-all = "test --features bundled,export-geojson"
+doc-all = "doc --no-deps --features bundled,export-geojson"

@@ -82,6 +82,12 @@ required-features = [
 [[bench]]
 harness = false
 name = "finders"
+required-features = ["bundled"]
+
+[[bench]]
+harness = false
+name = "finders_full"
+required-features = ["full"]
 
 [build-dependencies]
 prost-build = "0.14.1"

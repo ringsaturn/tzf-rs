@@ -30,10 +30,19 @@ bench:
 	cargo bench | tee benchmark_result.txt
 	./scripts/bench_memory.sh benchmark_result.txt | tee benchmark_report.md
 
+.PHONY: bench-full
+bench-full:
+	cargo bench --no-default-features --features full | tee benchmark_full_result.txt
+
+.PHONY: test-full
+test-full:
+	cargo test --no-default-features --features full --lib --tests
+
 .PHONY: ci
-ci: test test-examples
+ci: test test-full test-examples
 	cargo fmt --check
 	make bench
+	make bench-full
 
 extract-plot: bench
 	cp target/criterion/DefaultFinderIndexModes/0/report/violin.svg assets/violin.svg

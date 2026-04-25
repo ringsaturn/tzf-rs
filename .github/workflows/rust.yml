@@ -68,6 +68,23 @@ jobs:
             benchmark_report.md
             benchmark_result.txt
 
+      - name: Publish full benchmark report to job summary
+        if: always()
+        run: |
+          if [ -f benchmark_full_result.txt ]; then
+            echo "## Full Benchmark Results" >> "$GITHUB_STEP_SUMMARY"
+            cat benchmark_full_result.txt >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "benchmark_full_result.txt not found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload full benchmark result artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark_full_report
+          path: benchmark_full_result.txt
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
