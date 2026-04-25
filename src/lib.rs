@@ -7,7 +7,16 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::f64::consts::PI;
 use std::vec;
+#[cfg(all(feature = "bundled", feature = "full"))]
+compile_error!(
+    "features `bundled` and `full` are mutually exclusive; \
+     add `default-features = false` when enabling `full`"
+);
+
+#[cfg(feature = "bundled")]
 use tzf_dist::{load_preindex, load_topology_compress_topo};
+#[cfg(feature = "full")]
+use tzf_dist_git::{load_compress_topo, load_preindex, load_topology_compress_topo};
 pub mod pbgen;
 
 struct Item {
@@ -953,6 +962,39 @@ impl DefaultFinder {
         }
     }
 
+    /// Use lossless data to create a new `DefaultFinder`.
+    ///
+    /// Similar to [`DefaultFinder::new`], but the internal [`Finder`] uses
+    /// `combined-with-oceans.compress.topo.bin` (~17 MB, no topology simplification)
+    /// instead of the default topology-simplified dataset (~5.4 MB). Higher precision, ~1 GB memory usage.
+    ///
+    /// Requires the `full` feature to be enabled and must use a git dependency:
+    /// ```toml
+    /// tzf-rs = { git = "https://github.com/ringsaturn/tzf-rs", features = ["full"], default-features = false }
+    /// ```
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "full")]
+    /// # {
+    /// use tzf_rs::DefaultFinder;
+    /// let finder = DefaultFinder::new_full();
+    /// assert_eq!("Asia/Shanghai", finder.get_tz_name(116.3883, 39.9289));
+    /// # }
+    /// ```
+    #[must_use]
+    #[cfg(feature = "full")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "full")))]
+    pub fn new_full() -> Self {
+        let tzs =
+            pbgen::CompressedTopoTimezones::try_from(load_compress_topo()).unwrap_or_default();
+        Self {
+            finder: Finder::from_compressed_topo_with_options(tzs, FinderOptions::y_stripes()),
+            fuzzy_finder: FuzzyFinder::default(),
+        }
+    }
+
     /// ```rust
     /// use tzf_rs::DefaultFinder;
     /// let finder = DefaultFinder::new();
@@ -1080,3 +1122,4 @@ impl DefaultFinder {
         self.finder.get_tz_geojson(timezone_name)
     }
 }
+
