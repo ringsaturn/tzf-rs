@@ -18,15 +18,15 @@ CONFIG_MAP = {
 }
 
 TARGETS = [
-    ("Finder", "FinderIndexModes", "finder"),
-    ("DefaultFinder", "DefaultFinderIndexModes", "default"),
+    ("Finder", "FinderIndexModes", "finder", "topology-simplified"),
+    ("DefaultFinder", "DefaultFinderIndexModes", "default", "topology-simplified + preindex"),
 ]
 
 SCENARIOS = ["YStripesOnly", "NoIndex"]
 
 FULL_TARGETS = [
-    ("Finder (full)", "FullFinderIndexModes", "finder_full"),
-    ("DefaultFinder (full)", "FullDefaultFinderIndexModes", "default_full"),
+    ("Finder (full)", "FullFinderIndexModes", "finder_full", "full-precision"),
+    ("DefaultFinder (full)", "FullDefaultFinderIndexModes", "default_full", "full-precision + preindex"),
 ]
 
 
@@ -89,7 +89,7 @@ def build_rows(bench_text: str, runs: int = 5):
     rows = []
     is_darwin = platform.system() == "Darwin"
 
-    for target_name, target_group, target_key in TARGETS:
+    for target_name, target_group, target_key, dataset in TARGETS:
         for scenario in SCENARIOS:
             range_us = parse_range_us(bench_text, target_group, scenario)
             if range_us is None:
@@ -109,7 +109,7 @@ def build_rows(bench_text: str, runs: int = 5):
             rows.append(
                 (
                     target_name,
-                    "topology-simplified",
+                    dataset,
                     SCENARIO_MAP[scenario],
                     CONFIG_MAP[scenario],
                     f"[{fmt_float(range_us[0])}, {fmt_float(range_us[1])}, {fmt_float(range_us[2])}]",
@@ -131,7 +131,7 @@ def build_full_rows(bench_text: str, runs: int = 5):
     rows = []
     is_darwin = platform.system() == "Darwin"
 
-    for target_name, target_group, target_key in FULL_TARGETS:
+    for target_name, target_group, target_key, dataset in FULL_TARGETS:
         for scenario in SCENARIOS:
             range_us = parse_range_us(bench_text, target_group, scenario)
             if range_us is None:
@@ -151,7 +151,7 @@ def build_full_rows(bench_text: str, runs: int = 5):
             rows.append(
                 (
                     target_name,
-                    "full-precision",
+                    dataset,
                     SCENARIO_MAP[scenario],
                     CONFIG_MAP[scenario],
                     f"[{fmt_float(range_us[0])}, {fmt_float(range_us[1])}, {fmt_float(range_us[2])}]",
