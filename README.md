@@ -57,11 +57,17 @@ A Redis protocol demo could be used here:
 
 ### Setup 100% Accurate Lookup
 
-By default, tzf-rs uses a simplified shape data. If you need 100% accurate
-lookup, you can use the following code to setup:
+> [!NOTE]
+> 
+> The built-in full data feature is introduced in `v1.3.0`.
+>
+> By default, tzf-rs uses a simplified shape data. If you need 100% accurate
+> lookup, you can use the following code to setup:
+>
+> **This setup requeires more time and memory to build the `DefaultFinder`.**
 
 ```toml
-tzf-rs = { git =  "https://github.com/ringsaturn/tzf-rs", rev = "vX.Y.Z", features = ["export-geojson", "full"], default-features = false }
+tzf-rs = { git =  "https://github.com/ringsaturn/tzf-rs", rev = "v{X}.{Y}.{Z}", features = ["full"], default-features = false }
 ```
 
 ```rust,ignore
