@@ -58,33 +58,22 @@ A Redis protocol demo could be used here:
 ### Setup 100% Accurate Lookup
 
 By default, tzf-rs uses a simplified shape data. If you need 100% accurate
-lookup, you can use the following code to setup.
+lookup, you can use the following code to setup:
 
-1. Download
-   [full data set](https://github.com/ringsaturn/tzf-rel/blob/main/combined-with-oceans.bin),
-   about 90MB.
-2. Use the following code to setup.
+```toml
+tzf-rs = { git =  "https://github.com/ringsaturn/tzf-rs", rev = "vX.Y.Z", features = ["export-geojson", "full"], default-features = false }
+```
 
 ```rust,ignore
-use tzf_rs::Finder;
-use tzf_rs::pbgen::tzf::v1::Timezones;
-
-pub fn load_full() -> Vec<u8> {
-    include_bytes!("./combined-with-oceans.bin").to_vec()
-}
+use tzf_rs::DefaultFinder;
 
 fn main() {
-    println!("Hello, world!");
-    let file_bytes: Vec<u8> = load_full();
-
-    let finder = Finder::from_pb(Timezones::try_from(file_bytes).unwrap_or_default());
+    let finder = DefaultFinder::new_full();
+    println!("{}", finder.timezonenames().len());
     let tz_name = finder.get_tz_name(139.767125, 35.681236);
     println!("tz_name: {}", tz_name);
 }
 ```
-
-A full example can be found
-[here](https://github.com/ringsaturn/tzf-rs/pull/170).
 
 ## Advanced Usage - Toggle YStripes Index
 
@@ -220,17 +209,13 @@ That's all. There are no black magic tricks inside the tzf-rs.
 
 Below is a benchmark run on my MacBook Pro with Apple M3 Max:
 
-```bash
-make bench
-cat benchmark_report.md
-```
-
-| Target        | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
-| ------------- | ------------- | -------------------: | ------------------------: | -----------------: |
-| Finder        | YStripes only |               2.4286 |                   411,760 |              89.75 |
-| Finder        | No index      |               6.0933 |                   164,115 |              53.03 |
-| DefaultFinder | YStripes only |               0.9726 |                 1,028,172 |             111.58 |
-| DefaultFinder | No index      |               1.8955 |                   527,565 |              74.01 |
+| Target               | Scenario       | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
+| -------------------- | -------------- | -------------------: | ------------------------: | -----------------: |
+| Finder               | YStripes only  |               1.1345 |                   881,446 |             103.26 |
+| Finder               | No index       |               6.3567 |                   157,314 |              51.67 |
+| DefaultFinder        | YStripes only  |               1.0386 |                   962,835 |             126.70 |
+| DefaultFinder        | No index       |               2.2511 |                   444,227 |              78.46 |
+| DefaultFinder (full) | full-precision |               1.3115 |                   762,486 |             580.51 |
 
 The `FuzzyFinder` is not included in the benchmark, since it's query time is
 consistent.
