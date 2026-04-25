@@ -39,11 +39,16 @@ bench-full:
 test-full:
 	cargo test --no-default-features --features full --lib --tests
 
+benchmark_summary.md: bench bench-full
+	@printf '# Benchmark Summary\n\n## Topology-Simplified (bundled)\n\n' > benchmark_summary.md
+	@cat benchmark_report.md >> benchmark_summary.md
+	@printf '\n## Full-Precision (full)\n\n' >> benchmark_summary.md
+	@cat benchmark_full_report.md >> benchmark_summary.md
+
 .PHONY: ci
 ci: test test-full test-examples
 	cargo fmt --check
-	make bench
-	make bench-full
+	make benchmark_summary.md
 
 extract-plot: bench
 	cp target/criterion/DefaultFinderIndexModes/0/report/violin.svg assets/violin.svg

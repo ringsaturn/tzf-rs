@@ -50,45 +50,29 @@ jobs:
 
       - run: make ci
 
-      - name: Publish benchmark report to job summary
+      - name: Publish benchmark summary to job summary
         if: always()
         run: |
-          if [ -f benchmark_report.md ]; then
-            cat benchmark_report.md >> "$GITHUB_STEP_SUMMARY"
+          if [ -f benchmark_summary.md ]; then
+            cat benchmark_summary.md >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "benchmark_report.md not found." >> "$GITHUB_STEP_SUMMARY"
+            echo "benchmark_summary.md not found." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Upload benchmark report artifact
+      - name: Upload benchmark summary artifact
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: benchmark_report
+          name: benchmark_summary
           path: |
+            benchmark_summary.md
             benchmark_report.md
             benchmark_result.txt
-
-      - name: Publish full benchmark report to job summary
-        if: always()
-        run: |
-          if [ -f benchmark_full_report.md ]; then
-            echo "## Full Benchmark Report" >> "$GITHUB_STEP_SUMMARY"
-            cat benchmark_full_report.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "benchmark_full_report.md not found." >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Upload full benchmark result artifact
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: benchmark_full_report
-          path: |
             benchmark_full_report.md
             benchmark_full_result.txt
 
-      - name: Upload artifact
+      - name: Upload criterion results artifact
         uses: actions/upload-artifact@v7
         with:
-          name: "criterion_result"
+          name: criterion_result
           path: ./target/criterion

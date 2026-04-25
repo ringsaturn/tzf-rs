@@ -19,13 +19,12 @@ def main() -> int:
     rows = build_rows(bench_text, runs=5)
 
     print(
-        "| Target | Scenario | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |"
+        "| Target | Dataset | Scenario | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |"
     )
-    print("| --- |---|---:|---:|---:|")
+    print("| --- | --- | --- |---:|---:|---:|")
     for row in rows:
-        print(
-            f"| {row[0]} | {row[1]} | {row[4]} | {row[5]} | {row[6]} |"
-        )
+        # indices: 0=target 1=dataset 2=scenario 5=median 6=throughput 7=rss
+        print(f"| {row[0]} | {row[1]} | {row[2]} | {row[5]} | {row[6]} | {row[7]} |")
 
     return 0
 

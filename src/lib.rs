@@ -987,10 +987,18 @@ impl DefaultFinder {
     #[cfg(feature = "full")]
     #[cfg_attr(docsrs, doc(cfg(feature = "full")))]
     pub fn new_full() -> Self {
+        Self::new_full_with_options(FinderOptions::y_stripes())
+    }
+
+    /// Creates a `DefaultFinder` using full-precision data with explicit polygon build options.
+    #[must_use]
+    #[cfg(feature = "full")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "full")))]
+    pub fn new_full_with_options(options: FinderOptions) -> Self {
         let tzs =
             pbgen::CompressedTopoTimezones::try_from(load_compress_topo()).unwrap_or_default();
         Self {
-            finder: Finder::from_compressed_topo_with_options(tzs, FinderOptions::y_stripes()),
+            finder: Finder::from_compressed_topo_with_options(tzs, options),
             fuzzy_finder: FuzzyFinder::default(),
         }
     }
