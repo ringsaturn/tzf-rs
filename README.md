@@ -217,21 +217,21 @@ Below is a benchmark run on my MacBook Pro with Apple M3 Max:
 
 Topology-Simplified (bundled):
 
-| Target        | Dataset             | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
-| ------------- | ------------------- | ------------- | -------------------: | ------------------------: | -----------------: |
-| Finder        | topology-simplified | YStripes only |               1.2087 |                   827,335 |             103.38 |
-| Finder        | topology-simplified | No index      |               6.3528 |                   157,411 |              51.91 |
-| DefaultFinder | topology-simplified | YStripes only |               1.1610 |                   861,326 |             125.42 |
-| DefaultFinder | topology-simplified | No index      |               2.2944 |                   435,844 |              78.06 |
+| Target        | Dataset                        | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
+| ------------- | ------------------------------ | ------------- | -------------------: | ------------------------: | -----------------: |
+| Finder        | topology-simplified            | YStripes only |               1.2296 |                   813,273 |             103.30 |
+| Finder        | topology-simplified            | No index      |               6.5402 |                   152,901 |              51.68 |
+| DefaultFinder | topology-simplified + preindex | YStripes only |               1.1383 |                   878,503 |             125.98 |
+| DefaultFinder | topology-simplified + preindex | No index      |               2.2514 |                   444,168 |              77.79 |
 
 Full-Precision (full):
 
-| Target               | Dataset        | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
-| -------------------- | -------------- | ------------- | -------------------: | ------------------------: | -----------------: |
-| Finder (full)        | full-precision | YStripes only |               2.1019 |                   475,760 |             561.62 |
-| Finder (full)        | full-precision | No index      |              38.8190 |                    25,761 |             251.52 |
-| DefaultFinder (full) | full-precision | YStripes only |               1.3981 |                   715,256 |             583.72 |
-| DefaultFinder (full) | full-precision | No index      |              11.0460 |                    90,531 |             279.02 |
+| Target               | Dataset                   | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
+| -------------------- | ------------------------- | ------------- | -------------------: | ------------------------: | -----------------: |
+| Finder (full)        | full-precision            | YStripes only |               2.0852 |                   479,570 |             561.08 |
+| Finder (full)        | full-precision            | No index      |              37.6980 |                    26,527 |             252.54 |
+| DefaultFinder (full) | full-precision + preindex | YStripes only |               1.3488 |                   741,400 |             584.30 |
+| DefaultFinder (full) | full-precision + preindex | No index      |              11.2750 |                    88,692 |             278.63 |
 
 The `FuzzyFinder` is not included in the benchmark, since it's query time is
 consistent.
