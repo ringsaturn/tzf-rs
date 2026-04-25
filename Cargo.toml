@@ -43,8 +43,9 @@ serde_json = {version = "1.0.145", optional = true}
 tzf-dist = {version = "0.0.2026-a", optional = true}
 
 # Full-precision dataset from git (~17 MB). Activated by the "full" feature.
-# Mutually exclusive with "bundled": enabling both triggers a compile_error.
-tzf-dist-git = {package = "tzf-dist", git = "https://github.com/ringsaturn/tzf-dist", rev = "v0.0.2026-a", features = [
+# The data binary is too large for crates.io; this dep is git-only.
+# version= satisfies the crates.io manifest check; cargo publish verifies default features only.
+tzf-dist-git = {package = "tzf-dist", version = "0.0.2026-a", git = "https://github.com/ringsaturn/tzf-dist", rev = "v0.0.2026-a", features = [
   "full",
 ], optional = true}
 
