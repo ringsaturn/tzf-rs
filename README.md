@@ -203,9 +203,10 @@ short time, averaging around 1,500 nanoseconds.
 
 Here is what has been done to improve performance:
 
-1. Using pre-indexing to handle most queries takes approximately 500
+1. Using the simplified dataset by default.
+2. Using pre-indexing to handle most queries takes approximately 500
    nanoseconds.
-2. Using a finely-tuned Ray Casting algorithm package
+3. Using a finely-tuned Ray Casting algorithm package
    [`ringsaturn/geometry-rs`](https://github.com/ringsaturn/geometry-rs) to
    verify whether a polygon contains a point.
    - Using YStripes to accerate polygon queries. This polygon index works when

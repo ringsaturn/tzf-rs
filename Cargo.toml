@@ -33,19 +33,18 @@ clap = {version = "4", features = [
   "derive",
 ], optional = true}
 geometry-rs = "0.4.1"
-# geometry-rs = { git = "https://github.com/ringsaturn/geometry-rs", branch = "main" }
-# geometry-rs = { path = "../geometry-rs" }
 prost = "0.14.1"
 serde = {version = "1.0.228", features = [
   "derive",
 ], optional = true}
 serde_json = {version = "1.0.145", optional = true}
+
 # Topology-simplified dataset from crates.io (~7 MB). Activated by the "bundled" feature.
-tzf-dist = {version = "0.0.2026-a-alpha5", optional = true}
+tzf-dist = {version = "0.0.2026-a", optional = true}
 
 # Full-precision dataset from git (~17 MB). Activated by the "full" feature.
 # Mutually exclusive with "bundled": enabling both triggers a compile_error.
-tzf-dist-git = {package = "tzf-dist", git = "https://github.com/ringsaturn/tzf-dist", rev = "v0.0.2026-a-alpha5", features = [
+tzf-dist-git = {package = "tzf-dist", git = "https://github.com/ringsaturn/tzf-dist", rev = "v0.0.2026-a", features = [
   "full",
 ], optional = true}
 
