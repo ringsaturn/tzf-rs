@@ -18,11 +18,16 @@ CONFIG_MAP = {
 }
 
 TARGETS = [
-    ("Finder", "FinderIndexModes", "finder"),
-    ("DefaultFinder", "DefaultFinderIndexModes", "default"),
+    ("Finder", "FinderIndexModes", "finder", "topology-simplified"),
+    ("DefaultFinder", "DefaultFinderIndexModes", "default", "topology-simplified + preindex"),
 ]
 
 SCENARIOS = ["YStripesOnly", "NoIndex"]
+
+FULL_TARGETS = [
+    ("Finder (full)", "FullFinderIndexModes", "finder_full", "full-precision"),
+    ("DefaultFinder (full)", "FullDefaultFinderIndexModes", "default_full", "full-precision + preindex"),
+]
 
 
 def parse_peak_bytes(path: Path, is_darwin: bool) -> int:
@@ -68,10 +73,23 @@ def fmt_int(value: float) -> str:
 
 
 def build_rows(bench_text: str, runs: int = 5):
+    """Build rows for the topology-simplified (bundled) benchmark report.
+
+    Row tuple layout:
+      0  target_name
+      1  dataset          ← "topology-simplified"
+      2  scenario label
+      3  config label     (not printed)
+      4  range string     (not printed)
+      5  median µs
+      6  throughput ops/s
+      7  avg peak RSS MiB
+      8  raw RSS values   (not printed)
+    """
     rows = []
     is_darwin = platform.system() == "Darwin"
 
-    for target_name, target_group, target_key in TARGETS:
+    for target_name, target_group, target_key, dataset in TARGETS:
         for scenario in SCENARIOS:
             range_us = parse_range_us(bench_text, target_group, scenario)
             if range_us is None:
@@ -91,6 +109,49 @@ def build_rows(bench_text: str, runs: int = 5):
             rows.append(
                 (
                     target_name,
+                    dataset,
+                    SCENARIO_MAP[scenario],
+                    CONFIG_MAP[scenario],
+                    f"[{fmt_float(range_us[0])}, {fmt_float(range_us[1])}, {fmt_float(range_us[2])}]",
+                    fmt_float(median),
+                    fmt_int(throughput),
+                    f"{avg_mib:.2f}",
+                    ", ".join(str(v) for v in rss_values),
+                )
+            )
+
+    return rows
+
+
+def build_full_rows(bench_text: str, runs: int = 5):
+    """Build rows for the full-precision benchmark report.
+
+    Row tuple layout mirrors build_rows (same indices).
+    """
+    rows = []
+    is_darwin = platform.system() == "Darwin"
+
+    for target_name, target_group, target_key, dataset in FULL_TARGETS:
+        for scenario in SCENARIOS:
+            range_us = parse_range_us(bench_text, target_group, scenario)
+            if range_us is None:
+                continue
+
+            median = range_us[1]
+            throughput = 1_000_000.0 / median
+            mode = MODE_MAP[scenario]
+
+            rss_values = []
+            for i in range(1, runs + 1):
+                path = Path(f"/tmp/tzf_mem_{target_key}_{mode}_{i}.time")
+                rss_values.append(parse_peak_bytes(path, is_darwin))
+
+            avg_mib = sum(rss_values) / len(rss_values) / 1024 / 1024
+
+            rows.append(
+                (
+                    target_name,
+                    dataset,
                     SCENARIO_MAP[scenario],
                     CONFIG_MAP[scenario],
                     f"[{fmt_float(range_us[0])}, {fmt_float(range_us[1])}, {fmt_float(range_us[2])}]",

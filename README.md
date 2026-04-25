@@ -57,34 +57,29 @@ A Redis protocol demo could be used here:
 
 ### Setup 100% Accurate Lookup
 
-By default, tzf-rs uses a simplified shape data. If you need 100% accurate
-lookup, you can use the following code to setup.
+> [!NOTE]
+>
+> The built-in full data feature is introduced in `v1.3.0`.
+>
+> By default, tzf-rs uses a simplified shape data. If you need 100% accurate
+> lookup, you can use the following code to setup:
+>
+> **This setup requeires more time and memory to build the `DefaultFinder`.**
 
-1. Download
-   [full data set](https://github.com/ringsaturn/tzf-rel/blob/main/combined-with-oceans.bin),
-   about 90MB.
-2. Use the following code to setup.
+```toml
+tzf-rs = { git =  "https://github.com/ringsaturn/tzf-rs", rev = "v{X}.{Y}.{Z}", features = ["full"], default-features = false }
+```
 
 ```rust,ignore
-use tzf_rs::Finder;
-use tzf_rs::pbgen::tzf::v1::Timezones;
-
-pub fn load_full() -> Vec<u8> {
-    include_bytes!("./combined-with-oceans.bin").to_vec()
-}
+use tzf_rs::DefaultFinder;
 
 fn main() {
-    println!("Hello, world!");
-    let file_bytes: Vec<u8> = load_full();
-
-    let finder = Finder::from_pb(Timezones::try_from(file_bytes).unwrap_or_default());
+    let finder = DefaultFinder::new_full();
+    println!("{}", finder.timezonenames().len());
     let tz_name = finder.get_tz_name(139.767125, 35.681236);
     println!("tz_name: {}", tz_name);
 }
 ```
-
-A full example can be found
-[here](https://github.com/ringsaturn/tzf-rs/pull/170).
 
 ## Advanced Usage - Toggle YStripes Index
 
@@ -208,9 +203,10 @@ short time, averaging around 1,500 nanoseconds.
 
 Here is what has been done to improve performance:
 
-1. Using pre-indexing to handle most queries takes approximately 500
+1. Using the simplified dataset by default.
+2. Using pre-indexing to handle most queries takes approximately 500
    nanoseconds.
-2. Using a finely-tuned Ray Casting algorithm package
+3. Using a finely-tuned Ray Casting algorithm package
    [`ringsaturn/geometry-rs`](https://github.com/ringsaturn/geometry-rs) to
    verify whether a polygon contains a point.
    - Using YStripes to accerate polygon queries. This polygon index works when
@@ -220,17 +216,23 @@ That's all. There are no black magic tricks inside the tzf-rs.
 
 Below is a benchmark run on my MacBook Pro with Apple M3 Max:
 
-```bash
-make bench
-cat benchmark_report.md
-```
+Topology-Simplified (bundled):
 
-| Target        | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
-| ------------- | ------------- | -------------------: | ------------------------: | -----------------: |
-| Finder        | YStripes only |               2.4286 |                   411,760 |              89.75 |
-| Finder        | No index      |               6.0933 |                   164,115 |              53.03 |
-| DefaultFinder | YStripes only |               0.9726 |                 1,028,172 |             111.58 |
-| DefaultFinder | No index      |               1.8955 |                   527,565 |              74.01 |
+| Target        | Dataset                        | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
+| ------------- | ------------------------------ | ------------- | -------------------: | ------------------------: | -----------------: |
+| Finder        | topology-simplified            | YStripes only |               1.2296 |                   813,273 |             103.30 |
+| Finder        | topology-simplified            | No index      |               6.5402 |                   152,901 |              51.68 |
+| DefaultFinder | topology-simplified + preindex | YStripes only |               1.1383 |                   878,503 |             125.98 |
+| DefaultFinder | topology-simplified + preindex | No index      |               2.2514 |                   444,168 |              77.79 |
+
+Full-Precision (full):
+
+| Target               | Dataset                   | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
+| -------------------- | ------------------------- | ------------- | -------------------: | ------------------------: | -----------------: |
+| Finder (full)        | full-precision            | YStripes only |               2.0852 |                   479,570 |             561.08 |
+| Finder (full)        | full-precision            | No index      |              37.6980 |                    26,527 |             252.54 |
+| DefaultFinder (full) | full-precision + preindex | YStripes only |               1.3488 |                   741,400 |             584.30 |
+| DefaultFinder (full) | full-precision + preindex | No index      |              11.2750 |                    88,692 |             278.63 |
 
 The `FuzzyFinder` is not included in the benchmark, since it's query time is
 consistent.

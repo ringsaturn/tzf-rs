@@ -22,3 +22,19 @@ impl TryFrom<Vec<u8>> for PreindexTimezones {
         Ok(Self::decode(&value[..])?)
     }
 }
+
+impl TryFrom<Vec<u8>> for CompressedTopoTimezones {
+    type Error = anyhow::Error;
+
+    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+        Ok(Self::decode(&value[..])?)
+    }
+}
+
+impl TryFrom<&'static [u8]> for CompressedTopoTimezones {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &'static [u8]) -> Result<Self, Self::Error> {
+        Ok(Self::decode(value)?)
+    }
+}

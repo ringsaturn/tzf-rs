@@ -1,5 +1,5 @@
 use std::env;
-use tzf_rel::load_reduced;
+use tzf_dist::load_topology_compress_topo;
 use tzf_rs::{DefaultFinder, Finder, FinderOptions, pbgen};
 
 fn parse_mode(mode: &str) -> FinderOptions {
@@ -22,8 +22,9 @@ fn main() {
         }
         _ => {
             let options = parse_mode(&mode);
-            let tzs = pbgen::Timezones::try_from(load_reduced()).unwrap_or_default();
-            let finder = Finder::from_pb_with_options(tzs, options);
+            let tzs = pbgen::CompressedTopoTimezones::try_from(load_topology_compress_topo())
+                .unwrap_or_default();
+            let finder = Finder::from_compressed_topo_with_options(tzs, options);
             println!("{}", finder.timezonenames().len());
         }
     }

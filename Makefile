@@ -30,10 +30,25 @@ bench:
 	cargo bench | tee benchmark_result.txt
 	./scripts/bench_memory.sh benchmark_result.txt | tee benchmark_report.md
 
+.PHONY: bench-full
+bench-full:
+	cargo bench --no-default-features --features full | tee benchmark_full_result.txt
+	./scripts/bench_memory_full.sh benchmark_full_result.txt | tee benchmark_full_report.md
+
+.PHONY: test-full
+test-full:
+	cargo test --no-default-features --features full --lib --tests
+
+benchmark_summary.md: bench bench-full
+	@printf '# Benchmark Summary\n\n## Topology-Simplified (bundled)\n\n' > benchmark_summary.md
+	@cat benchmark_report.md >> benchmark_summary.md
+	@printf '\n## Full-Precision (full)\n\n' >> benchmark_summary.md
+	@cat benchmark_full_report.md >> benchmark_summary.md
+
 .PHONY: ci
-ci: test test-examples
+ci: test test-full test-examples
 	cargo fmt --check
-	make bench
+	make benchmark_summary.md
 
 extract-plot: bench
 	cp target/criterion/DefaultFinderIndexModes/0/report/violin.svg assets/violin.svg

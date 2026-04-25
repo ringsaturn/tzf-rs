@@ -33,14 +33,20 @@ clap = {version = "4", features = [
   "derive",
 ], optional = true}
 geometry-rs = "0.4.1"
-# geometry-rs = { git = "https://github.com/ringsaturn/geometry-rs", branch = "main" }
-# geometry-rs = { path = "../geometry-rs" }
 prost = "0.14.1"
 serde = {version = "1.0.228", features = [
   "derive",
 ], optional = true}
 serde_json = {version = "1.0.145", optional = true}
-tzf-rel = "0.0.2026-a"
+
+# Topology-simplified dataset from crates.io (~7 MB). Activated by the "bundled" feature.
+tzf-dist = {version = "0.0.2026-a", optional = true}
+
+# Full-precision dataset from git (~17 MB). Activated by the "full" feature.
+# Mutually exclusive with "bundled": enabling both triggers a compile_error.
+tzf-dist-git = {package = "tzf-dist", git = "https://github.com/ringsaturn/tzf-dist", rev = "v0.0.2026-a", features = [
+  "full",
+], optional = true}
 
 [dev-dependencies]
 cities-json = "0.6.8"
@@ -50,13 +56,20 @@ criterion = {version = "0.8", features = [
 lazy_static = "1.5.0"
 
 [features]
+# "bundled" wraps dep:tzf-dist so it is detectable via cfg(feature = "bundled")
+# and can be excluded when "full" is enabled.
 default = [
   "clap",
+  "bundled",
 ]
+bundled = ["dep:tzf-dist"]
 export-geojson = [
   "serde",
   "serde_json",
 ]
+# Full-precision polygon data (~17 MB, git-only). Mutually exclusive with "bundled".
+# Usage: default-features = false, features = ["full"]   (add "clap" for the CLI binary)
+full = ["dep:tzf-dist-git"]
 
 [[bin]]
 doc = false
@@ -68,6 +81,16 @@ required-features = [
 [[bench]]
 harness = false
 name = "finders"
+required-features = ["bundled"]
+
+[[bench]]
+harness = false
+name = "finders_full"
+required-features = ["full"]
+
+[[example]]
+name = "index_memory_probe_full"
+required-features = ["full"]
 
 [build-dependencies]
 prost-build = "0.14.1"
@@ -81,10 +104,8 @@ pprof = {version = "0.15", features = [
 ]}
 
 [package.metadata.docs.rs]
-# To doc all features
-all-features = true
-# You would see why we do this later
-# As a side note, docs.rs build doc with nightly cargo 
+# docs.rs cannot resolve git dependencies, so only document the "bundled" path.
+features = ["bundled", "export-geojson"]
 rustdoc-args = [
   "--cfg",
   "docsrs",
