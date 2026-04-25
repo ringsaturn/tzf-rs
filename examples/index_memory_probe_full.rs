@@ -10,7 +10,9 @@ fn parse_mode(mode: &str) -> FinderOptions {
 }
 
 fn main() {
-    let target = env::args().nth(1).unwrap_or_else(|| "default_full".to_string());
+    let target = env::args()
+        .nth(1)
+        .unwrap_or_else(|| "default_full".to_string());
     let mode = env::args().nth(2).unwrap_or_else(|| "ystripes".to_string());
     let options = parse_mode(&mode);
 
