@@ -117,12 +117,16 @@ pub struct PreindexTimezones {
     pub version: ::prost::alloc::string::String,
 }
 /// Wrapper for a sequence of inline points used inside a RingSegment oneof.
+/// (proto3 does not allow repeated fields directly in a oneof.)
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct InlinePoints {
     #[prost(message, repeated, tag = "1")]
     pub points: ::prost::alloc::vec::Vec<Point>,
 }
 /// A ring segment: either inline points or a reference to a shared edge.
+/// Shared edges are stored once in TopoTimezones.shared_edges and referenced
+/// by their index; edge_reversed references the same edge but traversed in
+/// the opposite direction.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RingSegment {
     #[prost(oneof = "ring_segment::Content", tags = "1, 2, 3")]
@@ -134,13 +138,17 @@ pub mod ring_segment {
     pub enum Content {
         #[prost(message, tag = "1")]
         Inline(super::InlinePoints),
+        /// index into TopoTimezones.shared_edges (canonical direction)
         #[prost(int32, tag = "2")]
         EdgeForward(i32),
+        /// index into TopoTimezones.shared_edges (reversed direction)
         #[prost(int32, tag = "3")]
         EdgeReversed(i32),
     }
 }
 /// A timezone polygon in topology format.
+/// The exterior ring is represented as an ordered sequence of segments.
+/// Holes are nested TopoPolygons.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TopoPolygon {
     #[prost(message, repeated, tag = "1")]
@@ -157,6 +165,8 @@ pub struct TopoTimezone {
     pub name: ::prost::alloc::string::String,
 }
 /// A shared boundary edge stored once in the global edge library.
+/// Rings reference it by index (forward or reversed) instead of repeating
+/// the point sequence.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SharedEdge {
     #[prost(int32, tag = "1")]
@@ -165,6 +175,10 @@ pub struct SharedEdge {
     pub points: ::prost::alloc::vec::Vec<Point>,
 }
 /// Timezones in topology format with shared-edge deduplication.
+/// Shared timezone boundaries are stored exactly once in shared_edges;
+/// rings reference them by ID rather than duplicating the point sequences.
+/// This format targets full-precision data where ~52% of boundary edges are
+/// shared, reducing the 96 MB full dataset by ~30–35 MB.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TopoTimezones {
     #[prost(message, repeated, tag = "1")]
@@ -174,17 +188,20 @@ pub struct TopoTimezones {
     #[prost(string, tag = "3")]
     pub version: ::prost::alloc::string::String,
 }
-/// CompressedSharedEdge stores a shared boundary edge with polyline-encoded points.
+/// CompressedSharedEdge stores a shared boundary edge with its point sequence
+/// polyline-encoded (delta + zigzag, same algorithm as CompressedPolygon).
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CompressedSharedEdge {
     #[prost(int32, tag = "1")]
     pub id: i32,
+    /// polyline-encoded point sequence
     #[prost(bytes = "vec", tag = "2")]
     pub points: ::prost::alloc::vec::Vec<u8>,
 }
 /// CompressedInlinePoints stores a short inline ring segment as polyline bytes.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CompressedInlinePoints {
+    /// polyline-encoded point sequence
     #[prost(bytes = "vec", tag = "1")]
     pub points: ::prost::alloc::vec::Vec<u8>,
 }
@@ -222,7 +239,10 @@ pub struct CompressedTopoTimezone {
     #[prost(string, tag = "2")]
     pub name: ::prost::alloc::string::String,
 }
-/// CompressedTopoTimezones combines shared-edge deduplication with polyline compression.
+/// CompressedTopoTimezones combines shared-edge deduplication with polyline
+/// coordinate compression. Shared edge point sequences and inline segments are
+/// stored as polyline bytes instead of repeated Point messages, significantly
+/// reducing file size on top of the deduplication savings.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CompressedTopoTimezones {
     #[prost(enumeration = "CompressMethod", tag = "1")]
