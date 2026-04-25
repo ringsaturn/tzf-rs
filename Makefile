@@ -23,7 +23,7 @@ test-examples:
 
 .PHONY: doc
 doc:
-	cargo +nightly doc --no-deps --all-features
+	cargo +nightly doc --no-deps --no-default-features --features bundled,export-geojson
 
 .PHONY: bench
 bench:
