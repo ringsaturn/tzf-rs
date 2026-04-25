@@ -3,3 +3,5 @@ src/data/*.pb
 tmp/
 benchmark_result.txt
 benchmark_report.md
+benchmark_full_result.txt
+benchmark_full_report.md

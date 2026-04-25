@@ -1,7 +1,7 @@
 use cities_json::get_random_cities;
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use lazy_static::lazy_static;
-use tzf_rs::{DefaultFinder, FuzzyFinder};
+use tzf_rs::{DefaultFinder};
 
 lazy_static! {
     static ref FULL_FINDER: DefaultFinder = DefaultFinder::new_full();

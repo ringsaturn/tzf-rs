@@ -33,6 +33,7 @@ bench:
 .PHONY: bench-full
 bench-full:
 	cargo bench --no-default-features --features full | tee benchmark_full_result.txt
+	./scripts/bench_memory_full.sh benchmark_full_result.txt | tee benchmark_full_report.md
 
 .PHONY: test-full
 test-full:

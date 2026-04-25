@@ -24,6 +24,10 @@ TARGETS = [
 
 SCENARIOS = ["YStripesOnly", "NoIndex"]
 
+FULL_TARGETS = [
+    ("DefaultFinder (full)", "FullFinders", "DefaultFinder_Full", "full"),
+]
+
 
 def parse_peak_bytes(path: Path, is_darwin: bool) -> int:
     txt = path.read_text()
@@ -100,5 +104,40 @@ def build_rows(bench_text: str, runs: int = 5):
                     ", ".join(str(v) for v in rss_values),
                 )
             )
+
+    return rows
+
+
+def build_full_rows(bench_text: str, runs: int = 5):
+    rows = []
+    is_darwin = platform.system() == "Darwin"
+
+    for display_name, group, scenario, probe_key in FULL_TARGETS:
+        range_us = parse_range_us(bench_text, group, scenario)
+        if range_us is None:
+            continue
+
+        median = range_us[1]
+        throughput = 1_000_000.0 / median
+
+        rss_values = []
+        for i in range(1, runs + 1):
+            path = Path(f"/tmp/tzf_mem_{probe_key}_{i}.time")
+            rss_values.append(parse_peak_bytes(path, is_darwin))
+
+        avg_mib = sum(rss_values) / len(rss_values) / 1024 / 1024
+
+        rows.append(
+            (
+                display_name,
+                "full-precision",
+                "`full` feature",
+                f"[{fmt_float(range_us[0])}, {fmt_float(range_us[1])}, {fmt_float(range_us[2])}]",
+                fmt_float(median),
+                fmt_int(throughput),
+                f"{avg_mib:.2f}",
+                ", ".join(str(v) for v in rss_values),
+            )
+        )
 
     return rows

@@ -89,6 +89,10 @@ harness = false
 name = "finders_full"
 required-features = ["full"]
 
+[[example]]
+name = "index_memory_probe_full"
+required-features = ["full"]
+
 [build-dependencies]
 prost-build = "0.14.1"
 
