@@ -71,18 +71,8 @@ jobs:
       - name: Publish full benchmark report to job summary
         if: always()
         run: |
-          if [ -f benchmark_full_result.txt ]; then
-            echo "## Full Benchmark Results" >> "$GITHUB_STEP_SUMMARY"
-            cat benchmark_full_result.txt >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "benchmark_full_result.txt not found." >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Publish full benchmark memory report to job summary
-        if: always()
-        run: |
           if [ -f benchmark_full_report.md ]; then
-            echo "## Full Benchmark Memory Report" >> "$GITHUB_STEP_SUMMARY"
+            echo "## Full Benchmark Report" >> "$GITHUB_STEP_SUMMARY"
             cat benchmark_full_report.md >> "$GITHUB_STEP_SUMMARY"
           else
             echo "benchmark_full_report.md not found." >> "$GITHUB_STEP_SUMMARY"
