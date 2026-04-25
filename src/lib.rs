@@ -1122,4 +1122,3 @@ impl DefaultFinder {
         self.finder.get_tz_geojson(timezone_name)
     }
 }
-
