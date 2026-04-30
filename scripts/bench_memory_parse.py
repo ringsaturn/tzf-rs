@@ -29,6 +29,24 @@ FULL_TARGETS = [
     ("DefaultFinder (full)", "FullDefaultFinderIndexModes", "default_full", "full-precision + preindex"),
 ]
 
+# Edge-city benchmark groups (FuzzyFinder misses only, no memory probing needed).
+EDGE_SCENARIO_MAP = {
+    "FuzzyFinder_miss": "FuzzyFinder miss",
+    "DefaultFinder_YStripes_fallback": "DefaultFinder (YStripes) fallback",
+    "YStripes": "YStripes",
+    "NoIndex": "No index",
+}
+
+EDGE_GROUPS = [
+    # (display name, criterion group, scenario key, dataset label)
+    ("FuzzyFinder", "EdgeCities/FuzzyVsFallback", "FuzzyFinder_miss", "preindex"),
+    ("DefaultFinder (YStripes)", "EdgeCities/FuzzyVsFallback", "DefaultFinder_YStripes_fallback", "topology-simplified + preindex"),
+    ("Finder", "EdgeCities/FinderIndexModes", "YStripes", "topology-simplified"),
+    ("Finder", "EdgeCities/FinderIndexModes", "NoIndex", "topology-simplified"),
+    ("DefaultFinder", "EdgeCities/DefaultFinderIndexModes", "YStripes", "topology-simplified + preindex"),
+    ("DefaultFinder", "EdgeCities/DefaultFinderIndexModes", "NoIndex", "topology-simplified + preindex"),
+]
+
 
 def parse_peak_bytes(path: Path, is_darwin: bool) -> int:
     txt = path.read_text()
@@ -162,4 +180,35 @@ def build_full_rows(bench_text: str, runs: int = 5):
                 )
             )
 
+    return rows
+
+
+def build_edge_rows(bench_text: str):
+    """Build rows for the edge-city benchmark report (no memory probing).
+
+    Row tuple layout:
+      0  target_name
+      1  dataset
+      2  scenario label
+      3  range string     (not printed)
+      4  median µs
+      5  throughput ops/s
+    """
+    rows = []
+    for target_name, target_group, scenario, dataset in EDGE_GROUPS:
+        range_us = parse_range_us(bench_text, target_group, scenario)
+        if range_us is None:
+            continue
+        median = range_us[1]
+        throughput = 1_000_000.0 / median
+        rows.append(
+            (
+                target_name,
+                dataset,
+                EDGE_SCENARIO_MAP[scenario],
+                f"[{fmt_float(range_us[0])}, {fmt_float(range_us[1])}, {fmt_float(range_us[2])}]",
+                fmt_float(median),
+                fmt_int(throughput),
+            )
+        )
     return rows

@@ -55,6 +55,8 @@ criterion = {version = "0.8", features = [
   "html_reports",
 ]}
 lazy_static = "1.5.0"
+serde = {version = "1", features = ["derive"]}
+serde_json = "1"
 
 [features]
 # "bundled" wraps dep:tzf-dist so it is detectable via cfg(feature = "bundled")
@@ -88,6 +90,15 @@ required-features = ["bundled"]
 harness = false
 name = "finders_full"
 required-features = ["full"]
+
+[[bench]]
+harness = false
+name = "edges"
+required-features = ["bundled"]
+
+[[example]]
+name = "gen_edges"
+required-features = ["bundled"]
 
 [[example]]
 name = "index_memory_probe_full"

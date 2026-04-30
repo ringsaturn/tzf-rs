@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-from bench_memory_parse import build_rows
+from bench_memory_parse import build_edge_rows, build_rows
 
 
 def main() -> int:
@@ -16,15 +16,26 @@ def main() -> int:
         return 1
 
     bench_text = bench_file.read_text()
-    rows = build_rows(bench_text, runs=5)
 
-    print(
-        "| Target | Dataset | Scenario | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |"
-    )
+    rows = build_rows(bench_text, runs=5)
+    print("### Random Cities")
+    print()
+    print("| Target | Dataset | Scenario | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |")
     print("| --- | --- | --- |---:|---:|---:|")
     for row in rows:
         # indices: 0=target 1=dataset 2=scenario 5=median 6=throughput 7=rss
         print(f"| {row[0]} | {row[1]} | {row[2]} | {row[5]} | {row[6]} | {row[7]} |")
+
+    edge_rows = build_edge_rows(bench_text)
+    if edge_rows:
+        print()
+        print("### Edge Cities (FuzzyFinder misses)")
+        print()
+        print("| Target | Dataset | Scenario | Median estimate (µs) | Approx throughput (ops/s) |")
+        print("| --- | --- | --- |---:|---:|")
+        for row in edge_rows:
+            # indices: 0=target 1=dataset 2=scenario 4=median 5=throughput
+            print(f"| {row[0]} | {row[1]} | {row[2]} | {row[4]} | {row[5]} |")
 
     return 0
 
