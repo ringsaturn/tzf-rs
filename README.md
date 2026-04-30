@@ -216,34 +216,34 @@ That's all. There are no black magic tricks inside the tzf-rs.
 
 Below is a benchmark run on my MacBook Pro with Apple M3 Max:
 
-Random Cities:
+Topology-Simplified (bundled) / Random Cities:
 
 | Target        | Dataset                        | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
 | ------------- | ------------------------------ | ------------- | -------------------: | ------------------------: | -----------------: |
-| Finder        | topology-simplified            | YStripes only |               1.1567 |                   864,528 |             105.64 |
-| Finder        | topology-simplified            | No index      |               4.8101 |                   207,896 |              52.91 |
-| DefaultFinder | topology-simplified + preindex | YStripes only |               1.0028 |                   997,208 |             127.94 |
-| DefaultFinder | topology-simplified + preindex | No index      |              11.7200 |                    85,324 |              78.25 |
+| Finder        | topology-simplified            | YStripes only |               1.0989 |                   910,001 |             105.61 |
+| Finder        | topology-simplified            | No index      |               4.8307 |                   207,009 |              53.05 |
+| DefaultFinder | topology-simplified + preindex | YStripes only |               0.6031 |                 1,658,045 |             127.73 |
+| DefaultFinder | topology-simplified + preindex | No index      |               5.3213 |                   187,924 |              78.20 |
 
-Edge Cities (FuzzyFinder misses):
+Topology-Simplified (bundled) / Edge Cities (FuzzyFinder misses)
 
 | Target                   | Dataset                        | Scenario                          | Median estimate (µs) | Approx throughput (ops/s) |
 | ------------------------ | ------------------------------ | --------------------------------- | -------------------: | ------------------------: |
-| FuzzyFinder              | preindex                       | FuzzyFinder miss                  |               0.4543 |                 2,201,382 |
-| DefaultFinder (YStripes) | topology-simplified + preindex | DefaultFinder (YStripes) fallback |               2.5909 |                   385,966 |
-| Finder                   | topology-simplified            | YStripes                          |               1.1002 |                   908,926 |
-| Finder                   | topology-simplified            | No index                          |               4.8101 |                   207,896 |
-| DefaultFinder            | topology-simplified + preindex | YStripes                          |               2.6697 |                   374,574 |
-| DefaultFinder            | topology-simplified + preindex | No index                          |              11.7200 |                    85,324 |
+| FuzzyFinder              | preindex                       | FuzzyFinder miss                  |               0.4407 |                 2,268,860 |
+| DefaultFinder (YStripes) | topology-simplified + preindex | DefaultFinder (YStripes) fallback |               1.5114 |                   661,638 |
+| Finder                   | topology-simplified            | YStripes                          |               1.0223 |                   978,186 |
+| Finder                   | topology-simplified            | No index                          |               4.8307 |                   207,009 |
+| DefaultFinder            | topology-simplified + preindex | YStripes                          |               1.4986 |                   667,289 |
+| DefaultFinder            | topology-simplified + preindex | No index                          |               5.3213 |                   187,924 |
 
 Full-Precision (full):
 
 | Target               | Dataset                   | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
 | -------------------- | ------------------------- | ------------- | -------------------: | ------------------------: | -----------------: |
-| Finder (full)        | full-precision            | YStripes only |               2.0694 |                   483,232 |             562.44 |
-| Finder (full)        | full-precision            | No index      |              38.2700 |                    26,130 |             254.02 |
-| DefaultFinder (full) | full-precision + preindex | YStripes only |               1.2555 |                   796,495 |             586.14 |
-| DefaultFinder (full) | full-precision + preindex | No index      |              11.5220 |                    86,790 |             281.32 |
+| Finder (full)        | full-precision            | YStripes only |               1.8384 |                   543,951 |             561.45 |
+| Finder (full)        | full-precision            | No index      |              47.0800 |                    21,240 |             254.88 |
+| DefaultFinder (full) | full-precision + preindex | YStripes only |               0.7551 |                 1,324,240 |             585.71 |
+| DefaultFinder (full) | full-precision + preindex | No index      |               8.3770 |                   119,374 |             280.68 |
 
 The `FuzzyFinder` is not included in the benchmark, since it's query time is
 consistent.
