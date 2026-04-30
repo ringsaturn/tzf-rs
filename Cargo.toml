@@ -19,7 +19,7 @@ license = "MIT"
 name = "tzf-rs"
 readme = "README.md"
 repository = "https://github.com/ringsaturn/tzf-rs"
-version = "1.3.0"
+version = "1.3.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -40,12 +40,12 @@ serde = {version = "1.0.228", features = [
 serde_json = {version = "1.0.145", optional = true}
 
 # Topology-simplified dataset from crates.io (~7 MB). Activated by the "bundled" feature.
-tzf-dist = {version = "0.0.2026-a", optional = true}
+tzf-dist = {version = "0.0.2026-b", optional = true}
 
 # Full-precision dataset from git (~17 MB). Activated by the "full" feature.
 # The data binary is too large for crates.io; this dep is git-only.
 # version= satisfies the crates.io manifest check; cargo publish verifies default features only.
-tzf-dist-git = {package = "tzf-dist", version = "0.0.2026-a", git = "https://github.com/ringsaturn/tzf-dist", rev = "v0.0.2026-a", features = [
+tzf-dist-git = {package = "tzf-dist", version = "0.0.2026-b", git = "https://github.com/ringsaturn/tzf-dist", rev = "v0.0.2026-b", features = [
   "full",
 ], optional = true}
 
