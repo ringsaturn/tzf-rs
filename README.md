@@ -272,6 +272,9 @@ Rust port's Python binding; you can view it
 - Continuous Benchmark compared with other packages:
   [`ringsaturn/tz-benchmark`](https://github.com/ringsaturn/tz-benchmark)
 
+See [Project tzf](https://project-tzf.ringsaturn.me/docs/getting-started/) for
+more information.
+
 ### Bindings
 
 - Ruby, see [`HarlemSquirrel/tzf-rb`](https://github.com/HarlemSquirrel/tzf-rb)
