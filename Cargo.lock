@@ -1264,6 +1264,7 @@ dependencies = [
 [[package]]
 name = "tzf-dist"
 version = "0.0.2026-b"
+source = "git+https://github.com/ringsaturn/tzf-dist?branch=data#1bb515f48dd48d8f1246a24deff2ec605ff59c90"
 
 [[package]]
 name = "tzf-rs"
