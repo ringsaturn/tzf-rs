@@ -226,8 +226,8 @@ impl Finder {
 
         let grid = tzs.grid_index.map(|gi| {
             let mut m = HashMap::with_capacity(gi.cells.len());
-            for cell in &gi.cells {
-                m.insert((cell.lng as i16, cell.lat as i16), cell.tz_indices.clone());
+            for cell in gi.cells {
+                m.insert((cell.lng as i16, cell.lat as i16), cell.tz_indices);
             }
             m
         });
@@ -305,16 +305,8 @@ impl Finder {
     /// ```
     #[must_use]
     pub fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
-        let direct_res = self._get_tz_name(lng, lat);
-        if !direct_res.is_empty() {
-            return direct_res;
-        }
-        ""
-    }
-
-    fn _get_tz_name(&self, lng: f64, lat: f64) -> &str {
         if let Some(ref grid) = self.grid {
-            let key = ((lng.floor() as i16), (lat.floor() as i16));
+            let key = (lng.floor() as i16, lat.floor() as i16);
             let indices = match grid.get(&key) {
                 Some(v) => v,
                 None => return "",
@@ -350,6 +342,18 @@ impl Finder {
     #[must_use]
     pub fn get_tz_names(&self, lng: f64, lat: f64) -> Vec<&str> {
         let mut ret: Vec<&str> = vec![];
+        if let Some(ref grid) = self.grid {
+            let key = (lng.floor() as i16, lat.floor() as i16);
+            if let Some(indices) = grid.get(&key) {
+                let p = geometry_rs::Point { x: lng, y: lat };
+                for &idx in indices {
+                    if self.all[idx as usize].contains_point(&p) {
+                        ret.push(&self.all[idx as usize].name);
+                    }
+                }
+            }
+            return ret;
+        }
         let p = geometry_rs::Point { x: lng, y: lat };
         for item in &self.all {
             if item.contains_point(&p) {
@@ -755,12 +759,11 @@ impl FuzzyFinder {
     pub fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
         for zoom in self.min_zoom..self.max_zoom {
             let idx = deg2num(lng, lat, zoom);
-            let k = &(idx.0, idx.1, zoom);
-            let ret = self.all.get(k);
-            if ret.is_none() {
-                continue;
+            if let Some(names) = self.all.get(&(idx.0, idx.1, zoom)) {
+                if let Some(name) = names.first() {
+                    return name;
+                }
             }
-            return ret.unwrap().first().unwrap();
         }
         ""
     }
@@ -769,13 +772,10 @@ impl FuzzyFinder {
         let mut names: Vec<&str> = vec![];
         for zoom in self.min_zoom..self.max_zoom {
             let idx = deg2num(lng, lat, zoom);
-            let k = &(idx.0, idx.1, zoom);
-            let ret = self.all.get(k);
-            if ret.is_none() {
-                continue;
-            }
-            for item in ret.unwrap() {
-                names.push(item);
+            if let Some(entries) = self.all.get(&(idx.0, idx.1, zoom)) {
+                for item in entries {
+                    names.push(item);
+                }
             }
         }
         names
