@@ -40,12 +40,17 @@ serde = {version = "1.0.228", features = [
 serde_json = {version = "1.0.145", optional = true}
 
 # Topology-simplified dataset from crates.io (~7 MB). Activated by the "bundled" feature.
-tzf-dist = {version = "0.0.2026-b", optional = true}
+# tzf-dist = {version = "0.0.2026-b", optional = true}
+tzf-dist = { path = "/Users/ringsaturn/go/src/github.com/ringsaturn/tzf-dist", optional = true }
 
 # Full-precision dataset from git (~17 MB). Activated by the "full" feature.
 # The data binary is too large for crates.io; this dep is git-only.
 # version= satisfies the crates.io manifest check; cargo publish verifies default features only.
-tzf-dist-git = {package = "tzf-dist", version = "0.0.2026-b", git = "https://github.com/ringsaturn/tzf-dist", rev = "v0.0.2026-b", features = [
+# tzf-dist-git = {package = "tzf-dist", version = "0.0.2026-b", git = "https://github.com/ringsaturn/tzf-dist", rev = "v0.0.2026-b", features = [
+#   "full",
+# ], optional = true}
+
+tzf-dist-git = {package = "tzf-dist", path = "/Users/ringsaturn/go/src/github.com/ringsaturn/tzf-dist", features = [
   "full",
 ], optional = true}
 

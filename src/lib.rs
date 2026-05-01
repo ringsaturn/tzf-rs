@@ -46,6 +46,10 @@ impl Item {
 pub struct Finder {
     all: Vec<Item>,
     data_version: String,
+    // grid maps (floor(lng), floor(lat)) → candidate item indices.
+    // Populated automatically when loading CompressedTopoTimezones that
+    // contains an embedded GridIndex.
+    grid: Option<HashMap<(i16, i16), Vec<u32>>>,
 }
 
 const DEFAULT_RTREE_MIN_SEGMENTS: usize = 64;
@@ -170,6 +174,7 @@ impl Finder {
         let mut f = Self {
             all: vec![],
             data_version: tzs.version,
+            grid: None,
         };
         for tz in &tzs.timezones {
             let mut polys: Vec<Polygon> = vec![];
@@ -219,9 +224,18 @@ impl Finder {
             edges[edge.id as usize] = decode_polyline(&edge.points);
         }
 
+        let grid = tzs.grid_index.map(|gi| {
+            let mut m = HashMap::with_capacity(gi.cells.len());
+            for cell in &gi.cells {
+                m.insert((cell.lng as i16, cell.lat as i16), cell.tz_indices.clone());
+            }
+            m
+        });
+
         let mut f = Self {
             all: vec![],
             data_version: tzs.version,
+            grid,
         };
 
         for tz in &tzs.timezones {
@@ -299,6 +313,26 @@ impl Finder {
     }
 
     fn _get_tz_name(&self, lng: f64, lat: f64) -> &str {
+        if let Some(ref grid) = self.grid {
+            let key = ((lng.floor() as i16), (lat.floor() as i16));
+            let indices = match grid.get(&key) {
+                Some(v) => v,
+                None => return "",
+            };
+            // Single-candidate short-circuit: skip PIP when there is only one
+            // candidate and we are away from antimeridian / pole edges.
+            if indices.len() == 1 && (-179.0..179.0).contains(&lng) && (-89.0..89.0).contains(&lat)
+            {
+                return &self.all[indices[0] as usize].name;
+            }
+            let p = geometry_rs::Point { x: lng, y: lat };
+            for &idx in indices {
+                if self.all[idx as usize].contains_point(&p) {
+                    return &self.all[idx as usize].name;
+                }
+            }
+            return "";
+        }
         let p = geometry_rs::Point { x: lng, y: lat };
         for item in &self.all {
             if item.contains_point(&p) {

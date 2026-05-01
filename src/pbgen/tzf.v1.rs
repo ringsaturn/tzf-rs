@@ -243,6 +243,8 @@ pub struct CompressedTopoTimezone {
 /// coordinate compression. Shared edge point sequences and inline segments are
 /// stored as polyline bytes instead of repeated Point messages, significantly
 /// reducing file size on top of the deduplication savings.
+/// grid_index is an optional embedded 1°×1° candidate-reduction index built
+/// at compress time. When present, Finder uses it to skip full linear scans.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CompressedTopoTimezones {
     #[prost(enumeration = "CompressMethod", tag = "1")]
@@ -252,6 +254,31 @@ pub struct CompressedTopoTimezones {
     #[prost(message, repeated, tag = "3")]
     pub timezones: ::prost::alloc::vec::Vec<CompressedTopoTimezone>,
     #[prost(string, tag = "4")]
+    pub version: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "5")]
+    pub grid_index: ::core::option::Option<GridIndex>,
+}
+/// GridIndexCell records the timezone indices that intersect a single 1°×1° cell.
+/// tz_indices are 0-based positions into the timezones array of the companion
+/// CompressedTopoTimezones (or Timezones) file, matching the order used by Finder.items.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct GridIndexCell {
+    /// floor(longitude), -180..179
+    #[prost(sint32, tag = "1")]
+    pub lng: i32,
+    /// floor(latitude), -90..89
+    #[prost(sint32, tag = "2")]
+    pub lat: i32,
+    #[prost(uint32, repeated, tag = "3")]
+    pub tz_indices: ::prost::alloc::vec::Vec<u32>,
+}
+/// GridIndex is the complete 1°×1° candidate-reduction index.
+/// Only cells with at least one intersecting timezone are stored.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GridIndex {
+    #[prost(message, repeated, tag = "1")]
+    pub cells: ::prost::alloc::vec::Vec<GridIndexCell>,
+    #[prost(string, tag = "2")]
     pub version: ::prost::alloc::string::String,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
