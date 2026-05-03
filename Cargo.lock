@@ -1263,14 +1263,14 @@ dependencies = [
 
 [[package]]
 name = "tzf-dist"
-version = "0.0.2026-b"
+version = "0.0.2026-b-fix1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd00715a173d8820c2cb658625140cdb044b58bd21d18ba3f61a6090f7ab5b49"
+checksum = "5d01156e05a8a494a8cfd993ae5990e9f39813c119bd490e0a67dd0bcbdbf1b6"
 
 [[package]]
 name = "tzf-dist"
-version = "0.0.2026-b"
-source = "git+https://github.com/ringsaturn/tzf-dist?rev=v0.0.2026-b#5c768ee8e16258bfbad26df6127f6c9f8355b643"
+version = "0.0.2026-b-fix1"
+source = "git+https://github.com/ringsaturn/tzf-dist?rev=v0.0.2026-b-fix1#5fba8f1a92d6c576fb85c46704f30397da88cfac"
 
 [[package]]
 name = "tzf-rs"
@@ -1288,8 +1288,8 @@ dependencies = [
  "prost-build",
  "serde",
  "serde_json",
- "tzf-dist 0.0.2026-b (registry+https://github.com/rust-lang/crates.io-index)",
- "tzf-dist 0.0.2026-b (git+https://github.com/ringsaturn/tzf-dist?rev=v0.0.2026-b)",
+ "tzf-dist 0.0.2026-b-fix1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tzf-dist 0.0.2026-b-fix1 (git+https://github.com/ringsaturn/tzf-dist?rev=v0.0.2026-b-fix1)",
 ]
 
 [[package]]
