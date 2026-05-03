@@ -562,9 +562,9 @@ impl Default for Finder {
     clippy::similar_names
 )]
 pub fn deg2num(lng: f64, lat: f64, zoom: i64) -> (i64, i64) {
+    let n = (1i64 << zoom) as f64;
     let lat_rad = lat.to_radians();
-    let n = f64::powf(2.0, zoom as f64);
-    let xtile = (lng + 180.0) / 360.0 * n;
+    let xtile = (lng / 360.0 + 0.5) * n;
     let ytile = (1.0 - lat_rad.tan().asinh() / PI) / 2.0 * n;
 
     // Possible precision loss here
@@ -757,9 +757,15 @@ impl FuzzyFinder {
     /// - Panics if `lng` or `lat` is not a number.
     #[must_use]
     pub fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
+        if self.max_zoom <= self.min_zoom {
+            return "";
+        }
+        // Compute tile coords once at the highest zoom, then right-shift for coarser levels.
+        let top_zoom = self.max_zoom - 1;
+        let (high_x, high_y) = deg2num(lng, lat, top_zoom);
         for zoom in self.min_zoom..self.max_zoom {
-            let idx = deg2num(lng, lat, zoom);
-            if let Some(names) = self.all.get(&(idx.0, idx.1, zoom)) {
+            let shift = (top_zoom - zoom) as u32;
+            if let Some(names) = self.all.get(&(high_x >> shift, high_y >> shift, zoom)) {
                 if let Some(name) = names.first() {
                     return name;
                 }
@@ -770,9 +776,14 @@ impl FuzzyFinder {
 
     pub fn get_tz_names(&self, lng: f64, lat: f64) -> Vec<&str> {
         let mut names: Vec<&str> = vec![];
+        if self.max_zoom <= self.min_zoom {
+            return names;
+        }
+        let top_zoom = self.max_zoom - 1;
+        let (high_x, high_y) = deg2num(lng, lat, top_zoom);
         for zoom in self.min_zoom..self.max_zoom {
-            let idx = deg2num(lng, lat, zoom);
-            if let Some(entries) = self.all.get(&(idx.0, idx.1, zoom)) {
+            let shift = (top_zoom - zoom) as u32;
+            if let Some(entries) = self.all.get(&(high_x >> shift, high_y >> shift, zoom)) {
                 for item in entries {
                     names.push(item);
                 }
