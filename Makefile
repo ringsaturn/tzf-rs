@@ -2,8 +2,11 @@
 fmt:
 	cargo fmt
 
-THIRDPARTY.yml: cargo.lock Cargo.toml
+THIRDPARTY.yml: Cargo.lock Cargo.toml
 	cargo-bundle-licenses --format yaml --output THIRDPARTY.yml
+
+NOTICE: THIRDPARTY.yml scripts/build_notice.py
+	python3 scripts/build_notice.py
 
 .PHONY: pb
 pb:

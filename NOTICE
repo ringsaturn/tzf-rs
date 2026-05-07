@@ -1,0 +1,131 @@
+NOTICE
+
+This product includes software developed by [github.com/ringsaturn/tzf-rs].
+------------------------------------------------------------------------
+
+anstream (github.com/rust-cli/anstyle)
+License: MIT OR Apache-2.0
+Copyright (c) Individual contributors
+
+anstyle (github.com/rust-cli/anstyle)
+License: MIT OR Apache-2.0
+Copyright (c) Individual contributors
+
+anstyle-parse (github.com/rust-cli/anstyle)
+License: MIT OR Apache-2.0
+Copyright (c) Individual contributors
+
+anstyle-query (github.com/rust-cli/anstyle)
+License: MIT OR Apache-2.0
+Copyright (c) Individual contributors
+
+anstyle-wincon (github.com/rust-cli/anstyle)
+License: MIT OR Apache-2.0
+Copyright (c) Individual contributors
+
+anyhow (github.com/dtolnay/anyhow)
+License: MIT OR Apache-2.0
+Author: dtolnay
+
+bytes (github.com/tokio-rs/bytes)
+License: MIT
+Copyright (c) 2018 Carl Lerche
+
+clap (github.com/clap-rs/clap)
+License: MIT OR Apache-2.0
+Copyright (c) Individual contributors
+
+clap_builder (github.com/clap-rs/clap)
+License: MIT OR Apache-2.0
+Copyright (c) Individual contributors
+
+clap_derive (github.com/clap-rs/clap)
+License: MIT OR Apache-2.0
+Copyright (c) Individual contributors
+
+clap_lex (github.com/clap-rs/clap)
+License: MIT OR Apache-2.0
+Copyright (c) Individual contributors
+
+colorchoice (github.com/rust-cli/anstyle)
+License: MIT OR Apache-2.0
+Copyright (c) Individual contributors
+
+either (github.com/rayon-rs/either)
+License: MIT OR Apache-2.0
+Copyright (c) 2015; Author: rayon-rs
+
+geometry-rs (github.com/ringsaturn/geometry-rs)
+License: MIT
+Copyright (c) 2022 ringsaturn
+
+heck (github.com/withoutboats/heck)
+License: MIT OR Apache-2.0
+Copyright (c) 2015 The Rust Project Developers
+
+is_terminal_polyfill (github.com/polyfill-rs/is_terminal_polyfill)
+License: MIT OR Apache-2.0
+Copyright (c) Individual contributors
+
+itertools (github.com/rust-itertools/itertools)
+License: MIT OR Apache-2.0
+Copyright (c) 2015; Author: rust-itertools
+
+once_cell_polyfill (github.com/polyfill-rs/once_cell_polyfill)
+License: MIT OR Apache-2.0
+Copyright (c) Individual contributors
+
+pqueue (github.com/tidwall/pqueue)
+License: MIT
+Copyright (c) 2022 Josh Baker
+
+proc-macro2 (github.com/dtolnay/proc-macro2)
+License: MIT OR Apache-2.0
+Author: dtolnay
+
+prost (github.com/tokio-rs/prost)
+License: Apache-2.0
+Author: tokio-rs
+
+prost-derive (github.com/tokio-rs/prost)
+License: Apache-2.0
+Author: tokio-rs
+
+quote (github.com/dtolnay/quote)
+License: MIT OR Apache-2.0
+Author: dtolnay
+
+rtree_rs (github.com/tidwall/rtree.rs)
+License: MIT
+Copyright (c) 2022 Josh Baker
+
+strsim (github.com/rapidfuzz/strsim-rs)
+License: MIT
+Copyright (c) 2015 Danny Guo; Copyright (c) 2016 Titus Wormer <tituswormer@gmail.com>; Copyright (c) 2018 Akash Kurdekar
+
+syn (github.com/dtolnay/syn)
+License: MIT OR Apache-2.0
+Author: dtolnay
+
+tzf-dist (github.com/ringsaturn/tzf-dist)
+License: MIT
+Copyright (c) 2026 Han Xiao
+
+tzf-dist (github.com/ringsaturn/tzf-dist) (data)
+License: ODbL-1.0
+
+unicode-ident (github.com/dtolnay/unicode-ident)
+License: (MIT OR Apache-2.0) AND Unicode-3.0
+Author: dtolnay
+
+utf8parse (github.com/alacritty/vte)
+License: Apache-2.0 OR MIT
+Copyright (c) 2016 Joe Wilm
+
+windows-link (github.com/microsoft/windows-rs)
+License: MIT OR Apache-2.0
+Copyright (c) Microsoft Corporation
+
+windows-sys (github.com/microsoft/windows-rs)
+License: MIT OR Apache-2.0
+Copyright (c) Microsoft Corporation
