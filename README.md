@@ -13,13 +13,13 @@ By default, the binary is built as well. If you don't want/need it, you can omit
 the default features and build like this:
 
 ```bash
-cargo build --no-default-features
+cargo build
 ```
 
 Or add in the below way:
 
 ```bash
-cargo add tzf-rs --no-default-features
+cargo add tzf-rs
 ```
 
 ## Best Practices
