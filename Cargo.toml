@@ -37,7 +37,7 @@ prost = "0.14.1"
 serde = {version = "1.0.228", features = [
   "derive",
 ], optional = true}
-serde_json = {version = "1.0.145", optional = true}
+serde_json = {version = "1.0.150", optional = true}
 
 # Topology-simplified dataset from crates.io (~7 MB). Activated by the "bundled" feature.
 tzf-dist = {version = "0.0.2026-b-fix1", optional = true}
