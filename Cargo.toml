@@ -32,7 +32,7 @@ clap = {version = "4", features = [
   "usage",
   "derive",
 ], optional = true}
-geometry-rs = "0.4.1"
+geometry-rs = "0.4.2"
 prost = "0.14.1"
 serde = {version = "1.0.228", features = [
   "derive",

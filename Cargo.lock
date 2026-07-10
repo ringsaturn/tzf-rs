@@ -471,9 +471,9 @@ dependencies = [
 
 [[package]]
 name = "geometry-rs"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "129657eb16d434a353fb598886464216900994fdbba4af45c36eda11ad0248e9"
+checksum = "49f90f6704fe64e8efed54e26ff54e297988fe059d4d63e841a238b2512757d1"
 dependencies = [
  "rtree_rs",
 ]
