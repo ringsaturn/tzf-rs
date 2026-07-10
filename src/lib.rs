@@ -686,6 +686,48 @@ pub fn revert_timezones(input: &pbgen::Timezones) -> BoundaryFile {
     output
 }
 
+// Packs (x, y, z) into a single u64 tile key, mirroring the Go
+// implementation's TileID layout:
+// bits 56-63 = zoom (0-255), bits 28-55 = x (up to 2^28), bits 0-27 = y (up to 2^28).
+// This covers all OSM zoom levels (0-28) without collision. Out-of-range
+// lookup coordinates are masked; the masked values exceed any real tile
+// index so they simply never match.
+const TILE_COORD_BITS: u32 = 28;
+const TILE_COORD_MASK: u64 = (1 << TILE_COORD_BITS) - 1;
+
+#[inline]
+#[allow(clippy::cast_sign_loss)]
+fn pack_tile_key(x: i64, y: i64, z: i64) -> u64 {
+    ((z as u64) << (2 * TILE_COORD_BITS))
+        | ((x as u64 & TILE_COORD_MASK) << TILE_COORD_BITS)
+        | (y as u64 & TILE_COORD_MASK)
+}
+
+#[cfg(feature = "export-geojson")]
+#[allow(clippy::cast_possible_wrap)]
+fn unpack_tile_key(key: u64) -> (i64, i64, i64) {
+    let x = ((key >> TILE_COORD_BITS) & TILE_COORD_MASK) as i64;
+    let y = (key & TILE_COORD_MASK) as i64;
+    let z = (key >> (2 * TILE_COORD_BITS)) as i64;
+    (x, y, z)
+}
+
+/// Most tiles belong to exactly one timezone, so store that index inline and
+/// only heap-allocate for boundary tiles that straddle multiple timezones.
+enum TileEntry {
+    One(u16),
+    Many(Box<[u16]>),
+}
+
+impl TileEntry {
+    fn indices(&self) -> &[u16] {
+        match self {
+            Self::One(idx) => std::slice::from_ref(idx),
+            Self::Many(idxs) => idxs,
+        }
+    }
+}
+
 /// `FuzzyFinder` blazing fast for most places on earth, use a preindex data.
 /// Not work for places around borders.
 ///
@@ -699,7 +741,10 @@ pub fn revert_timezones(input: &pbgen::Timezones) -> BoundaryFile {
 pub struct FuzzyFinder {
     min_zoom: i64,
     max_zoom: i64,
-    all: HashMap<(i64, i64, i64), Vec<String>>, // K: <x,y,z>
+    // Sorted timezone name table; tiles reference names by index, so index
+    // order matches lexical order.
+    names: Vec<String>,
+    all: HashMap<u64, TileEntry>, // K: packed <x,y,z>
     data_version: String,
 }
 
@@ -718,21 +763,52 @@ impl Default for FuzzyFinder {
 }
 
 impl FuzzyFinder {
+    /// # Panics
+    ///
+    /// Panics if the input contains more than `u16::MAX` distinct timezone names.
     #[must_use]
     pub fn from_pb(tzs: pbgen::PreindexTimezones) -> Self {
-        let mut f = Self {
+        // First pass: build a sorted name table so indices compare in the
+        // same order as the names themselves.
+        let mut names: Vec<String> = tzs.keys.iter().map(|item| item.name.clone()).collect();
+        names.sort();
+        names.dedup();
+        let name_idx: HashMap<&str, u16> = names
+            .iter()
+            .enumerate()
+            .map(|(i, name)| {
+                (
+                    name.as_str(),
+                    u16::try_from(i).expect("more than u16::MAX timezone names"),
+                )
+            })
+            .collect();
+
+        // Second pass: populate tiles with name indices.
+        let mut all: HashMap<u64, TileEntry> = HashMap::new();
+        for item in &tzs.keys {
+            let idx = name_idx[item.name.as_str()];
+            let key = pack_tile_key(i64::from(item.x), i64::from(item.y), i64::from(item.z));
+            match all.entry(key) {
+                std::collections::hash_map::Entry::Vacant(entry) => {
+                    entry.insert(TileEntry::One(idx));
+                }
+                std::collections::hash_map::Entry::Occupied(mut entry) => {
+                    let mut idxs = entry.get().indices().to_vec();
+                    idxs.push(idx);
+                    idxs.sort_unstable();
+                    *entry.get_mut() = TileEntry::Many(idxs.into_boxed_slice());
+                }
+            }
+        }
+
+        Self {
             min_zoom: i64::from(tzs.agg_zoom),
             max_zoom: i64::from(tzs.idx_zoom),
-            all: HashMap::new(),
+            names,
+            all,
             data_version: tzs.version,
-        };
-        for item in &tzs.keys {
-            let key = (i64::from(item.x), i64::from(item.y), i64::from(item.z));
-            let names = f.all.entry(key).or_default();
-            names.push(item.name.to_string());
-            names.sort();
         }
-        f
     }
 
     /// Retrieves the time zone name for the given longitude and latitude.
@@ -765,10 +841,12 @@ impl FuzzyFinder {
         let (high_x, high_y) = deg2num(lng, lat, top_zoom);
         for zoom in self.min_zoom..self.max_zoom {
             let shift = (top_zoom - zoom) as u32;
-            if let Some(names) = self.all.get(&(high_x >> shift, high_y >> shift, zoom)) {
-                if let Some(name) = names.first() {
-                    return name;
-                }
+            if let Some(&idx) = self
+                .all
+                .get(&pack_tile_key(high_x >> shift, high_y >> shift, zoom))
+                .and_then(|entry| entry.indices().first())
+            {
+                return &self.names[usize::from(idx)];
             }
         }
         ""
@@ -783,9 +861,12 @@ impl FuzzyFinder {
         let (high_x, high_y) = deg2num(lng, lat, top_zoom);
         for zoom in self.min_zoom..self.max_zoom {
             let shift = (top_zoom - zoom) as u32;
-            if let Some(entries) = self.all.get(&(high_x >> shift, high_y >> shift, zoom)) {
-                for item in entries {
-                    names.push(item);
+            if let Some(entry) =
+                self.all
+                    .get(&pack_tile_key(high_x >> shift, high_y >> shift, zoom))
+            {
+                for &idx in entry.indices() {
+                    names.push(self.names[usize::from(idx)].as_str());
                 }
             }
         }
@@ -842,18 +923,21 @@ impl FuzzyFinder {
     #[must_use]
     #[cfg(feature = "export-geojson")]
     pub fn to_geojson(&self) -> BoundaryFile {
-        let mut name_to_keys: HashMap<&String, Vec<(i64, i64, i64)>> = HashMap::new();
+        let mut name_to_keys: HashMap<u16, Vec<(i64, i64, i64)>> = HashMap::new();
 
-        // Group tiles by timezone name
-        for (key, names) in &self.all {
-            for name in names {
-                name_to_keys.entry(name).or_insert_with(Vec::new).push(*key);
+        // Group tiles by timezone name index
+        for (key, entry) in &self.all {
+            for &idx in entry.indices() {
+                name_to_keys
+                    .entry(idx)
+                    .or_default()
+                    .push(unpack_tile_key(*key));
             }
         }
 
         let mut features = Vec::new();
 
-        for (name, keys) in name_to_keys {
+        for (idx, keys) in name_to_keys {
             let mut multi_polygon_coords = MultiPolygonCoordinates::new();
 
             for (x, y, z) in keys {
@@ -864,7 +948,9 @@ impl FuzzyFinder {
 
             let feature = FeatureItem {
                 feature_type: "Feature".to_string(),
-                properties: PropertiesDefine { tzid: name.clone() },
+                properties: PropertiesDefine {
+                    tzid: self.names[usize::from(idx)].clone(),
+                },
                 geometry: GeometryDefine {
                     geometry_type: "MultiPolygon".to_string(),
                     coordinates: multi_polygon_coords,
@@ -902,12 +988,20 @@ impl FuzzyFinder {
     #[must_use]
     #[cfg(feature = "export-geojson")]
     pub fn get_tz_geojson(&self, timezone_name: &str) -> Option<FeatureItem> {
+        // The name table is sorted, so binary search for the index.
+        let target = u16::try_from(
+            self.names
+                .binary_search_by(|name| name.as_str().cmp(timezone_name))
+                .ok()?,
+        )
+        .ok()?;
+
         let mut keys = Vec::new();
 
         // Find all tiles that contain this timezone
-        for (key, names) in &self.all {
-            if names.iter().any(|n| n == timezone_name) {
-                keys.push(*key);
+        for (key, entry) in &self.all {
+            if entry.indices().contains(&target) {
+                keys.push(unpack_tile_key(*key));
             }
         }
 
