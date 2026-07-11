@@ -1,7 +1,9 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-use geometry_rs::{Point, Polygon, PolygonBuildOptions};
+use geometry_rs::{
+    ContainsPoint, I32Point, I32Polygon, I32RaycastMode, Point, Polygon, PolygonBuildOptions,
+};
 #[cfg(feature = "export-geojson")]
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -20,8 +22,25 @@ use tzf_dist_git::{load_compress_topo, load_preindex, load_topology_compress_top
 pub mod pbgen;
 
 struct Item {
-    polys: Vec<Polygon>,
+    polys: Vec<StoredPolygon>,
     name: String,
+}
+
+enum StoredPolygon {
+    Float(Box<Polygon>),
+    Scaled(I32Polygon),
+}
+
+impl StoredPolygon {
+    fn contains_point(&self, point: Point) -> bool {
+        fn query<P: ContainsPoint<Point>>(polygon: &P, point: Point) -> bool {
+            polygon.contains_point(point)
+        }
+        match self {
+            Self::Float(poly) => query(poly.as_ref(), point),
+            Self::Scaled(poly) => query(poly, point),
+        }
+    }
 }
 
 impl Item {
@@ -66,6 +85,10 @@ pub enum FinderOptions {
     NoIndex,
     /// Use Y stripes index.
     YStripes,
+    /// Store scaled integer coordinates and convert endpoints during raycasting.
+    NoIndexFloatRaycast,
+    /// Store scaled integer coordinates and use an integer raycast.
+    NoIndexIntegerRaycast,
 }
 
 impl FinderOptions {
@@ -81,6 +104,16 @@ impl FinderOptions {
         Self::YStripes
     }
 
+    #[must_use]
+    pub fn no_index_float_raycast() -> Self {
+        Self::NoIndexFloatRaycast
+    }
+
+    #[must_use]
+    pub fn no_index_integer_raycast() -> Self {
+        Self::NoIndexIntegerRaycast
+    }
+
     fn to_polygon_build_options(self) -> PolygonBuildOptions {
         match self {
             Self::YStripes => PolygonBuildOptions {
@@ -89,12 +122,21 @@ impl FinderOptions {
                 enable_y_stripes: true,
                 rtree_min_segments: DEFAULT_RTREE_MIN_SEGMENTS,
             },
-            Self::NoIndex => PolygonBuildOptions {
-                enable_rtree: false,
-                enable_compressed_quad: false,
-                enable_y_stripes: false,
-                rtree_min_segments: DEFAULT_RTREE_MIN_SEGMENTS,
-            },
+            Self::NoIndex | Self::NoIndexFloatRaycast | Self::NoIndexIntegerRaycast => {
+                PolygonBuildOptions {
+                    enable_rtree: false,
+                    enable_compressed_quad: false,
+                    enable_y_stripes: false,
+                    rtree_min_segments: DEFAULT_RTREE_MIN_SEGMENTS,
+                }
+            }
+        }
+    }
+
+    fn i32_raycast_mode(self) -> I32RaycastMode {
+        match self {
+            Self::NoIndexIntegerRaycast => I32RaycastMode::Integer,
+            Self::NoIndex | Self::NoIndexFloatRaycast | Self::YStripes => I32RaycastMode::Float,
         }
     }
 }
@@ -103,7 +145,7 @@ impl FinderOptions {
 ///
 /// The go-polyline library encodes coordinates as [lng, lat] pairs with 1e5 precision.
 #[allow(clippy::cast_possible_truncation)]
-fn decode_polyline(encoded: &[u8]) -> Vec<Point> {
+fn decode_polyline(encoded: &[u8]) -> Vec<I32Point> {
     let mut points = Vec::new();
     let mut index = 0;
     let mut lng: i64 = 0;
@@ -116,9 +158,9 @@ fn decode_polyline(encoded: &[u8]) -> Vec<Point> {
         index = next;
         lng += dlng;
         lat += dlat;
-        points.push(Point {
-            x: lng as f64 / 1e5,
-            y: lat as f64 / 1e5,
+        points.push(I32Point {
+            x: i32::try_from(lng).expect("polyline longitude exceeds i32"),
+            y: i32::try_from(lat).expect("polyline latitude exceeds i32"),
         });
     }
     points
@@ -149,8 +191,8 @@ fn polyline_decode_value(encoded: &[u8], start: usize) -> (i64, usize) {
 
 fn expand_compressed_ring(
     segs: &[pbgen::CompressedRingSegment],
-    edges: &[Vec<Point>],
-) -> Vec<Point> {
+    edges: &[Vec<I32Point>],
+) -> Vec<I32Point> {
     let mut pts = Vec::new();
     for seg in segs {
         match &seg.content {
@@ -177,7 +219,7 @@ impl Finder {
             grid: None,
         };
         for tz in &tzs.timezones {
-            let mut polys: Vec<Polygon> = vec![];
+            let mut polys: Vec<StoredPolygon> = vec![];
 
             for pbpoly in &tz.polygons {
                 let mut exterior: Vec<Point> = vec![];
@@ -202,7 +244,7 @@ impl Finder {
                 }
 
                 let geopoly = geometry_rs::Polygon::new(exterior, interior, Some(options));
-                polys.push(geopoly);
+                polys.push(StoredPolygon::Float(Box::new(geopoly)));
             }
 
             let item: Item = Item {
@@ -218,8 +260,9 @@ impl Finder {
     fn from_compressed_topo_with_polygon_options(
         tzs: pbgen::CompressedTopoTimezones,
         options: PolygonBuildOptions,
+        raycast_mode: I32RaycastMode,
     ) -> Self {
-        let mut edges: Vec<Vec<Point>> = vec![Vec::new(); tzs.shared_edges.len()];
+        let mut edges: Vec<Vec<I32Point>> = vec![Vec::new(); tzs.shared_edges.len()];
         for edge in &tzs.shared_edges {
             edges[edge.id as usize] = decode_polyline(&edge.points);
         }
@@ -239,15 +282,36 @@ impl Finder {
         };
 
         for tz in &tzs.timezones {
-            let mut polys: Vec<Polygon> = vec![];
+            let mut polys: Vec<StoredPolygon> = vec![];
             for poly in &tz.polygons {
                 let exterior = expand_compressed_ring(&poly.exterior, &edges);
-                let interior: Vec<Vec<Point>> = poly
+                let interior: Vec<Vec<I32Point>> = poly
                     .holes
                     .iter()
                     .map(|hole| expand_compressed_ring(&hole.exterior, &edges))
                     .collect();
-                polys.push(geometry_rs::Polygon::new(exterior, interior, Some(options)));
+                if options.enable_y_stripes {
+                    let to_float = |ring: Vec<I32Point>| {
+                        ring.into_iter()
+                            .map(|point| Point {
+                                x: f64::from(point.x) / 1e5,
+                                y: f64::from(point.y) / 1e5,
+                            })
+                            .collect()
+                    };
+                    polys.push(StoredPolygon::Float(Box::new(Polygon::new(
+                        to_float(exterior),
+                        interior.into_iter().map(to_float).collect(),
+                        Some(options),
+                    ))));
+                } else {
+                    polys.push(StoredPolygon::Scaled(I32Polygon::new_with_mode(
+                        exterior,
+                        interior,
+                        1e5,
+                        raycast_mode,
+                    )));
+                }
             }
             f.all.push(Item {
                 name: tz.name.clone(),
@@ -271,7 +335,11 @@ impl Finder {
         tzs: pbgen::CompressedTopoTimezones,
         options: FinderOptions,
     ) -> Self {
-        Self::from_compressed_topo_with_polygon_options(tzs, options.to_polygon_build_options())
+        Self::from_compressed_topo_with_polygon_options(
+            tzs,
+            options.to_polygon_build_options(),
+            options.i32_raycast_mode(),
+        )
     }
 
     /// `from_pb` is used when you can use your own timezone data, as long as
@@ -418,27 +486,48 @@ impl Finder {
                 holes: Vec::new(),
             };
 
-            // Convert exterior points
-            for point in poly.exterior() {
-                pbpoly.points.push(pbgen::Point {
-                    lng: point.x as f32,
-                    lat: point.y as f32,
-                });
-            }
-
-            // Convert holes
-            for hole in poly.holes() {
-                let mut hole_poly = pbgen::Polygon {
-                    points: Vec::new(),
-                    holes: Vec::new(),
-                };
-                for point in hole {
-                    hole_poly.points.push(pbgen::Point {
-                        lng: point.x as f32,
-                        lat: point.y as f32,
-                    });
+            match poly {
+                StoredPolygon::Float(poly) => {
+                    pbpoly
+                        .points
+                        .extend(poly.exterior().iter().map(|point| pbgen::Point {
+                            lng: point.x as f32,
+                            lat: point.y as f32,
+                        }));
+                    for hole in poly.holes() {
+                        pbpoly.holes.push(pbgen::Polygon {
+                            points: hole
+                                .iter()
+                                .map(|point| pbgen::Point {
+                                    lng: point.x as f32,
+                                    lat: point.y as f32,
+                                })
+                                .collect(),
+                            holes: Vec::new(),
+                        });
+                    }
                 }
-                pbpoly.holes.push(hole_poly);
+                StoredPolygon::Scaled(poly) => {
+                    let scale = poly.scale();
+                    pbpoly
+                        .points
+                        .extend(poly.exterior().iter().map(|point| pbgen::Point {
+                            lng: (f64::from(point.x) / scale) as f32,
+                            lat: (f64::from(point.y) / scale) as f32,
+                        }));
+                    for hole in poly.holes() {
+                        pbpoly.holes.push(pbgen::Polygon {
+                            points: hole
+                                .iter()
+                                .map(|point| pbgen::Point {
+                                    lng: (f64::from(point.x) / scale) as f32,
+                                    lat: (f64::from(point.y) / scale) as f32,
+                                })
+                                .collect(),
+                            holes: Vec::new(),
+                        });
+                    }
+                }
             }
 
             pbpolys.push(pbpoly);

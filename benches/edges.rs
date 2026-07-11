@@ -24,6 +24,11 @@ lazy_static! {
             .unwrap_or_default();
         Finder::from_compressed_topo_with_options(tzs, FinderOptions::no_index())
     };
+    static ref FINDER_INTEGER_RAYCAST: Finder = {
+        let tzs = pbgen::CompressedTopoTimezones::try_from(load_topology_compress_topo())
+            .unwrap_or_default();
+        Finder::from_compressed_topo_with_options(tzs, FinderOptions::no_index_integer_raycast())
+    };
     static ref FINDER_YSTRIPES: Finder = {
         let tzs = pbgen::CompressedTopoTimezones::try_from(load_topology_compress_topo())
             .unwrap_or_default();
@@ -83,6 +88,12 @@ fn bench_finder_index_modes(c: &mut Criterion) {
         b.iter(|| {
             let city = next_edge_city();
             let _ = FINDER_NO_INDEX.get_tz_name(city.lng, city.lat);
+        });
+    });
+    group.bench_with_input(BenchmarkId::new("IntegerRaycast", i), i, |b, _| {
+        b.iter(|| {
+            let city = next_edge_city();
+            let _ = FINDER_INTEGER_RAYCAST.get_tz_name(city.lng, city.lat);
         });
     });
     group.bench_with_input(BenchmarkId::new("YStripes", i), i, |b, _| {
