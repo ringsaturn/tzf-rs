@@ -1,6 +1,9 @@
 use serde::Deserialize;
 use std::fs;
+#[cfg(feature = "bundled")]
 use tzf_dist::load_topology_compress_topo;
+#[cfg(feature = "full")]
+use tzf_dist_git::load_topology_compress_topo;
 use tzf_rs::{Finder, FinderOptions, pbgen};
 
 #[derive(Deserialize)]
