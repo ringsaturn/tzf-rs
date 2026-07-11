@@ -1251,7 +1251,7 @@ source = "git+https://github.com/ringsaturn/tzf-dist?rev=v0.0.2026-b-fix1#5fba8f
 
 [[package]]
 name = "tzf-rs"
-version = "1.3.3"
+version = "1.3.4"
 dependencies = [
  "anyhow",
  "bytes",
