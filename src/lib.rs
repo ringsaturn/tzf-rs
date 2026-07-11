@@ -2,7 +2,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 use geometry_rs::{
-    ContainsPoint, I32Point, I32Polygon, I32RaycastMode, Point, Polygon, PolygonBuildOptions,
+    CoordStorage, I32Point, I32Polygon, I32RaycastMode, Point, Polygon, PolygonBuildOptions,
 };
 #[cfg(feature = "export-geojson")]
 use serde::{Deserialize, Serialize};
@@ -21,29 +21,12 @@ use tzf_dist::{load_preindex, load_topology_compress_topo};
 use tzf_dist_git::{load_compress_topo, load_preindex, load_topology_compress_topo};
 pub mod pbgen;
 
-struct Item {
-    polys: Vec<StoredPolygon>,
+struct Item<T: CoordStorage> {
+    polys: Vec<Polygon<T>>,
     name: String,
 }
 
-enum StoredPolygon {
-    Float(Box<Polygon>),
-    Scaled(I32Polygon),
-}
-
-impl StoredPolygon {
-    fn contains_point(&self, point: Point) -> bool {
-        fn query<P: ContainsPoint<Point>>(polygon: &P, point: Point) -> bool {
-            polygon.contains_point(point)
-        }
-        match self {
-            Self::Float(poly) => query(poly.as_ref(), point),
-            Self::Scaled(poly) => query(poly, point),
-        }
-    }
-}
-
-impl Item {
+impl<T: CoordStorage> Item<T> {
     fn contains_point(&self, p: &Point) -> bool {
         for poly in &self.polys {
             if poly.contains_point(*p) {
@@ -52,6 +35,34 @@ impl Item {
         }
         false
     }
+}
+
+/// Monomorphized finder internals. `T` is the polygon coordinate storage:
+/// `i32` (1e5-scaled) for compressed topo data, `f64` for user-supplied
+/// protobuf data.
+struct FinderCore<T: CoordStorage> {
+    all: Vec<Item<T>>,
+    data_version: String,
+    // grid maps (floor(lng), floor(lat)) → candidate item indices.
+    // Populated automatically when loading CompressedTopoTimezones that
+    // contains an embedded GridIndex.
+    grid: Option<HashMap<(i16, i16), Vec<u32>>>,
+}
+
+enum FinderKind {
+    Float(FinderCore<f64>),
+    Scaled(FinderCore<i32>),
+}
+
+/// Dispatch once at the top of each query; everything below the dispatch is
+/// monomorphized over the storage type, avoiding a per-polygon enum match.
+macro_rules! with_core {
+    ($finder:expr, $core:ident => $body:expr) => {
+        match &$finder.inner {
+            FinderKind::Float($core) => $body,
+            FinderKind::Scaled($core) => $body,
+        }
+    };
 }
 
 /// Finder works anywhere.
@@ -63,17 +74,18 @@ impl Item {
 /// [geometry]: https://github.com/tidwall/geometry
 /// [Josh Baker]: https://github.com/tidwall
 pub struct Finder {
-    all: Vec<Item>,
-    data_version: String,
-    // grid maps (floor(lng), floor(lat)) → candidate item indices.
-    // Populated automatically when loading CompressedTopoTimezones that
-    // contains an embedded GridIndex.
-    grid: Option<HashMap<(i16, i16), Vec<u32>>>,
+    inner: FinderKind,
 }
 
 const DEFAULT_RTREE_MIN_SEGMENTS: usize = 64;
 
 /// Finder build options for polygon acceleration indexes.
+///
+/// Compressed topo data (the tzf-dist default) always stores polygons as
+/// 1e5-scaled integer coordinates; the options only choose the acceleration
+/// index and the raycast flavor. The indexes operate directly in the scaled
+/// integer storage space, so [`FinderOptions::YStripes`] keeps the full
+/// memory savings of integer storage.
 ///
 /// Default:
 /// - [`FinderOptions::NoIndex`]
@@ -81,13 +93,19 @@ const DEFAULT_RTREE_MIN_SEGMENTS: usize = 64;
 #[non_exhaustive]
 pub enum FinderOptions {
     /// Disable polygon acceleration indexes.
+    ///
+    /// For compressed topo data this is equivalent to
+    /// [`FinderOptions::NoIndexFloatRaycast`].
     #[default]
     NoIndex,
-    /// Use Y stripes index.
+    /// Use Y stripes index (recommended).
     YStripes,
-    /// Store scaled integer coordinates and convert endpoints during raycasting.
+    /// Disable polygon acceleration indexes; segment endpoints are converted
+    /// to `f64` in registers during raycasting.
     NoIndexFloatRaycast,
-    /// Store scaled integer coordinates and use an integer raycast.
+    /// Disable polygon acceleration indexes and use an integer cross-product
+    /// raycast, which snaps the query point to the 1e-5 grid (a semantic
+    /// difference near polygon edges). Opt-in.
     NoIndexIntegerRaycast,
 }
 
@@ -211,15 +229,74 @@ fn expand_compressed_ring(
     pts
 }
 
+impl<T: CoordStorage> FinderCore<T> {
+    fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
+        if let Some(ref grid) = self.grid {
+            let key = (lng.floor() as i16, lat.floor() as i16);
+            let indices = match grid.get(&key) {
+                Some(v) => v,
+                None => return "",
+            };
+            // Single-candidate short-circuit: skip PIP when there is only one
+            // candidate and we are away from antimeridian / pole edges.
+            if indices.len() == 1 && (-179.0..179.0).contains(&lng) && (-89.0..89.0).contains(&lat)
+            {
+                return &self.all[indices[0] as usize].name;
+            }
+            let p = geometry_rs::Point { x: lng, y: lat };
+            for &idx in indices {
+                if self.all[idx as usize].contains_point(&p) {
+                    return &self.all[idx as usize].name;
+                }
+            }
+            return "";
+        }
+        let p = geometry_rs::Point { x: lng, y: lat };
+        for item in &self.all {
+            if item.contains_point(&p) {
+                return &item.name;
+            }
+        }
+        ""
+    }
+
+    fn get_tz_names(&self, lng: f64, lat: f64) -> Vec<&str> {
+        let mut ret: Vec<&str> = vec![];
+        if let Some(ref grid) = self.grid {
+            let key = (lng.floor() as i16, lat.floor() as i16);
+            if let Some(indices) = grid.get(&key) {
+                let p = geometry_rs::Point { x: lng, y: lat };
+                for &idx in indices {
+                    if self.all[idx as usize].contains_point(&p) {
+                        ret.push(&self.all[idx as usize].name);
+                    }
+                }
+            }
+            return ret;
+        }
+        let p = geometry_rs::Point { x: lng, y: lat };
+        for item in &self.all {
+            if item.contains_point(&p) {
+                ret.push(&item.name);
+            }
+        }
+        ret
+    }
+
+    fn timezonenames(&self) -> Vec<&str> {
+        let mut ret: Vec<&str> = vec![];
+        for item in &self.all {
+            ret.push(&item.name);
+        }
+        ret
+    }
+}
+
 impl Finder {
     fn from_pb_with_polygon_options(tzs: pbgen::Timezones, options: PolygonBuildOptions) -> Self {
-        let mut f = Self {
-            all: vec![],
-            data_version: tzs.version,
-            grid: None,
-        };
+        let mut all: Vec<Item<f64>> = vec![];
         for tz in &tzs.timezones {
-            let mut polys: Vec<StoredPolygon> = vec![];
+            let mut polys: Vec<Polygon> = vec![];
 
             for pbpoly in &tz.polygons {
                 let mut exterior: Vec<Point> = vec![];
@@ -243,18 +320,21 @@ impl Finder {
                     interior.push(holeextr);
                 }
 
-                let geopoly = geometry_rs::Polygon::new(exterior, interior, Some(options));
-                polys.push(StoredPolygon::Float(Box::new(geopoly)));
+                polys.push(geometry_rs::Polygon::new(exterior, interior, Some(options)));
             }
 
-            let item: Item = Item {
+            all.push(Item {
                 name: tz.name.to_string(),
                 polys,
-            };
-
-            f.all.push(item);
+            });
         }
-        f
+        Self {
+            inner: FinderKind::Float(FinderCore {
+                all,
+                data_version: tzs.version,
+                grid: None,
+            }),
+        }
     }
 
     fn from_compressed_topo_with_polygon_options(
@@ -275,14 +355,9 @@ impl Finder {
             m
         });
 
-        let mut f = Self {
-            all: vec![],
-            data_version: tzs.version,
-            grid,
-        };
-
+        let mut all: Vec<Item<i32>> = vec![];
         for tz in &tzs.timezones {
-            let mut polys: Vec<StoredPolygon> = vec![];
+            let mut polys: Vec<I32Polygon> = vec![];
             for poly in &tz.polygons {
                 let exterior = expand_compressed_ring(&poly.exterior, &edges);
                 let interior: Vec<Vec<I32Point>> = poly
@@ -290,35 +365,29 @@ impl Finder {
                     .iter()
                     .map(|hole| expand_compressed_ring(&hole.exterior, &edges))
                     .collect();
-                if options.enable_y_stripes {
-                    let to_float = |ring: Vec<I32Point>| {
-                        ring.into_iter()
-                            .map(|point| Point {
-                                x: f64::from(point.x) / 1e5,
-                                y: f64::from(point.y) / 1e5,
-                            })
-                            .collect()
-                    };
-                    polys.push(StoredPolygon::Float(Box::new(Polygon::new(
-                        to_float(exterior),
-                        interior.into_iter().map(to_float).collect(),
-                        Some(options),
-                    ))));
-                } else {
-                    polys.push(StoredPolygon::Scaled(I32Polygon::new_with_mode(
-                        exterior,
-                        interior,
-                        1e5,
-                        raycast_mode,
-                    )));
-                }
+                // The acceleration indexes operate directly in the 1e5-scaled
+                // integer storage space, so enabling them no longer requires
+                // falling back to float storage.
+                polys.push(I32Polygon::new_with_options(
+                    exterior,
+                    interior,
+                    1e5,
+                    raycast_mode,
+                    Some(options),
+                ));
             }
-            f.all.push(Item {
+            all.push(Item {
                 name: tz.name.clone(),
                 polys,
             });
         }
-        f
+        Self {
+            inner: FinderKind::Scaled(FinderCore {
+                all,
+                data_version: tzs.version,
+                grid,
+            }),
+        }
     }
 
     /// Create a Finder from `CompressedTopoTimezones` protobuf data.
@@ -373,33 +442,7 @@ impl Finder {
     /// ```
     #[must_use]
     pub fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
-        if let Some(ref grid) = self.grid {
-            let key = (lng.floor() as i16, lat.floor() as i16);
-            let indices = match grid.get(&key) {
-                Some(v) => v,
-                None => return "",
-            };
-            // Single-candidate short-circuit: skip PIP when there is only one
-            // candidate and we are away from antimeridian / pole edges.
-            if indices.len() == 1 && (-179.0..179.0).contains(&lng) && (-89.0..89.0).contains(&lat)
-            {
-                return &self.all[indices[0] as usize].name;
-            }
-            let p = geometry_rs::Point { x: lng, y: lat };
-            for &idx in indices {
-                if self.all[idx as usize].contains_point(&p) {
-                    return &self.all[idx as usize].name;
-                }
-            }
-            return "";
-        }
-        let p = geometry_rs::Point { x: lng, y: lat };
-        for item in &self.all {
-            if item.contains_point(&p) {
-                return &item.name;
-            }
-        }
-        ""
+        with_core!(self, core => core.get_tz_name(lng, lat))
     }
 
     /// ```rust
@@ -409,26 +452,7 @@ impl Finder {
     /// ```
     #[must_use]
     pub fn get_tz_names(&self, lng: f64, lat: f64) -> Vec<&str> {
-        let mut ret: Vec<&str> = vec![];
-        if let Some(ref grid) = self.grid {
-            let key = (lng.floor() as i16, lat.floor() as i16);
-            if let Some(indices) = grid.get(&key) {
-                let p = geometry_rs::Point { x: lng, y: lat };
-                for &idx in indices {
-                    if self.all[idx as usize].contains_point(&p) {
-                        ret.push(&self.all[idx as usize].name);
-                    }
-                }
-            }
-            return ret;
-        }
-        let p = geometry_rs::Point { x: lng, y: lat };
-        for item in &self.all {
-            if item.contains_point(&p) {
-                ret.push(&item.name);
-            }
-        }
-        ret
+        with_core!(self, core => core.get_tz_names(lng, lat))
     }
 
     /// Example:
@@ -441,11 +465,7 @@ impl Finder {
     /// ```
     #[must_use]
     pub fn timezonenames(&self) -> Vec<&str> {
-        let mut ret: Vec<&str> = vec![];
-        for item in &self.all {
-            ret.push(&item.name);
-        }
-        ret
+        with_core!(self, core => core.timezonenames())
     }
 
     /// Example:
@@ -458,7 +478,7 @@ impl Finder {
     /// ```
     #[must_use]
     pub fn data_version(&self) -> &str {
-        &self.data_version
+        with_core!(self, core => &core.data_version)
     }
 
     /// Creates a new, empty `Finder`.
@@ -473,72 +493,6 @@ impl Finder {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
-    }
-
-    /// Helper method to convert an Item to a FeatureItem.
-    #[cfg(feature = "export-geojson")]
-    fn item_to_feature(&self, item: &Item) -> FeatureItem {
-        // Convert internal Item to pbgen::Timezone format
-        let mut pbpolys = Vec::new();
-        for poly in &item.polys {
-            let mut pbpoly = pbgen::Polygon {
-                points: Vec::new(),
-                holes: Vec::new(),
-            };
-
-            match poly {
-                StoredPolygon::Float(poly) => {
-                    pbpoly
-                        .points
-                        .extend(poly.exterior().iter().map(|point| pbgen::Point {
-                            lng: point.x as f32,
-                            lat: point.y as f32,
-                        }));
-                    for hole in poly.holes() {
-                        pbpoly.holes.push(pbgen::Polygon {
-                            points: hole
-                                .iter()
-                                .map(|point| pbgen::Point {
-                                    lng: point.x as f32,
-                                    lat: point.y as f32,
-                                })
-                                .collect(),
-                            holes: Vec::new(),
-                        });
-                    }
-                }
-                StoredPolygon::Scaled(poly) => {
-                    let scale = poly.scale();
-                    pbpoly
-                        .points
-                        .extend(poly.exterior().iter().map(|point| pbgen::Point {
-                            lng: (f64::from(point.x) / scale) as f32,
-                            lat: (f64::from(point.y) / scale) as f32,
-                        }));
-                    for hole in poly.holes() {
-                        pbpoly.holes.push(pbgen::Polygon {
-                            points: hole
-                                .iter()
-                                .map(|point| pbgen::Point {
-                                    lng: (f64::from(point.x) / scale) as f32,
-                                    lat: (f64::from(point.y) / scale) as f32,
-                                })
-                                .collect(),
-                            holes: Vec::new(),
-                        });
-                    }
-                }
-            }
-
-            pbpolys.push(pbpoly);
-        }
-
-        let pbtz = pbgen::Timezone {
-            polygons: pbpolys,
-            name: item.name.clone(),
-        };
-
-        revert_item(&pbtz)
     }
 
     /// Convert the Finder's data to GeoJSON format.
@@ -557,16 +511,7 @@ impl Finder {
     #[must_use]
     #[cfg(feature = "export-geojson")]
     pub fn to_geojson(&self) -> BoundaryFile {
-        let mut output = BoundaryFile {
-            collection_type: "FeatureCollection".to_string(),
-            features: Vec::new(),
-        };
-
-        for item in &self.all {
-            output.features.push(self.item_to_feature(item));
-        }
-
-        output
+        with_core!(self, core => core.to_geojson())
     }
 
     /// Convert a specific timezone to GeoJSON format.
@@ -596,6 +541,68 @@ impl Finder {
     #[must_use]
     #[cfg(feature = "export-geojson")]
     pub fn get_tz_geojson(&self, timezone_name: &str) -> Option<BoundaryFile> {
+        with_core!(self, core => core.get_tz_geojson(timezone_name))
+    }
+}
+
+#[cfg(feature = "export-geojson")]
+impl<T: CoordStorage> FinderCore<T> {
+    /// Helper method to convert an Item to a FeatureItem.
+    fn item_to_feature(&self, item: &Item<T>) -> FeatureItem {
+        // Convert internal Item to pbgen::Timezone format
+        let mut pbpolys = Vec::new();
+        for poly in &item.polys {
+            // Storage space → degrees; `scale` is 1.0 for float storage.
+            let scale = poly.scale();
+            let mut pbpoly = pbgen::Polygon {
+                points: Vec::new(),
+                holes: Vec::new(),
+            };
+
+            pbpoly
+                .points
+                .extend(poly.exterior().iter().map(|point| pbgen::Point {
+                    lng: (point.x.to_f64() / scale) as f32,
+                    lat: (point.y.to_f64() / scale) as f32,
+                }));
+            for hole in poly.holes() {
+                pbpoly.holes.push(pbgen::Polygon {
+                    points: hole
+                        .iter()
+                        .map(|point| pbgen::Point {
+                            lng: (point.x.to_f64() / scale) as f32,
+                            lat: (point.y.to_f64() / scale) as f32,
+                        })
+                        .collect(),
+                    holes: Vec::new(),
+                });
+            }
+
+            pbpolys.push(pbpoly);
+        }
+
+        let pbtz = pbgen::Timezone {
+            polygons: pbpolys,
+            name: item.name.clone(),
+        };
+
+        revert_item(&pbtz)
+    }
+
+    fn to_geojson(&self) -> BoundaryFile {
+        let mut output = BoundaryFile {
+            collection_type: "FeatureCollection".to_string(),
+            features: Vec::new(),
+        };
+
+        for item in &self.all {
+            output.features.push(self.item_to_feature(item));
+        }
+
+        output
+    }
+
+    fn get_tz_geojson(&self, timezone_name: &str) -> Option<BoundaryFile> {
         let mut output = BoundaryFile {
             collection_type: "FeatureCollection".to_string(),
             features: Vec::new(),
@@ -1287,7 +1294,7 @@ impl DefaultFinder {
     /// ```
     #[must_use]
     pub fn data_version(&self) -> &str {
-        &self.finder.data_version
+        self.finder.data_version()
     }
 
     /// Creates a new instance of `DefaultFinder`.
