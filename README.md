@@ -99,8 +99,8 @@ to build the `DefaultFinder` with currently supported index modes:
 
 | Index mode    | Build time (ms) | Memory usage (MiB) |
 | ------------- | --------------: | -----------------: |
-| No index      |             ~40 |                ~70 |
-| YStripes only |             ~50 |               ~110 |
+| No index      |             ~40 |                ~58 |
+| YStripes only |             ~65 |                ~82 |
 
 For the performance comparison of different index modes, please see the
 [Performance](#performance) section below.
@@ -194,12 +194,12 @@ for online usage.
 
 The tzf-rs package is intended for high-performance geospatial query services,
 such as weather forecasting APIs. Most queries can be returned within a very
-short time, averaging around 1,500 nanoseconds.
+short time, averaging around 300 nanoseconds.
 
 Here is what has been done to improve performance:
 
 1. Using the simplified dataset by default.
-2. Using pre-indexing to handle most queries takes approximately 500
+2. Using pre-indexing to handle most queries takes approximately 200
    nanoseconds.
 3. Using a finely-tuned Ray Casting algorithm package
    [`ringsaturn/geometry-rs`](https://github.com/ringsaturn/geometry-rs) to
@@ -219,30 +219,30 @@ Topology-Simplified (bundled) / Random Cities:
 
 | Target        | Dataset                        | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
 | ------------- | ------------------------------ | ------------- | -------------------: | ------------------------: | -----------------: |
-| Finder        | topology-simplified            | YStripes only |               0.6457 |                 1,548,635 |             112.30 |
-| Finder        | topology-simplified            | No index      |               4.3948 |                   227,542 |              59.92 |
-| DefaultFinder | topology-simplified + preindex | YStripes only |               0.3800 |                 2,631,787 |             134.48 |
-| DefaultFinder | topology-simplified + preindex | No index      |               4.4922 |                   222,608 |              85.66 |
+| Finder        | topology-simplified            | YStripes only |               0.5698 |                 1,755,033 |              69.72 |
+| Finder        | topology-simplified            | No index      |               4.9164 |                   203,401 |              42.46 |
+| DefaultFinder | topology-simplified + preindex | YStripes only |               0.3040 |                 3,289,365 |              82.10 |
+| DefaultFinder | topology-simplified + preindex | No index      |               5.0438 |                   198,263 |              58.11 |
 
 Topology-Simplified (bundled) / Edge Cities (FuzzyFinder misses)
 
 | Target                   | Dataset                        | Scenario                          | Median estimate (µs) | Approx throughput (ops/s) |
 | ------------------------ | ------------------------------ | --------------------------------- | -------------------: | ------------------------: |
-| FuzzyFinder              | preindex                       | FuzzyFinder miss                  |               0.2200 |                 4,546,074 |
-| DefaultFinder (YStripes) | topology-simplified + preindex | DefaultFinder (YStripes) fallback |               0.7456 |                 1,341,184 |
-| Finder                   | topology-simplified            | YStripes                          |               0.4975 |                 2,010,131 |
-| Finder                   | topology-simplified            | No index                          |               4.3948 |                   227,542 |
-| DefaultFinder            | topology-simplified + preindex | YStripes                          |               0.7154 |                 1,397,858 |
-| DefaultFinder            | topology-simplified + preindex | No index                          |               4.4922 |                   222,608 |
+| FuzzyFinder              | preindex                       | FuzzyFinder miss                  |               0.1564 |                 6,393,044 |
+| DefaultFinder (YStripes) | topology-simplified + preindex | DefaultFinder (YStripes) fallback |               0.6256 |                 1,598,338 |
+| Finder                   | topology-simplified            | YStripes                          |               0.4421 |                 2,261,676 |
+| Finder                   | topology-simplified            | No index                          |               4.9164 |                   203,401 |
+| DefaultFinder            | topology-simplified + preindex | YStripes                          |               0.6069 |                 1,647,718 |
+| DefaultFinder            | topology-simplified + preindex | No index                          |               5.0438 |                   198,263 |
 
 Full-Precision (full):
 
 | Target               | Dataset                   | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
 | -------------------- | ------------------------- | ------------- | -------------------: | ------------------------: | -----------------: |
-| Finder (full)        | full-precision            | YStripes only |               1.7158 |                   582,819 |             568.78 |
-| Finder (full)        | full-precision            | No index      |              38.9370 |                    25,683 |             260.95 |
-| DefaultFinder (full) | full-precision + preindex | YStripes only |               0.4984 |                 2,006,421 |             592.25 |
-| DefaultFinder (full) | full-precision + preindex | No index      |               6.6012 |                   151,488 |             287.32 |
+| Finder (full)        | full-precision            | YStripes only |               1.2227 |                   817,862 |             314.59 |
+| Finder (full)        | full-precision            | No index      |              43.0520 |                    23,228 |             157.02 |
+| DefaultFinder (full) | full-precision + preindex | YStripes only |               0.5527 |                 1,809,136 |             323.58 |
+| DefaultFinder (full) | full-precision + preindex | No index      |               7.4823 |                   133,649 |             171.44 |
 
 The `FuzzyFinder` is not included in the benchmark, since it's query time is
 consistent.
