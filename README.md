@@ -56,8 +56,10 @@ A Redis protocol demo could be used here:
 >
 > The built-in full data feature is introduced in `v1.3.0`.
 >
-> By default, tzf-rs uses a simplified shape data. If you need 100% accurate
-> lookup, you can use the following code to setup:
+> By default, tzf-rs uses simplified shape data. The error around borders is
+> small and bounded: every simplified boundary stays within ~111 m of the
+> full-precision border. See [Accuracy](#accuracy) for measured numbers. If you
+> need 100% accurate lookup, you can use the following code to set it up:
 >
 > **This setup requeires more time and memory to build the `DefaultFinder`.**
 
@@ -189,6 +191,29 @@ For now, tzf-rs' binding in Wasm, named
 [tzf-wasm](https://github.com/ringsaturn/tzf-wasm), has exported this feature
 and it has been deployed to the [tzf-web](https://ringsaturn.github.io/tzf-web/)
 for online usage.
+
+## Accuracy
+
+The Douglas-Peucker simplification uses an epsilon of 0.001 degrees, which
+caps boundary displacement at roughly 111 m by construction. Measured against
+the full-precision 2026c dataset with `tzf`'s `internal/cmd/borderchange`
+(spherical model, certified via Lipschitz interval subdivision):
+
+| Metric                                            |                        Result |
+| ------------------------------------------------- | ----------------------------: |
+| Certified maximum boundary displacement           | 111.2 m (+1.0 m tolerance)    |
+| Boundary length displaced more than 100 m         | 0.41%                         |
+| Boundary length displaced more than 500 m         | 0%                            |
+| Total mis-assigned area                           | 16,828 km² (~0.003% of Earth) |
+| Mis-assigned area within 100 m of the true border | 92.8%                         |
+
+See [`BORDER_CHANGE.md`](https://github.com/ringsaturn/tzf/blob/main/BORDER_CHANGE.md)
+in the `tzf` repository for the complete evaluation results.
+
+Only queries that land within ~111 m of a timezone border can differ from the
+full-precision result, and most of that band is far narrower. If your use case
+is sensitive inside that band, enable the `full` feature and use
+`DefaultFinder::new_full()`.
 
 ## Performance
 
