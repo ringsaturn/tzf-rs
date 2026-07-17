@@ -1259,15 +1259,7 @@ impl DefaultFinder {
     /// ```
     #[must_use]
     pub fn get_tz_names(&self, lng: f64, lat: f64) -> Vec<&str> {
-        let fuzzy_names = self.fuzzy_finder.get_tz_names(lng, lat);
-        if !fuzzy_names.is_empty() {
-            return fuzzy_names;
-        }
-        let names = self.finder.get_tz_names(lng, lat);
-        if !names.is_empty() {
-            return names;
-        }
-        Vec::new() // Return empty vector if no timezone is found
+        self.finder.get_tz_names(lng, lat)
     }
 
     /// Returns all time zone names as a `Vec<&str>`.
