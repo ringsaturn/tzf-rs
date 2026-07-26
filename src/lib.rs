@@ -77,7 +77,19 @@ pub struct Finder {
     inner: FinderKind,
 }
 
-const DEFAULT_RTREE_MIN_SEGMENTS: usize = 64;
+/// Minimum ring segment count for building a polygon acceleration index.
+///
+/// Rings below this are scanned linearly. Only [`FinderOptions::YStripes`]
+/// consults this value; the `NoIndex*` variants build no index at all.
+///
+/// 32 matches the Go implementation (`internal/geom.minIndexSegments`) rather
+/// than the geometry-rs default of 64, which tzf-rs previously inherited from
+/// geometry-rs's earlier RTree work. Measured on the bundled dataset
+/// (Apple M3 Max, `benches/edges.rs`): 32 costs +0.64 MiB live heap
+/// (32.69 MB -> 33.36 MB) and is 1-5% faster on edge-city lookups. The latency
+/// edge is within run-to-run noise here; Go's benchmark harness, which reports
+/// p50 over many iterations, resolves it more clearly (+14% p50 at 64).
+const DEFAULT_RTREE_MIN_SEGMENTS: usize = 32;
 
 /// Finder build options for polygon acceleration indexes.
 ///
