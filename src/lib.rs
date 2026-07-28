@@ -29,7 +29,12 @@ struct Item<T: CoordStorage> {
 impl<T: CoordStorage> Item<T> {
     fn contains_point(&self, p: &Point) -> bool {
         for poly in &self.polys {
-            if poly.contains_point(*p) {
+            // Timezone polygons tile the globe, so a query that lands exactly
+            // on a shared border must belong to both neighbours rather than to
+            // neither. The nautical zones make this easy to hit: their borders
+            // sit on whole meridians (7.5°, 22.5°, …), which is exactly the
+            // kind of coordinate people type by hand.
+            if poly.contains_point_allow_on_edge(*p) {
                 return true;
             }
         }
