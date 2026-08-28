@@ -220,6 +220,65 @@ impl DefaultFinder {
             Some(geojson::collection(features))
         }
     }
+
+    /// Converts one timezone's FUZZY preindex tiles to a GeoJSON
+    /// FeatureCollection: one Feature whose MultiPolygon holds each tile's
+    /// bounding rectangle — the area where `get_tz_name` answers from the
+    /// preindex fast path instead of exact point-in-polygon. Tiles are
+    /// ordered coarsest zoom first.
+    ///
+    /// Returns `None` when the file carries no FUZZY section, the dataset
+    /// does not contain the name, or no preindex tile names it.
+    #[cfg(feature = "export-geojson")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "export-geojson")))]
+    #[must_use]
+    pub fn get_tz_preindex_geojson(&self, timezone_name: &str) -> Option<BoundaryFile> {
+        let fuzzy = self.fuzzy.as_ref()?;
+        // The same name may map to more than one directory item; a preindex
+        // tile may name any of them.
+        let indices: Vec<u16> = self
+            .finder
+            .items
+            .iter()
+            .enumerate()
+            .filter(|(_, item)| item.name == timezone_name)
+            .filter_map(|(i, _)| u16::try_from(i).ok())
+            .collect();
+        if indices.is_empty() {
+            return None;
+        }
+        let keys = fuzzy.tile_keys_for(&indices);
+        if keys.is_empty() {
+            return None;
+        }
+        Some(geojson::collection(vec![geojson::feature_from_tile_keys(
+            timezone_name.to_string(),
+            &keys,
+        )]))
+    }
+
+    /// Converts the whole FUZZY preindex to a GeoJSON FeatureCollection: one
+    /// Feature per timezone that owns at least one tile, in dataset order; a
+    /// boundary tile appears in every timezone it names. Returns `None` when
+    /// the file carries no FUZZY section.
+    #[cfg(feature = "export-geojson")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "export-geojson")))]
+    #[must_use]
+    pub fn to_preindex_geojson(&self) -> Option<BoundaryFile> {
+        let fuzzy = self.fuzzy.as_ref()?;
+        let mut grouped = fuzzy.tile_keys_grouped();
+        let features = self
+            .finder
+            .items
+            .iter()
+            .enumerate()
+            .filter_map(|(i, item)| {
+                let keys = grouped.remove(&u16::try_from(i).ok()?)?;
+                Some(geojson::feature_from_tile_keys(item.name.clone(), &keys))
+            })
+            .collect();
+        Some(geojson::collection(features))
+    }
 }
 
 #[cfg(any(feature = "bundled", feature = "full"))]
@@ -364,6 +423,70 @@ impl EmbeddedFinder {
         } else {
             Some(geojson::collection(features))
         }
+    }
+
+    /// Converts one timezone's FUZZY preindex tiles to a GeoJSON
+    /// FeatureCollection; see [`DefaultFinder::get_tz_preindex_geojson`].
+    /// Results match [`DefaultFinder`] over the same file.
+    #[cfg(feature = "export-geojson")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "export-geojson")))]
+    #[must_use]
+    pub fn get_tz_preindex_geojson(&self, timezone_name: &str) -> Option<BoundaryFile> {
+        if !self.reader.has_fuzzy() {
+            return None;
+        }
+        let indices: Vec<u16> = self
+            .names
+            .iter()
+            .enumerate()
+            .filter(|(_, name)| name.as_str() == timezone_name)
+            .filter_map(|(i, _)| u16::try_from(i).ok())
+            .collect();
+        if indices.is_empty() {
+            return None;
+        }
+        // The FUZZY key array is stored sorted, so the filtered keys keep the
+        // coarsest-zoom-first order DefaultFinder produces by sorting.
+        let entries = self.reader.fuzzy_entries().ok()?;
+        let keys: Vec<u64> = entries
+            .iter()
+            .filter(|(_, idxs)| idxs.iter().any(|i| indices.contains(i)))
+            .map(|(key, _)| *key)
+            .collect();
+        if keys.is_empty() {
+            return None;
+        }
+        Some(geojson::collection(vec![geojson::feature_from_tile_keys(
+            timezone_name.to_string(),
+            &keys,
+        )]))
+    }
+
+    /// Converts the whole FUZZY preindex to a GeoJSON FeatureCollection; see
+    /// [`DefaultFinder::to_preindex_geojson`]. Results match
+    /// [`DefaultFinder`] over the same file.
+    #[cfg(feature = "export-geojson")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "export-geojson")))]
+    #[must_use]
+    pub fn to_preindex_geojson(&self) -> Option<BoundaryFile> {
+        if !self.reader.has_fuzzy() {
+            return None;
+        }
+        let entries = self.reader.fuzzy_entries().ok()?;
+        let mut grouped: std::collections::HashMap<u16, Vec<u64>> =
+            std::collections::HashMap::new();
+        for (key, idxs) in &entries {
+            for &idx in idxs {
+                grouped.entry(idx).or_default().push(*key);
+            }
+        }
+        let features = (0..self.names.len())
+            .filter_map(|i| {
+                let keys = grouped.remove(&u16::try_from(i).ok()?)?;
+                Some(geojson::feature_from_tile_keys(self.names[i].clone(), &keys))
+            })
+            .collect();
+        Some(geojson::collection(features))
     }
 }
 

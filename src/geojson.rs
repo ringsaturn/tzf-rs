@@ -5,7 +5,7 @@
 //! across releases.
 
 use crate::finder::Item;
-use crate::tzb::ExpandedPolygon;
+use crate::tzb::{ExpandedPolygon, TileId};
 use serde::{Deserialize, Serialize};
 
 pub type PolygonCoordinates = Vec<Vec<[f64; 2]>>;
@@ -130,6 +130,13 @@ pub(crate) fn feature_from_expanded(name: String, polys: &[ExpandedPolygon]) -> 
             rings
         })
         .collect();
+    feature(name, coordinates)
+}
+
+/// Builds one GeoJSON Feature from FUZZY preindex tile keys: a MultiPolygon
+/// holding each tile's bounding rectangle as one closed ring.
+pub(crate) fn feature_from_tile_keys(name: String, keys: &[u64]) -> FeatureItem {
+    let coordinates = keys.iter().map(|&key| vec![TileId(key).polygon()]).collect();
     feature(name, coordinates)
 }
 

@@ -231,6 +231,14 @@ impl TileEntry {
             Self::Many(idxs) => idxs[0],
         }
     }
+
+    #[cfg(feature = "export-geojson")]
+    fn indices(&self) -> &[u16] {
+        match self {
+            Self::One(idx) => std::slice::from_ref(idx),
+            Self::Many(idxs) => idxs,
+        }
+    }
 }
 
 /// The preindex tile fast path rebuilt out of a file's FUZZY section. Not a
@@ -286,5 +294,37 @@ impl FuzzyIndex {
             }
         }
         None
+    }
+
+    /// All tile keys carrying any of the given timezone indices, sorted
+    /// ascending — the zoom lives in the key's high bits, so coarser tiles
+    /// come first. Deterministic despite the hash-map storage.
+    #[cfg(feature = "export-geojson")]
+    pub(crate) fn tile_keys_for(&self, indices: &[u16]) -> Vec<u64> {
+        let mut keys: Vec<u64> = self
+            .tiles
+            .iter()
+            .filter(|(_, entry)| entry.indices().iter().any(|i| indices.contains(i)))
+            .map(|(key, _)| *key)
+            .collect();
+        keys.sort_unstable();
+        keys
+    }
+
+    /// One pass over all tiles, grouping keys by the timezone index they
+    /// carry (a boundary tile lands in every group it names); each group
+    /// sorted ascending.
+    #[cfg(feature = "export-geojson")]
+    pub(crate) fn tile_keys_grouped(&self) -> HashMap<u16, Vec<u64>> {
+        let mut grouped: HashMap<u16, Vec<u64>> = HashMap::new();
+        for (key, entry) in &self.tiles {
+            for &idx in entry.indices() {
+                grouped.entry(idx).or_default().push(*key);
+            }
+        }
+        for keys in grouped.values_mut() {
+            keys.sort_unstable();
+        }
+        grouped
     }
 }

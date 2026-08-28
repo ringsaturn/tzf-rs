@@ -44,6 +44,29 @@ impl TileId {
         )
     }
 
+    /// The tile's bounding rectangle as a closed GeoJSON ring — five
+    /// counterclockwise `[lng, lat]` points, first repeated last. Port of Go
+    /// `geom.TileID.Polygon`.
+    #[cfg(feature = "export-geojson")]
+    pub(crate) fn polygon(self) -> Vec<[f64; 2]> {
+        let (x, y, z) = self.xyz();
+        let n = f64::from(1u32 << z);
+
+        let lng_min = f64::from(x) / n * 360.0 - 180.0;
+        let lng_max = f64::from(x + 1) / n * 360.0 - 180.0;
+
+        let lat_max = (PI * (1.0 - 2.0 * f64::from(y) / n)).sinh().atan() * 180.0 / PI;
+        let lat_min = (PI * (1.0 - 2.0 * f64::from(y + 1) / n)).sinh().atan() * 180.0 / PI;
+
+        vec![
+            [lng_min, lat_min],
+            [lng_max, lat_min],
+            [lng_max, lat_max],
+            [lng_min, lat_max],
+            [lng_min, lat_min],
+        ]
+    }
+
     /// The tile at a coarser zoom: right-shift the high-zoom tile coordinates
     /// instead of repeating the transcendental math.
     pub(crate) fn shift(self, shift: u8) -> Self {
