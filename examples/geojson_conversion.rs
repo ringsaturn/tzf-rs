@@ -1,13 +1,12 @@
 /// Example: Convert timezone data to GeoJSON format
 ///
-/// This example demonstrates how to use the GeoJSON conversion functions
-/// for Finder, FuzzyFinder, and DefaultFinder.
-use tzf_rs::{DefaultFinder, Finder, FuzzyFinder};
+/// Demonstrates the GeoJSON conversion methods on both finder mechanisms.
+use tzf_rs::{DefaultFinder, EmbeddedFinder};
 
 fn main() {
-    // Example 1: Convert Finder data to GeoJSON
-    println!("=== Example 1: Finder to GeoJSON ===");
-    let finder = Finder::new();
+    // Example 1: Convert DefaultFinder data to GeoJSON
+    println!("=== Example 1: DefaultFinder to GeoJSON ===");
+    let finder = DefaultFinder::new();
     let geojson = finder.to_geojson();
 
     println!("Type: {}", geojson.collection_type);
@@ -26,40 +25,11 @@ fn main() {
     println!("\nGeoJSON preview (first 500 chars):");
     println!("{}", &json_string[..json_string.len().min(500)]);
 
-    // Example 2: Convert FuzzyFinder data to GeoJSON
-    println!("\n\n=== Example 2: FuzzyFinder to GeoJSON ===");
-    let fuzzy_finder = FuzzyFinder::new();
-    let fuzzy_geojson = fuzzy_finder.to_geojson();
+    // Example 2: EmbeddedFinder exports the same data, decoding on demand
+    println!("\n\n=== Example 2: EmbeddedFinder to GeoJSON ===");
+    let embedded = EmbeddedFinder::new();
+    let embedded_geojson = embedded.to_geojson();
 
-    println!("Type: {}", fuzzy_geojson.collection_type);
-    println!("Number of features: {}", fuzzy_geojson.features.len());
-
-    // Example 3: Convert DefaultFinder data to GeoJSON
-    println!("\n\n=== Example 3: DefaultFinder to GeoJSON ===");
-    let default_finder = DefaultFinder::new();
-    let default_geojson = default_finder.to_geojson();
-
-    println!("Type: {}", default_geojson.collection_type);
-    println!("Number of features: {}", default_geojson.features.len());
-
-    // Example 4: Save to a file (optional, commented out)
-    // std::fs::write("timezones.geojson", json_string).unwrap();
-    // println!("\nGeoJSON saved to timezones.geojson");
-
-    // Example 5: Find a specific timezone and export just that one
-    println!("\n\n=== Example 4: Export specific timezone ===");
-    let shanghai_feature: Option<&tzf_rs::FeatureItem> = geojson
-        .features
-        .iter()
-        .find(|f| f.properties.tzid == "Asia/Shanghai");
-
-    if let Some(feature) = shanghai_feature {
-        println!("Found timezone: {}", feature.properties.tzid);
-        let single_feature_json = feature.to_string_pretty();
-        println!("Feature JSON (first 300 chars):");
-        println!(
-            "{}",
-            &single_feature_json[..single_feature_json.len().min(300)]
-        );
-    }
+    println!("Type: {}", embedded_geojson.collection_type);
+    println!("Number of features: {}", embedded_geojson.features.len());
 }

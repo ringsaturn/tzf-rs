@@ -1,123 +1,63 @@
-use cities_json::get_random_cities;
-use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use cities_json::{CITIES, get_random_cities};
+use criterion::{Criterion, criterion_group, criterion_main};
 use lazy_static::lazy_static;
-use tzf_dist::load_topology_compress_topo;
-use tzf_rs::{DefaultFinder, Finder, FinderOptions, FuzzyFinder, pbgen};
+use std::hint::black_box;
+use tzf_rs::{DefaultFinder, EmbeddedFinder};
 
 lazy_static! {
-    static ref DEFAULT_FINDER: DefaultFinder = DefaultFinder::default();
-    static ref FINDER: Finder = Finder::default();
-    static ref FUZZY_FINDER: FuzzyFinder = FuzzyFinder::default();
-    static ref FINDER_YSTRIPES_ONLY: Finder = {
-        let tzs = pbgen::CompressedTopoTimezones::try_from(load_topology_compress_topo())
-            .unwrap_or_default();
-        Finder::from_compressed_topo_with_options(tzs, FinderOptions::y_stripes())
-    };
-    static ref FINDER_NO_INDEX: Finder = {
-        let tzs = pbgen::CompressedTopoTimezones::try_from(load_topology_compress_topo())
-            .unwrap_or_default();
-        Finder::from_compressed_topo_with_options(tzs, FinderOptions::no_index())
-    };
-    static ref DEFAULT_FINDER_YSTRIPES_ONLY: DefaultFinder =
-        DefaultFinder::new_with_options(FinderOptions::y_stripes());
-    static ref DEFAULT_FINDER_NO_INDEX: DefaultFinder =
-        DefaultFinder::new_with_options(FinderOptions::no_index());
+    static ref DEFAULT_FINDER: DefaultFinder = DefaultFinder::new();
+    static ref EMBEDDED_FINDER: EmbeddedFinder = EmbeddedFinder::new();
 }
 
-fn bench_default_finder_random_city() {
+fn bench_queries(c: &mut Criterion) {
     let city = get_random_cities();
-    let _ = DEFAULT_FINDER.get_tz_name(city.lng, city.lat);
-}
 
-fn bench_finder_random_city() {
-    let city = get_random_cities();
-    let _ = FINDER.get_tz_name(city.lng, city.lat);
-}
-
-fn bench_finder_y_stripes_only_random_city() {
-    let city = get_random_cities();
-    let _ = FINDER_YSTRIPES_ONLY.get_tz_name(city.lng, city.lat);
-}
-
-fn bench_finder_no_index_random_city() {
-    let city = get_random_cities();
-    let _ = FINDER_NO_INDEX.get_tz_name(city.lng, city.lat);
-}
-
-fn bench_default_finder_y_stripes_only_random_city() {
-    let city = get_random_cities();
-    let _ = DEFAULT_FINDER_YSTRIPES_ONLY.get_tz_name(city.lng, city.lat);
-}
-
-fn bench_default_finder_no_index_random_city() {
-    let city = get_random_cities();
-    let _ = DEFAULT_FINDER_NO_INDEX.get_tz_name(city.lng, city.lat);
-}
-
-fn bench_fuzzy_finder_random_city() {
-    let city = get_random_cities();
-    let _ = FUZZY_FINDER.get_tz_name(city.lng, city.lat);
-}
-
-fn bench_finders(c: &mut Criterion) {
-    let mut group = c.benchmark_group("Finders");
-
-    // warmup
-    let _ = DEFAULT_FINDER.get_tz_name(116.3883, 39.9289);
-    let _ = FINDER.get_tz_name(116.3883, 39.9289);
-
-    let i = &0;
-    group.bench_with_input(BenchmarkId::new("DefaultFinder", i), i, |b, _i| {
-        b.iter(|| bench_default_finder_random_city());
+    c.bench_function("default_finder_random_city", |b| {
+        b.iter(|| black_box(DEFAULT_FINDER.get_tz_name(city.lng, city.lat)));
     });
-    group.bench_with_input(BenchmarkId::new("Finder_NoIndex", i), i, |b, _i| {
-        b.iter(|| bench_finder_random_city());
+    c.bench_function("embedded_finder_random_city", |b| {
+        b.iter(|| black_box(EMBEDDED_FINDER.get_tz_name(city.lng, city.lat)));
     });
-    group.bench_with_input(BenchmarkId::new("FuzzyFinder", i), i, |b, _i| {
-        b.iter(|| bench_fuzzy_finder_random_city());
+    c.bench_function("default_finder_get_tz_names_random_city", |b| {
+        b.iter(|| black_box(DEFAULT_FINDER.get_tz_names(city.lng, city.lat)));
     });
+    c.bench_function("embedded_finder_get_tz_names_random_city", |b| {
+        b.iter(|| black_box(EMBEDDED_FINDER.get_tz_names(city.lng, city.lat)));
+    });
+}
 
+/// Whole-dataset sweep: amortizes per-query variance across every city.
+fn bench_all_cities(c: &mut Criterion) {
+    let mut group = c.benchmark_group("all_cities");
+    group.sample_size(10);
+    group.bench_function("default_finder", |b| {
+        b.iter(|| {
+            for city in CITIES.iter() {
+                black_box(DEFAULT_FINDER.get_tz_name(city.lng, city.lat));
+            }
+        });
+    });
+    group.bench_function("embedded_finder", |b| {
+        b.iter(|| {
+            for city in CITIES.iter() {
+                black_box(EMBEDDED_FINDER.get_tz_name(city.lng, city.lat));
+            }
+        });
+    });
     group.finish();
 }
 
-fn bench_finder_index_modes(c: &mut Criterion) {
-    let mut group = c.benchmark_group("FinderIndexModes");
-
-    let _ = FINDER_YSTRIPES_ONLY.get_tz_name(116.3883, 39.9289);
-    let _ = FINDER_NO_INDEX.get_tz_name(116.3883, 39.9289);
-
-    let i = &0;
-    group.bench_with_input(BenchmarkId::new("YStripesOnly", i), i, |b, _i| {
-        b.iter(|| bench_finder_y_stripes_only_random_city());
+fn bench_load(c: &mut Criterion) {
+    let mut group = c.benchmark_group("load");
+    group.sample_size(10);
+    group.bench_function("default_finder_new", |b| {
+        b.iter(|| black_box(DefaultFinder::new()));
     });
-    group.bench_with_input(BenchmarkId::new("NoIndex", i), i, |b, _i| {
-        b.iter(|| bench_finder_no_index_random_city());
+    group.bench_function("embedded_finder_new", |b| {
+        b.iter(|| black_box(EmbeddedFinder::new()));
     });
-
     group.finish();
 }
 
-fn bench_default_finder_index_modes(c: &mut Criterion) {
-    let mut group = c.benchmark_group("DefaultFinderIndexModes");
-
-    let _ = DEFAULT_FINDER_YSTRIPES_ONLY.get_tz_name(116.3883, 39.9289);
-    let _ = DEFAULT_FINDER_NO_INDEX.get_tz_name(116.3883, 39.9289);
-
-    let i = &0;
-    group.bench_with_input(BenchmarkId::new("YStripesOnly", i), i, |b, _i| {
-        b.iter(|| bench_default_finder_y_stripes_only_random_city());
-    });
-    group.bench_with_input(BenchmarkId::new("NoIndex", i), i, |b, _i| {
-        b.iter(|| bench_default_finder_no_index_random_city());
-    });
-
-    group.finish();
-}
-
-criterion_group!(
-    benches,
-    bench_finders,
-    bench_finder_index_modes,
-    bench_default_finder_index_modes
-);
+criterion_group!(benches, bench_queries, bench_all_cities, bench_load);
 criterion_main!(benches);

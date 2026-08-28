@@ -3,8 +3,9 @@
 //! neighbour and return an empty result.
 
 #[cfg(test)]
+#[cfg(feature = "bundled")]
 mod tests {
-    use tzf_rs::{DefaultFinder, Finder};
+    use tzf_rs::{DefaultFinder, EmbeddedFinder};
 
     #[test]
     fn nautical_border_is_not_a_gap() {
@@ -26,7 +27,8 @@ mod tests {
             );
         }
 
-        assert_eq!(finder.get_tz_names(7.5, 54.5), ["Etc/GMT-1", "Etc/GMT"]);
+        // v2 sorts multi-results lexicographically.
+        assert_eq!(finder.get_tz_names(7.5, 54.5), ["Etc/GMT", "Etc/GMT-1"]);
         assert_eq!(finder.get_tz_names(-22.5, 54.5), ["Etc/GMT+1", "Etc/GMT+2"]);
     }
 
@@ -40,11 +42,25 @@ mod tests {
         assert_eq!(finder.get_tz_name(-22.5001, 54.5), "Etc/GMT+2");
     }
 
+    #[test]
+    fn embedded_finder_borders_match() {
+        let finder = EmbeddedFinder::new();
+
+        for (lng, lat) in [(7.5, 54.5), (-22.5, 54.5)] {
+            assert!(
+                !finder.get_tz_name(lng, lat).is_empty(),
+                "get_tz_name({lng}, {lat}) is empty"
+            );
+        }
+        assert_eq!(finder.get_tz_names(7.5, 54.5), ["Etc/GMT", "Etc/GMT-1"]);
+        assert_eq!(finder.get_tz_names(-22.5, 54.5), ["Etc/GMT+1", "Etc/GMT+2"]);
+    }
+
     /// A 1°×1° sweep of the whole globe. Every point used to miss on the 24
     /// nautical meridians (2753 empty results); nothing may miss now.
     #[test]
     fn global_grid_has_no_holes() {
-        let finder = Finder::new();
+        let finder = DefaultFinder::new();
 
         let mut empty: Vec<(f64, f64)> = vec![];
         let mut lng = -179.5;
