@@ -5,6 +5,14 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  # Same interim sibling bootstrap as rust.yml — see the note there.
+  TZF_REF: embedded
+  TZF_DIST_REF: v2-artifacts
+  TBB_VERSION: 2026c
+
+defaults:
+  run:
+    working-directory: tzf-rs
 
 jobs:
   deploy:
@@ -18,9 +26,38 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          path: tzf-rs
+      - uses: actions/checkout@v7
+        with:
+          repository: ringsaturn/tzf
+          ref: ${{ env.TZF_REF }}
+          path: tzf
+      - uses: actions/checkout@v7
+        with:
+          repository: ringsaturn/tzf-dist
+          ref: ${{ env.TZF_DIST_REF }}
+          path: tzf-dist
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tzf/go.mod
+          cache-dependency-path: tzf/go.sum
+
+      - name: Cache tzf-dist artifact build
+        uses: actions/cache@v4
+        with:
+          path: tzf/tmp/tzf-dist-dev
+          key: tzf-dist-dev-${{ env.TBB_VERSION }}-${{ hashFiles('tzf/scripts/build-tzf-dist-dev.sh', 'tzf/internal/**', 'tzf/cmd/**') }}
+
+      - name: Build and install tzf-dist artifacts
+        working-directory: tzf
+        run: ./scripts/build-tzf-dist-dev.sh
+
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: nightly
+          workspaces: tzf-rs
       - name: Build documentation with all features
         run: make doc
 
@@ -34,7 +71,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: "./target/doc"
+          path: "./tzf-rs/target/doc"
 
       - name: Deploy to GitHub Pages
         id: deployment

@@ -2,29 +2,38 @@ name: Rust
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "v2"]
     paths:
       - "**/*.rs"
       - "Cargo.toml"
       - "Cargo.lock"
-      - "build.rs"
       - "rust-toolchain.toml"
       - ".cargo/**"
+      - "Makefile"
       - ".github/workflows/rust.yml"
   pull_request:
-    branches: ["main"]
+    branches: ["main", "v2"]
     paths:
       - "**/*.rs"
       - "Cargo.toml"
       - "Cargo.lock"
-      - "build.rs"
       - "rust-toolchain.toml"
       - ".cargo/**"
+      - "Makefile"
       - ".github/workflows/rust.yml"
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
+  # Sibling checkouts backing the Cargo path dependency on ../tzf-dist.
+  # Interim wiring until tzf-dist publishes the .tzb artifact release: the
+  # tzf checkout's build script assembles the artifact set from the upstream
+  # raw GeoJSON and installs it over tzf-dist's committed placeholders.
+  # Pin both refs to tags once the v2 lines tag; drop the bootstrap (and the
+  # path dependency) once the tzf-dist release ships.
+  TZF_REF: embedded
+  TZF_DIST_REF: v2-artifacts
+  TBB_VERSION: 2026c
 
 permissions:
   contents: write
@@ -33,6 +42,10 @@ permissions:
 concurrency:
   group: publish-${{ github.ref_name }}
   cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: tzf-rs
 
 jobs:
   build:
@@ -44,9 +57,38 @@ jobs:
           comment_on_pr: false
 
       - uses: actions/checkout@v7
+        with:
+          path: tzf-rs
+      - uses: actions/checkout@v7
+        with:
+          repository: ringsaturn/tzf
+          ref: ${{ env.TZF_REF }}
+          path: tzf
+      - uses: actions/checkout@v7
+        with:
+          repository: ringsaturn/tzf-dist
+          ref: ${{ env.TZF_DIST_REF }}
+          path: tzf-dist
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tzf/go.mod
+          cache-dependency-path: tzf/go.sum
+
+      - name: Cache tzf-dist artifact build
+        uses: actions/cache@v4
+        with:
+          path: tzf/tmp/tzf-dist-dev
+          key: tzf-dist-dev-${{ env.TBB_VERSION }}-${{ hashFiles('tzf/scripts/build-tzf-dist-dev.sh', 'tzf/internal/**', 'tzf/cmd/**') }}
+
+      - name: Build and install tzf-dist artifacts
+        working-directory: tzf
+        run: ./scripts/build-tzf-dist-dev.sh
+
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt
+          workspaces: tzf-rs
 
       - run: make ci
 
@@ -65,14 +107,12 @@ jobs:
         with:
           name: benchmark_summary
           path: |
-            benchmark_summary.md
-            benchmark_report.md
-            benchmark_result.txt
-            benchmark_full_report.md
-            benchmark_full_result.txt
+            tzf-rs/benchmark_summary.md
+            tzf-rs/benchmark_result.txt
+            tzf-rs/benchmark_full_result.txt
 
       - name: Upload criterion results artifact
         uses: actions/upload-artifact@v7
         with:
           name: criterion_result
-          path: ./target/criterion
+          path: tzf-rs/target/criterion

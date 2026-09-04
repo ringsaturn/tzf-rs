@@ -7,39 +7,68 @@
   [ringsaturn.github.io/tzf-rs](https://ringsaturn.github.io/tzf-rs/tzf_rs/)
 - Try it online: [tzf-web](https://ringsaturn.github.io/tzf-web/)
 
-## Build options
+> [!NOTE]
+>
+> **Version 2 is protobuf-free.** The data source is the TZF embedded binary
+> format (`.tzb`) shipped by
+> [tzf-dist](https://github.com/ringsaturn/tzf-dist), and the public surface
+> is two finder types: `DefaultFinder` and `EmbeddedFinder`. See
+> [Migrating from v1](#migrating-from-v1).
 
-By default, the binary is built as well. If you don't want/need it, you can omit
-the default features and build like this:
-
-```bash
-cargo build
-```
-
-Or add in the below way:
+## Quick start
 
 ```bash
 cargo add tzf-rs
 ```
 
-## Best Practices
-
-It's expensive to init tzf-rs's `Finder`/`FuzzyFinder`/`DefaultFinder`, so
-please consider reusing instances or creating one as a global variable. Below is
-a global variable example:
-
 ```rust
-use lazy_static::lazy_static;
 use tzf_rs::DefaultFinder;
 
-lazy_static! {
-    static ref FINDER: DefaultFinder = DefaultFinder::new();
+fn main() {
+    let finder = DefaultFinder::new();
+    // Please note coords are lng-lat.
+    println!("{:?}", finder.get_tz_name(116.3883, 39.9289));
+    println!("{:?}", finder.get_tz_names(116.3883, 39.9289));
 }
+```
+
+By default the `tzf` CLI binary is built as well. If you don't want/need it,
+you can omit the default features and build like this:
+
+```bash
+cargo build --no-default-features --features bundled
+```
+
+## Finders
+
+- **`DefaultFinder`** — the recommended general-purpose finder. Expands the
+  file's geometry into materialized polygons at load time. `get_tz_name`
+  answers most queries from the preindex tiles in ~100 ns and falls back to
+  exact point-in-polygon (YStripes-accelerated ray casting) for boundary
+  cases; `get_tz_names` is always polygon-exact.
+- **`EmbeddedFinder`** — the low-memory finder. Queries the `.tzb` bytes in
+  place, without expanding geometry: total footprint is roughly the ~4 MB
+  file plus ~1 KB of state. Queries are microseconds instead of hundreds of
+  nanoseconds on boundary cases; results are identical to `DefaultFinder`.
+
+Both also load caller-supplied bytes: `DefaultFinder::from_tzb` /
+`EmbeddedFinder::from_tzb`.
+
+## Best Practices
+
+It's expensive to init tzf-rs's `DefaultFinder`/`EmbeddedFinder`, so please
+consider reusing instances or creating one as a global variable:
+
+```rust
+use std::sync::LazyLock;
+use tzf_rs::DefaultFinder;
+
+static FINDER: LazyLock<DefaultFinder> = LazyLock::new(DefaultFinder::new);
 
 fn main() {
     // Please note coords are lng-lat.
-    print!("{:?}\n", FINDER.get_tz_name(116.3883, 39.9289));
-    print!("{:?}\n", FINDER.get_tz_names(116.3883, 39.9289));
+    println!("{:?}", FINDER.get_tz_name(116.3883, 39.9289));
+    println!("{:?}", FINDER.get_tz_names(116.3883, 39.9289));
 }
 ```
 
@@ -52,16 +81,10 @@ A Redis protocol demo could be used here:
 
 ### Setup 100% Accurate Lookup
 
-> [!NOTE]
->
-> The built-in full data feature is introduced in `v1.3.0`.
->
-> By default, tzf-rs uses simplified shape data. The error around borders is
-> small and bounded: every simplified boundary stays within ~111 m of the
-> full-precision border. See [Accuracy](#accuracy) for measured numbers. If you
-> need 100% accurate lookup, you can use the following code to set it up:
->
-> **This setup requeires more time and memory to build the `DefaultFinder`.**
+By default, tzf-rs uses simplified shape data. The error around borders is
+small and bounded: every simplified boundary stays within ~111 m of the
+full-precision border. See [Accuracy](#accuracy) for measured numbers. If you
+need 100% accurate lookup, use the full-precision dataset (git-only, ~14 MB):
 
 ```toml
 tzf-rs = { git =  "https://github.com/ringsaturn/tzf-rs", rev = "v{X}.{Y}.{Z}", features = ["full"], default-features = false }
@@ -78,34 +101,7 @@ fn main() {
 }
 ```
 
-## Advanced Usage - Toggle YStripes Index
-
-> [!NOTE]
->
-> This feature is introduced `v1.2.0` and is **enabled by default**, since the
-> build time is not significantly increased, but the query time is significantly
-> decreased. If you want to disable it, please use `FinderOptions::NoIndex`
-> explicitly. Below is the code example to disable it:
->
-> ```rust
-> use tzf_rs::{DefaultFinder, FinderOptions};
->
-> fn main() {
->     let default_finder = DefaultFinder::new_with_options(FinderOptions::no_index());
->     println!("{}", default_finder.get_tz_name(139.767125, 35.681236));
-> }
-> ```
-
-YStripes needs more time and memory than NoIndex, below is data from my machine
-to build the `DefaultFinder` with currently supported index modes:
-
-| Index mode    | Build time (ms) | Memory usage (MiB) |
-| ------------- | --------------: | -----------------: |
-| No index      |             ~40 |                ~58 |
-| YStripes only |             ~65 |                ~82 |
-
-For the performance comparison of different index modes, please see the
-[Performance](#performance) section below.
+**This setup requires more time and memory to build the `DefaultFinder`.**
 
 ## Advanced Usage - Export GeoJSON
 
@@ -118,13 +114,12 @@ For the performance comparison of different index modes, please see the
 > push to CDN.
 
 It's a common use case make some visualization of timezone boundaries. For this
-purpose, tzf-rs provides methods to export the preindex tile data or specific
-timezone polygons as GeoJSON format.
+purpose, tzf-rs provides methods to export specific timezone polygons as
+GeoJSON format.
 
 To enable this feature, you need to build tzf-rs with `export-geojson` feature:
 
 ```toml
-# Please note that >= 1.1.1 is required to have full GeoJSON functionality.
 tzf-rs = { version = "{version}", features = ["export-geojson"]}
 ```
 
@@ -145,9 +140,10 @@ fn main() {
         lng, lat, tz_name
     );
 
-    // Get the Polygon boundary for the timezone
-    if let Some(boundary_file) = default_finder.finder.get_tz_geojson(&tz_name) {
-        // It's GeoJSON Feature Collection, and the features contains "MultiPolygon" geometry for the timezone.
+    // Get the polygon boundary for the timezone.
+    if let Some(boundary_file) = default_finder.get_tz_geojson(&tz_name) {
+        // It's a GeoJSON FeatureCollection whose features contain
+        // "MultiPolygon" geometry for the timezone.
         println!("Found GeoJSON feature for timezone: {}", tz_name);
         let mut polygons: usize = 0;
         for feature in boundary_file.features {
@@ -158,21 +154,6 @@ fn main() {
             polygons
         );
     }
-
-    // Get the Index polygon boundary for the timezone
-    if let Some(index_boundary_file) = default_finder.fuzzy_finder.get_tz_geojson(&tz_name) {
-        // It's GeoJSON Feature, and the geometry contains "MultiPolygon" for the timezone index.
-        // But the Polygons are actually map tiles.
-        println!("Found Index GeoJSON feature for timezone: {}", tz_name);
-        let mut polygons: usize = 0;
-        for polygon in index_boundary_file.geometry.coordinates {
-            polygons += polygon.len();
-        }
-        println!(
-            "Total number of tile polygons in index feature: {}",
-            polygons
-        );
-    }
 }
 ```
 
@@ -180,17 +161,39 @@ fn main() {
 cargo run --example query_tokyo --features export-geojson
 ```
 
-```console
-The timezone at longitude 139.6917, latitude 35.6895 is: Asia/Tokyo
-Found GeoJSON feature for timezone: Asia/Tokyo
-Total number of polygons in feature collection: 24
-Found Index GeoJSON feature for timezone: Asia/Tokyo
-```
+`EmbeddedFinder` exports the same GeoJSON, decoding only the requested
+timezone's rings from the file on demand.
 
 For now, tzf-rs' binding in Wasm, named
 [tzf-wasm](https://github.com/ringsaturn/tzf-wasm), has exported this feature
 and it has been deployed to the [tzf-web](https://ringsaturn.github.io/tzf-web/)
 for online usage.
+
+## Migrating from v1
+
+v1 loaded protobuf artifacts (`CompressedTopoTimezones`, `PreindexTimezones`);
+those artifacts are no longer published, and v2 removes every protobuf-typed
+API. Mappings:
+
+| v1                                       | v2                                                        |
+| ---------------------------------------- | --------------------------------------------------------- |
+| `DefaultFinder::new()`                   | `DefaultFinder::new()` (unchanged call sites)             |
+| `DefaultFinder::new_full()`              | `DefaultFinder::new_full()` (unchanged call sites)        |
+| `Finder` (polygon-only)                  | `DefaultFinder` (`get_tz_names` stays polygon-exact)      |
+| `FuzzyFinder` (tile-only)                | removed — the preindex is the fast path inside every finder |
+| `Finder::from_compressed_topo(pb)`       | `DefaultFinder::from_tzb(bytes)`                          |
+| `FuzzyFinder::from_pb(pb)`               | removed, no replacement                                   |
+| `FinderOptions` / `new_with_options`     | removed — YStripes is always on                           |
+| `finder.finder.get_tz_geojson(...)`      | `finder.get_tz_geojson(...)`                              |
+| `FuzzyFinder` tile-bbox GeoJSON          | removed, no replacement                                   |
+
+Behavior changes:
+
+- `get_tz_names` results are now sorted lexicographically.
+- `get_tz_name` on `DefaultFinder` answers from the preindex tile when one
+  covers the point (v1 `DefaultFinder` semantics; v1 `Finder` users who need
+  polygon-exact multi-results use `get_tz_names`).
+- New: `EmbeddedFinder`, an in-place low-memory mechanism (~4 MB total).
 
 ## Accuracy
 
@@ -219,13 +222,13 @@ is sensitive inside that band, enable the `full` feature and use
 
 The tzf-rs package is intended for high-performance geospatial query services,
 such as weather forecasting APIs. Most queries can be returned within a very
-short time, averaging around 300 nanoseconds.
+short time, averaging around 100-300 nanoseconds with `DefaultFinder`.
 
 Here is what has been done to improve performance:
 
 1. Using the simplified dataset by default.
-2. Using pre-indexing to handle most queries takes approximately 200
-   nanoseconds.
+2. Using pre-indexing (the `.tzb` FUZZY section) to handle most queries in
+   about 100 nanoseconds.
 3. Using a finely-tuned Ray Casting algorithm package
    [`ringsaturn/geometry-rs`](https://github.com/ringsaturn/geometry-rs) to
    verify whether a polygon contains a point.
@@ -233,61 +236,30 @@ Here is what has been done to improve performance:
      [`tg`](https://github.com/tidwall/tg)'s ) to accerate polygon queries. This
      polygon index works when the pre-indexing missing, especially for queries
      around the border.
-   - Also a grid-index to quickly find candidate polygons, inspired by Aaron
-     Roney's [rtz](https://github.com/twitchax/rtz).
+   - Also the dense 1°×1° grid index carried by the `.tzb` file to quickly
+     find candidate polygons, inspired by Aaron Roney's
+     [rtz](https://github.com/twitchax/rtz).
 
 That's all. There are no black magic tricks inside the tzf-rs.
 
-Below is a benchmark run on my MacBook Pro with Apple M3 Max:
+Benchmark numbers (Apple M3 Max, bundled lite dataset, `cargo bench`):
 
-Topology-Simplified (bundled) / Random Cities:
+| Target         | Scenario                  | Median estimate |
+| -------------- | ------------------------- | --------------: |
+| DefaultFinder  | random city               |         ~260 ns |
+| DefaultFinder  | edge city (preindex miss) |         ~400 ns |
+| EmbeddedFinder | random city               |         ~1.6 µs |
+| EmbeddedFinder | edge city (preindex miss) |         ~3.9 µs |
+| DefaultFinder  | open (`new()`)            |          ~13 ms |
+| EmbeddedFinder | open (`new()`)            |           ~2 ms |
 
-| Target        | Dataset                        | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
-| ------------- | ------------------------------ | ------------- | -------------------: | ------------------------: | -----------------: |
-| Finder        | topology-simplified            | YStripes only |               0.5698 |                 1,755,033 |              69.72 |
-| Finder        | topology-simplified            | No index      |               4.9164 |                   203,401 |              42.46 |
-| DefaultFinder | topology-simplified + preindex | YStripes only |               0.3040 |                 3,289,365 |              82.10 |
-| DefaultFinder | topology-simplified + preindex | No index      |               5.0438 |                   198,263 |              58.11 |
+tzf-rs consumes the `.tzb` profile only. The `.tzm` memory image the Go
+runtime uses exists for zero-copy ring aliasing, which geometry-rs's owned
+polygon storage cannot exploit — measured here it saved ~3 ms of open time
+while costing more memory, so it is not supported.
 
-Topology-Simplified (bundled) / Edge Cities (FuzzyFinder misses)
-
-| Target                   | Dataset                        | Scenario                          | Median estimate (µs) | Approx throughput (ops/s) |
-| ------------------------ | ------------------------------ | --------------------------------- | -------------------: | ------------------------: |
-| FuzzyFinder              | preindex                       | FuzzyFinder miss                  |               0.1564 |                 6,393,044 |
-| DefaultFinder (YStripes) | topology-simplified + preindex | DefaultFinder (YStripes) fallback |               0.6256 |                 1,598,338 |
-| Finder                   | topology-simplified            | YStripes                          |               0.4421 |                 2,261,676 |
-| Finder                   | topology-simplified            | No index                          |               4.9164 |                   203,401 |
-| DefaultFinder            | topology-simplified + preindex | YStripes                          |               0.6069 |                 1,647,718 |
-| DefaultFinder            | topology-simplified + preindex | No index                          |               5.0438 |                   198,263 |
-
-Full-Precision (full):
-
-| Target               | Dataset                   | Scenario      | Median estimate (µs) | Approx throughput (ops/s) | Avg peak RSS (MiB) |
-| -------------------- | ------------------------- | ------------- | -------------------: | ------------------------: | -----------------: |
-| Finder (full)        | full-precision            | YStripes only |               1.2227 |                   817,862 |             314.59 |
-| Finder (full)        | full-precision            | No index      |              43.0520 |                    23,228 |             157.02 |
-| DefaultFinder (full) | full-precision + preindex | YStripes only |               0.5527 |                 1,809,136 |             323.58 |
-| DefaultFinder (full) | full-precision + preindex | No index      |               7.4823 |                   133,649 |             171.44 |
-
-The `FuzzyFinder` is not included in the benchmark, since it's query time is
-consistent.
-
-<details>
-<summary>DefaultFinder's Benchmark charts (click to expand)</summary>
-
-Violin plot:
-
-![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/violin.svg)
-
-No Index:
-
-![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/no_index.pdf.svg)
-
-YStripes only:
-
-![](https://raw.githubusercontent.com/ringsaturn/tzf-rs/refs/heads/main/assets/ystripes_only.pdf.svg)
-
-</details>
+Peak RSS (macOS, `make memory`): ~44 MiB for `DefaultFinder` (v1 needed
+~82 MiB), ~6 MiB for `EmbeddedFinder`.
 
 You can view more details from latest benchmark from
 [GitHub Actions logs](https://github.com/ringsaturn/tzf-rs/actions/workflows/rust.yml).
@@ -299,8 +271,8 @@ Rust port's Python binding; you can view it
 [here](https://blog.ringsaturn.me/en/posts/2023-01-31-history-of-tzf/).
 
 - Original Go repo: [`ringsaturn/tzf`](https://github.com/ringsaturn/tzf)
-- Binary timezone data:
-  [`ringsaturn/tzf-rel`](https://github.com/ringsaturn/tzf-rel)
+- Binary timezone data (`.tzb` / `.tzm`):
+  [`ringsaturn/tzf-dist`](https://github.com/ringsaturn/tzf-dist)
 - Geometry: use
   [`ringsaturn/geometry-rs`](https://github.com/ringsaturn/geometry-rs) which is
   [`tidwall/geometry`](https://github.com/tidwall/geometry)'s Rust port.
@@ -339,7 +311,8 @@ see more in
 This project is licensed under the [MIT license](./LICENSE) and
 [Anti CSDN License](./LICENSE_ANTI_CSDN.md)[^anti_csdn]. The data is licensed
 under the
-[ODbL license](https://github.com/ringsaturn/tzf-rel/blob/main/LICENSE), same as
+[ODbL license](https://github.com/ringsaturn/tzf-dist/blob/main/LICENSE_DATA),
+same as
 [`evansiroky/timezone-boundary-builder`](https://github.com/evansiroky/timezone-boundary-builder)
 
 [^anti_csdn]:
