@@ -194,8 +194,8 @@ pub(crate) fn add_delta(prev: i32, delta: i32) -> Result<i32, Error> {
 pub(crate) fn crc32_ieee(data: &[u8]) -> u32 {
     const TABLES: [[u32; 256]; 8] = crc32_tables();
     let mut crc = !0u32;
-    let mut chunks = data.chunks_exact(8);
-    for chunk in &mut chunks {
+    let (chunks, remainder) = data.as_chunks::<8>();
+    for chunk in chunks {
         let lo = u32_le(chunk, 0) ^ crc;
         let hi = u32_le(chunk, 4);
         crc = TABLES[7][(lo & 0xff) as usize]
@@ -207,7 +207,7 @@ pub(crate) fn crc32_ieee(data: &[u8]) -> u32 {
             ^ TABLES[1][((hi >> 16) & 0xff) as usize]
             ^ TABLES[0][(hi >> 24) as usize];
     }
-    for &b in chunks.remainder() {
+    for &b in remainder {
         crc = TABLES[0][((crc ^ u32::from(b)) & 0xff) as usize] ^ (crc >> 8);
     }
     !crc
