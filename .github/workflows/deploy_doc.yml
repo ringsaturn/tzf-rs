@@ -28,29 +28,46 @@ jobs:
       - uses: actions/checkout@v7
         with:
           path: tzf-rs
+
+      # See rust.yml: the bootstrap is only needed while Cargo.toml carries
+      # the dev-form path dependency on ../tzf-dist.
+      - name: Does this manifest still need the sibling tzf-dist bootstrap?
+        id: data
+        run: |
+          if grep -Eq '^[[:space:]]*tzf-dist[[:space:]]*=.*path[[:space:]]*=' Cargo.toml; then
+            echo "bootstrap=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "bootstrap=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v7
+        if: steps.data.outputs.bootstrap == 'true'
         with:
           repository: ringsaturn/tzf
           ref: ${{ env.TZF_REF }}
           path: tzf
       - uses: actions/checkout@v7
+        if: steps.data.outputs.bootstrap == 'true'
         with:
           repository: ringsaturn/tzf-dist
           ref: ${{ env.TZF_DIST_REF }}
           path: tzf-dist
 
       - uses: actions/setup-go@v5
+        if: steps.data.outputs.bootstrap == 'true'
         with:
           go-version-file: tzf/go.mod
           cache-dependency-path: tzf/go.sum
 
       - name: Cache tzf-dist artifact build
+        if: steps.data.outputs.bootstrap == 'true'
         uses: actions/cache@v4
         with:
           path: tzf/tmp/tzf-dist-dev
           key: tzf-dist-dev-${{ env.TBB_VERSION }}-${{ hashFiles('tzf/scripts/build-tzf-dist-dev.sh', 'tzf/internal/**', 'tzf/cmd/**') }}
 
       - name: Build and install tzf-dist artifacts
+        if: steps.data.outputs.bootstrap == 'true'
         working-directory: tzf
         run: ./scripts/build-tzf-dist-dev.sh
 

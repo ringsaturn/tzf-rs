@@ -29,8 +29,19 @@ env:
   # Interim wiring until tzf-dist publishes the .tzb artifact release: the
   # tzf checkout's build script assembles the artifact set from the upstream
   # raw GeoJSON and installs it over tzf-dist's committed placeholders.
-  # Pin both refs to tags once the v2 lines tag; drop the bootstrap (and the
-  # path dependency) once the tzf-dist release ships.
+  #
+  # POST-RELEASE FORM: every step guarded by `steps.data.outputs.bootstrap`
+  # below becomes dead once Cargo.toml switches to the release-form
+  # dependencies (registry `tzf-dist` + git `tzf-dist-git`, see Cargo.toml).
+  # The guard makes that automatic — the tzf / tzf-dist checkouts, the Go
+  # toolchain, the artifact cache and the build script all skip themselves,
+  # and the job reduces to "checkout, setup-rust, make ci". Delete the
+  # guarded steps, the three env vars and `defaults.run.working-directory`
+  # (moving the checkout back to the workspace root) in a follow-up cleanup.
+  # `make test-full` / `make bench-full` keep working after the switch:
+  # building tzf-rs from its own manifest uses the git source of
+  # `tzf-dist-git`, which carries full.tzb. Only *consumers of the published
+  # crate* lose the git source (see Cargo.toml's release-form notes).
   TZF_REF: embedded
   TZF_DIST_REF: v2-artifacts
   TBB_VERSION: 2026c
@@ -59,35 +70,53 @@ jobs:
       - uses: actions/checkout@v7
         with:
           path: tzf-rs
+
+      # True only while Cargo.toml carries the dev-form path dependency on
+      # ../tzf-dist. Everything below that is guarded on it disappears by
+      # itself once the release-form dependencies land.
+      - name: Does this manifest still need the sibling tzf-dist bootstrap?
+        id: data
+        run: |
+          if grep -Eq '^[[:space:]]*tzf-dist[[:space:]]*=.*path[[:space:]]*=' Cargo.toml; then
+            echo "bootstrap=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "bootstrap=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v7
+        if: steps.data.outputs.bootstrap == 'true'
         with:
           repository: ringsaturn/tzf
           ref: ${{ env.TZF_REF }}
           path: tzf
       - uses: actions/checkout@v7
+        if: steps.data.outputs.bootstrap == 'true'
         with:
           repository: ringsaturn/tzf-dist
           ref: ${{ env.TZF_DIST_REF }}
           path: tzf-dist
 
       - uses: actions/setup-go@v5
+        if: steps.data.outputs.bootstrap == 'true'
         with:
           go-version-file: tzf/go.mod
           cache-dependency-path: tzf/go.sum
 
       - name: Cache tzf-dist artifact build
+        if: steps.data.outputs.bootstrap == 'true'
         uses: actions/cache@v4
         with:
           path: tzf/tmp/tzf-dist-dev
           key: tzf-dist-dev-${{ env.TBB_VERSION }}-${{ hashFiles('tzf/scripts/build-tzf-dist-dev.sh', 'tzf/internal/**', 'tzf/cmd/**') }}
 
       - name: Build and install tzf-dist artifacts
+        if: steps.data.outputs.bootstrap == 'true'
         working-directory: tzf
         run: ./scripts/build-tzf-dist-dev.sh
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          components: rustfmt
+          components: rustfmt, clippy
           workspaces: tzf-rs
 
       - run: make ci

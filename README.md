@@ -9,7 +9,7 @@
 
 > [!NOTE]
 >
-> **Version 2 is protobuf-free.** The data source is the TZF embedded binary
+> Version 2 is protobuf-free. The data source is the TZF embedded binary
 > format (`.tzb`) shipped by
 > [tzf-dist](https://github.com/ringsaturn/tzf-dist), and the public surface
 > is two finder types: `DefaultFinder` and `EmbeddedFinder`. See
@@ -52,7 +52,28 @@ cargo build --no-default-features --features bundled
   nanoseconds on boundary cases; results are identical to `DefaultFinder`.
 
 Both also load caller-supplied bytes: `DefaultFinder::from_tzb` /
-`EmbeddedFinder::from_tzb`.
+`EmbeddedFinder::from_tzb` (`EmbeddedFinder` takes `&'static [u8]` or an owned
+`Vec<u8>`). Both expose `get_tz_name`, `get_tz_names`, `timezonenames` and
+`data_version` (the upstream release the file was built from, e.g. `2026c`),
+and — with `export-geojson` — `to_geojson`, `get_tz_geojson`,
+`to_preindex_geojson` and `get_tz_preindex_geojson`.
+
+## Cargo features
+
+| Feature          | Default | Effect                                                                         |
+| ---------------- | :-----: | ------------------------------------------------------------------------------ |
+| `bundled`        |   yes   | Embeds the lite `.tzb` (~4 MB) from the crates.io `tzf-dist` package.           |
+| `clap`           |   yes   | Builds the `tzf` CLI binary.                                                    |
+| `export-geojson` |    no   | GeoJSON export methods (pulls in `serde` / `serde_json`).                       |
+| `full`           |    no   | Full-precision `.tzb` (~14 MB) plus `DefaultFinder::new_full()`. The data is git-only; see [Setup 100% Accurate Lookup](#setup-100-accurate-lookup). Mutually exclusive with `bundled`. |
+
+Minimum supported Rust version: 1.88 (edition 2024 plus let-chains).
+
+There is no wasm-specific feature. `wasm32-unknown-unknown` builds with
+`--no-default-features --features bundled` (drop `clap`). Load-time polygon
+assembly is distributed over `std::thread::available_parallelism()`, which
+returns an error on wasm; the loader then takes the single-threaded path, so no
+threads are spawned there.
 
 ## Best Practices
 
@@ -84,11 +105,33 @@ A Redis protocol demo could be used here:
 By default, tzf-rs uses simplified shape data. The error around borders is
 small and bounded: every simplified boundary stays within ~111 m of the
 full-precision border. See [Accuracy](#accuracy) for measured numbers. If you
-need 100% accurate lookup, use the full-precision dataset (git-only, ~14 MB):
+need 100% accurate lookup, use the full-precision dataset (~14 MB).
+
+`full.tzb` exceeds the crates.io package size limit, so the `tzf-dist` package
+published to the registry ships only `lite.tzb`. The `full` feature therefore
+needs the `tzf-dist` git source. There are two ways to get it.
+
+**A. Take tzf-rs itself from git** (the v1 recipe, still supported):
 
 ```toml
 tzf-rs = { git =  "https://github.com/ringsaturn/tzf-rs", rev = "v{X}.{Y}.{Z}", features = ["full"], default-features = false }
 ```
+
+**B. Keep tzf-rs from crates.io and patch the data crate:** add a
+`[patch.crates-io]` section to the workspace root manifest.
+
+```toml
+[dependencies]
+tzf-rs = { version = "2", features = ["full"], default-features = false }
+
+[patch.crates-io]
+tzf-dist = { git = "https://github.com/ringsaturn/tzf-dist", tag = "v0.0.2026-c-tzb1" }
+```
+
+Either way `default-features = false` is required: `full` and the default
+`bundled` feature are mutually exclusive, and enabling both is a
+`compile_error!`. Without one of these two recipes, `features = ["full"]` fails
+to compile, because the registry `tzf-dist` package contains no full dataset.
 
 ```rust,ignore
 use tzf_rs::DefaultFinder;
@@ -101,13 +144,13 @@ fn main() {
 }
 ```
 
-**This setup requires more time and memory to build the `DefaultFinder`.**
+This setup requires more time and memory to build the `DefaultFinder`.
 
 ## Advanced Usage - Export GeoJSON
 
 > [!NOTE]
 >
-> This feature is designed for **data visualization purposes** and I can't
+> This feature is designed for data visualization purposes and I can't
 > guarantee the performance when using it in high-performance scenarios. Please
 > do proper performance tests and necessary optimizations before using it in
 > high performace production, for example caching the exported GeoJSON data or
@@ -175,17 +218,25 @@ v1 loaded protobuf artifacts (`CompressedTopoTimezones`, `PreindexTimezones`);
 those artifacts are no longer published, and v2 removes every protobuf-typed
 API. Mappings:
 
-| v1                                       | v2                                                        |
-| ---------------------------------------- | --------------------------------------------------------- |
-| `DefaultFinder::new()`                   | `DefaultFinder::new()` (unchanged call sites)             |
-| `DefaultFinder::new_full()`              | `DefaultFinder::new_full()` (unchanged call sites)        |
-| `Finder` (polygon-only)                  | `DefaultFinder` (`get_tz_names` stays polygon-exact)      |
-| `FuzzyFinder` (tile-only)                | removed — the preindex is the fast path inside every finder |
-| `Finder::from_compressed_topo(pb)`       | `DefaultFinder::from_tzb(bytes)`                          |
-| `FuzzyFinder::from_pb(pb)`               | removed, no replacement                                   |
-| `FinderOptions` / `new_with_options`     | removed — YStripes is always on                           |
-| `finder.finder.get_tz_geojson(...)`      | `finder.get_tz_geojson(...)`                              |
-| `FuzzyFinder` tile-bbox GeoJSON          | removed, no replacement                                   |
+| v1                                        | v2                                                          |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| `DefaultFinder::new()`                    | unchanged                                                    |
+| `DefaultFinder::new_full()`               | unchanged (`full` feature, git-only data)                    |
+| `DefaultFinder::{get_tz_name,get_tz_names,timezonenames,data_version}` | unchanged                        |
+| `Finder` (polygon-only)                   | `DefaultFinder` (`get_tz_names` stays polygon-exact)         |
+| `FuzzyFinder` (tile-only)                 | removed — the preindex is the fast path inside every finder  |
+| `Finder::from_compressed_topo(pb)` / `from_pb(pb)` | `DefaultFinder::from_tzb(&[u8])`                    |
+| `FuzzyFinder::from_pb(pb)`                | removed — no separate tile-only finder                       |
+| `FinderOptions` / `*_with_options`        | removed — YStripes is always on                              |
+| `tzf_rs::pbgen` module                    | removed — no protobuf types in the public API                |
+| `tzf_rs::revert_timezones(&pb)`           | removed — took a protobuf type                               |
+| `finder.finder.get_tz_geojson(...)`       | `finder.get_tz_geojson(...)`                                 |
+| `FuzzyFinder::to_geojson()`               | `DefaultFinder::to_preindex_geojson() -> Option<BoundaryFile>` |
+| `FuzzyFinder::get_tz_geojson(name) -> Option<FeatureItem>` | `DefaultFinder::get_tz_preindex_geojson(name) -> Option<BoundaryFile>` |
+| feature `bundled` (pb lite data)          | feature `bundled` (lite `.tzb`)                              |
+| feature `full` (pb full data, git-only)   | feature `full` (full `.tzb`, still git-only)                 |
+| features `clap`, `export-geojson`         | unchanged                                                    |
+| —                                         | new: `EmbeddedFinder`, `tzf_rs::Error`                       |
 
 Behavior changes:
 
@@ -193,7 +244,11 @@ Behavior changes:
 - `get_tz_name` on `DefaultFinder` answers from the preindex tile when one
   covers the point (v1 `DefaultFinder` semantics; v1 `Finder` users who need
   polygon-exact multi-results use `get_tz_names`).
+- The byte constructors return `Result<_, tzf_rs::Error>`: files are
+  CRC-checked and structurally validated at open, instead of silently
+  yielding an empty finder.
 - New: `EmbeddedFinder`, an in-place low-memory mechanism (~4 MB total).
+- MSRV is now 1.88.
 
 ## Accuracy
 
@@ -204,10 +259,10 @@ the full-precision 2026c dataset with `tzf`'s `internal/cmd/borderchange`
 
 | Metric                                            |                        Result |
 | ------------------------------------------------- | ----------------------------: |
-| Certified maximum boundary displacement           | 111.2 m (+1.0 m tolerance)    |
+| Certified maximum boundary displacement           | 111.7 m (+1.0 m tolerance)    |
 | Boundary length displaced more than 100 m         | 0.41%                         |
 | Boundary length displaced more than 500 m         | 0%                            |
-| Total mis-assigned area                           | 16,828 km² (~0.003% of Earth) |
+| Total mis-assigned area                           | 16,962 km² (~0.003% of Earth) |
 | Mis-assigned area within 100 m of the true border | 92.8%                         |
 
 See [`BORDER_CHANGE.md`](https://github.com/ringsaturn/tzf/blob/main/BORDER_CHANGE.md)
@@ -222,7 +277,7 @@ is sensitive inside that band, enable the `full` feature and use
 
 The tzf-rs package is intended for high-performance geospatial query services,
 such as weather forecasting APIs. Most queries can be returned within a very
-short time, averaging around 100-300 nanoseconds with `DefaultFinder`.
+short time, averaging around 150-300 nanoseconds with `DefaultFinder`.
 
 Here is what has been done to improve performance:
 
@@ -242,16 +297,22 @@ Here is what has been done to improve performance:
 
 That's all. There are no black magic tricks inside the tzf-rs.
 
-Benchmark numbers (Apple M3 Max, bundled lite dataset, `cargo bench`):
+Benchmark numbers (Apple M3 Max, bundled lite dataset `2026c`, `make bench`):
 
-| Target         | Scenario                  | Median estimate |
-| -------------- | ------------------------- | --------------: |
-| DefaultFinder  | random city               |         ~260 ns |
-| DefaultFinder  | edge city (preindex miss) |         ~400 ns |
-| EmbeddedFinder | random city               |         ~1.6 µs |
-| EmbeddedFinder | edge city (preindex miss) |         ~3.9 µs |
-| DefaultFinder  | open (`new()`)            |          ~13 ms |
-| EmbeddedFinder | open (`new()`)            |           ~2 ms |
+| Target         | Scenario                                | Median estimate |
+| -------------- | --------------------------------------- | --------------: |
+| DefaultFinder  | `get_tz_name`, 154,248-city sweep       |    25.1 ms total (~163 ns/query) |
+| EmbeddedFinder | `get_tz_name`, 154,248-city sweep       |    147.0 ms total (~950 ns/query) |
+| DefaultFinder  | `get_tz_name`, edge city (preindex miss)|          434 ns |
+| EmbeddedFinder | `get_tz_name`, edge city (preindex miss)|         4.03 µs |
+| DefaultFinder  | `get_tz_names`, edge city               |          531 ns |
+| EmbeddedFinder | `get_tz_names`, edge city               |         5.71 µs |
+| DefaultFinder  | open (`new()`)                          |         13.0 ms |
+| EmbeddedFinder | open (`new()`)                          |         2.05 ms |
+
+The whole-dataset sweep is the number to compare against: the per-query
+`*_random_city` benches draw a single random city and reuse it for the whole
+measurement, so their absolute value varies with the draw.
 
 tzf-rs consumes the `.tzb` profile only. The `.tzm` memory image the Go
 runtime uses exists for zero-copy ring aliasing, which geometry-rs's owned
@@ -308,15 +369,10 @@ see more in
 
 ## LICENSE
 
-This project is licensed under the [MIT license](./LICENSE) and
-[Anti CSDN License](./LICENSE_ANTI_CSDN.md)[^anti_csdn]. The data is licensed
-under the
+This project is licensed under the [MIT license](./LICENSE). The data is
+licensed under the
 [ODbL license](https://github.com/ringsaturn/tzf-dist/blob/main/LICENSE_DATA),
 same as
 [`evansiroky/timezone-boundary-builder`](https://github.com/evansiroky/timezone-boundary-builder)
-
-[^anti_csdn]:
-    This license is to prevent the use of this project by CSDN, has no
-    effect on other use cases.
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fringsaturn%2Ftzf-rs.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fringsaturn%2Ftzf-rs?ref=badge_large)

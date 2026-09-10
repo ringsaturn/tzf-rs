@@ -136,7 +136,10 @@ pub(crate) fn feature_from_expanded(name: String, polys: &[ExpandedPolygon]) -> 
 /// Builds one GeoJSON Feature from FUZZY preindex tile keys: a MultiPolygon
 /// holding each tile's bounding rectangle as one closed ring.
 pub(crate) fn feature_from_tile_keys(name: String, keys: &[u64]) -> FeatureItem {
-    let coordinates = keys.iter().map(|&key| vec![TileId(key).polygon()]).collect();
+    let coordinates = keys
+        .iter()
+        .map(|&key| vec![TileId(key).polygon()])
+        .collect();
     feature(name, coordinates)
 }
 

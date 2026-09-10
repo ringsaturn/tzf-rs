@@ -27,6 +27,14 @@
 //! [tzf-dist]: https://github.com/ringsaturn/tzf-dist
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+/// Compiles and runs every ```` ```rust ```` block in `README.md` as a doctest,
+/// so the README's samples cannot drift from the API. Gated on the features
+/// those samples need; `cargo test --features bundled,export-geojson` (the
+/// `cargo test-all` alias used by `make ci`) covers it.
+#[cfg(all(doctest, feature = "bundled", feature = "export-geojson"))]
+#[doc = include_str!("../README.md")]
+struct ReadmeDoctests;
+
 use std::borrow::Cow;
 use std::f64::consts::PI;
 
@@ -483,7 +491,10 @@ impl EmbeddedFinder {
         let features = (0..self.names.len())
             .filter_map(|i| {
                 let keys = grouped.remove(&u16::try_from(i).ok()?)?;
-                Some(geojson::feature_from_tile_keys(self.names[i].clone(), &keys))
+                Some(geojson::feature_from_tile_keys(
+                    self.names[i].clone(),
+                    &keys,
+                ))
             })
             .collect();
         Some(geojson::collection(features))

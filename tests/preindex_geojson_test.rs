@@ -61,7 +61,9 @@ fn test_embedded_finder_preindex_geojson_matches_default() {
     let inplace = EmbeddedFinder::new();
 
     for name in ["Asia/Shanghai", "Europe/Berlin", "America/Chicago"] {
-        let a = expanded.get_tz_preindex_geojson(name).expect("tz has tiles");
+        let a = expanded
+            .get_tz_preindex_geojson(name)
+            .expect("tz has tiles");
         let b = inplace.get_tz_preindex_geojson(name).expect("tz has tiles");
         // Both finders order tiles by ascending packed key, so the JSON must
         // be byte-identical.

@@ -39,10 +39,27 @@ jobs:
         shell: bash
         run: |
           tag_version="${GITHUB_REF_NAME#v}"
-          cargo_version="$(cargo pkgid | sed -E 's/.*#//')"
+          # `cargo pkgid` prints "…#<version>" when the directory basename
+          # equals the package name and "…#<name>@<version>" otherwise, so
+          # strip at either separator.
+          cargo_version="$(cargo pkgid | sed -E 's/.*[#@]//')"
 
           if [ "${tag_version}" != "${cargo_version}" ]; then
             echo "Tag version ${tag_version} does not match Cargo.toml version ${cargo_version}."
+            exit 1
+          fi
+
+      # `cargo publish` rejects path dependencies, but the error arrives after
+      # the whole verification build. Fail fast with an actionable message
+      # instead: the release form of the tzf-dist dependencies is documented in
+      # Cargo.toml, and release-runbook-v2.md walks through the switch.
+      - name: Reject unpublishable path dependencies
+        shell: bash
+        run: |
+          if grep -Eq '^[[:space:]]*tzf-dist(-git)?[[:space:]]*=.*path[[:space:]]*=' Cargo.toml; then
+            echo "Cargo.toml still uses the DEV FORM path dependency on ../tzf-dist."
+            echo "Switch to the RELEASE FORM block documented in Cargo.toml, run"
+            echo "'cargo update -p tzf-dist', commit, and retag."
             exit 1
           fi
 

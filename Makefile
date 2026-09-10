@@ -8,6 +8,15 @@ THIRDPARTY.yml: Cargo.lock Cargo.toml
 NOTICE: THIRDPARTY.yml scripts/build_notice.py
 	python3 scripts/build_notice.py
 
+# Lint. `--all-features` is never valid for this crate: `bundled` and `full`
+# are mutually exclusive (compile_error!), and with the dev-form path
+# dependency cargo additionally refuses "depends on crate tzf-dist multiple
+# times with different names". So lint the two data legs separately.
+.PHONY: lint
+lint:
+	cargo clippy --all-targets --features bundled,export-geojson,clap -- -D warnings
+	cargo clippy --all-targets --no-default-features --features full,export-geojson,clap -- -D warnings
+
 # Test commands
 .PHONY: test
 test:
@@ -54,4 +63,13 @@ benchmark_summary.md: bench bench-full
 .PHONY: ci
 ci: test test-full test-examples
 	cargo fmt --check
-	make benchmark_summary.md
+	$(MAKE) lint
+	$(MAKE) benchmark_summary.md
+
+# Everything `cargo publish` would exercise, minus the upload. Fails on the
+# dev-form path dependency by design — see Cargo.toml's release-form notes and
+# release-runbook-v2.md.
+.PHONY: publish-check
+publish-check:
+	cargo package --list
+	cargo publish --dry-run --locked

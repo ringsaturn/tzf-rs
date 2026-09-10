@@ -19,7 +19,24 @@ license = "MIT"
 name = "tzf-rs"
 readme = "README.md"
 repository = "https://github.com/ringsaturn/tzf-rs"
+# Minimum supported Rust version: edition 2024 needs 1.85, and `src/lib.rs`
+# uses let-chains (`if let … && let …`), stabilised for edition 2024 in 1.88.
+# Verified with `cargo +1.88 check --all-targets --features bundled,export-geojson,clap`.
+rust-version = "1.88"
 version = "2.0.0"
+# Release paperwork and working notes are repo artifacts, not crate content.
+# rfc/, llm/, snapshot/ and tmp/ are listed defensively: they are ignored today,
+# so `cargo package` already skips them, and an `exclude` entry keeps that true
+# if the ignore rules change.
+exclude = [
+  "release-notes-*.md",
+  "release-runbook-*.md",
+  "*.bak",
+  "rfc/",
+  "llm/",
+  "snapshot/",
+  "tmp/",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -40,14 +57,66 @@ serde_json = {version = "1.0.150", optional = true}
 # v1 line. The crates.io package carries lite.tzb (~4 MB); full.tzb is
 # git-only for size.
 #
-# DEV NOTE: path dependencies to a sibling tzf-dist checkout until the first
-# .tzb-carrying tzf-dist release ships; then switch to
-#   tzf-dist = { version = "...", optional = true }
-#   tzf-dist-git = { package = "tzf-dist", version = "...", git = "https://github.com/ringsaturn/tzf-dist", rev = "...", optional = true }
-tzf-dist = {path = "../tzf-dist", optional = true}
+# == DEV FORM (inactive) ========================================================
+# Path dependencies on a sibling tzf-dist checkout (branch v2-artifacts), used
+# until the first .tzb-carrying tzf-dist release ships. Fill the checkout with
+# real artifacts via `scripts/build-tzf-dist-dev.sh` in a sibling tzf checkout.
+#
+# Known limitation of this form: both names resolve to the *same* path package,
+# and cargo rejects "depends on crate tzf-dist multiple times with different
+# names". So `--all-features` cannot build while the dev form is active — lint
+# and test the two data features separately:
+#   cargo clippy --all-targets --features bundled,export-geojson,clap -- -D warnings
+#   cargo clippy --all-targets --no-default-features --features full,export-geojson,clap -- -D warnings
+# `cargo publish` also refuses this form ("all dependencies must have a version
+# requirement specified when publishing").
+# tzf-dist = {path = "../tzf-dist", optional = true}
+# tzf-dist-git = {package = "tzf-dist", path = "../tzf-dist", optional = true}
+
+# == RELEASE FORM (active) ======================================================
+tzf-dist = {version = "0.0.2026-c-tzb1", optional = true}
 # Git-only full-precision data. Mutually exclusive with "bundled":
 # use default-features = false.
-tzf-dist-git = {package = "tzf-dist", path = "../tzf-dist", optional = true}
+tzf-dist-git = {package = "tzf-dist", version = "0.0.2026-c-tzb1", git = "https://github.com/ringsaturn/tzf-dist", rev = "v0.0.2026-c-tzb1", optional = true}
+
+# == RELEASE FORM notes =========================================================
+# To go back to the dev form, swap the commented lines above.
+# <TAG> is the tzf-dist release that first carries the .tzb artifact set,
+# e.g. 0.0.2026-c with git tag v0.0.2026-c. Then run `cargo update -p tzf-dist`
+# so Cargo.lock stops pointing at the path checkout (release.yml publishes with
+# `--locked`). The [features] table below needs no change: `tzf-dist-git/full`
+# turns on tzf-dist's `full` feature in either form.
+#
+# tzf-dist = {version = "0.0.<TAG>", optional = true}
+# tzf-dist-git = {package = "tzf-dist", version = "0.0.<TAG>", git = "https://github.com/ringsaturn/tzf-dist", rev = "v0.0.<TAG>", optional = true}
+#
+# Why tzf-dist-git carries BOTH `version` and `git`/`rev` (same trick as
+# v1.3.7 — see `git show v1.3.7:Cargo.toml`):
+#
+#   * crates.io rejects a dependency that has `git` but no `version`.
+#   * `cargo publish` strips `git`/`rev` from the uploaded manifest, so in the
+#     *published* crate both `tzf-dist` and `tzf-dist-git` name the registry
+#     package `tzf-dist` at the same version. That is legal (one package under
+#     a rename) and they unify into a single dependency.
+#   * The registry tzf-dist package `include`s only `lite.tzb` — `full.tzb`
+#     and `src/full.rs` are excluded (crates.io size limit). So enabling
+#     `full` against the registry copy fails to compile ("file not found for
+#     module `full`"). **`full` only builds when the tzf-dist source is a git
+#     checkout**, i.e. when the consumer either takes tzf-rs itself from git,
+#     or patches tzf-dist to git. README's "Setup 100% Accurate Lookup"
+#     documents both recipes; `full` is not a crates.io-resolvable feature and
+#     never has been.
+#   * `cargo publish` verifies default features only, so the unbuildable
+#     `full` path does not block publication. Publish order matters: the
+#     tzf-dist crates.io release must exist before tzf-rs is published.
+#
+# Verified 2026-09-10 by temporarily applying this shape with the existing
+# v1 tag (0.0.2026-c-fix1) and running `cargo package --no-verify`:
+# "Packaged 56 files, 2.8MiB (485.6KiB compressed)". The generated
+# tzf-rs-2.0.0/Cargo.toml inside the .crate carries
+#   [dependencies.tzf-dist-git] version + package = "tzf-dist"
+# with no `git`/`rev` key, and `full = ["dep:tzf-dist-git",
+# "tzf-dist-git/full"]` verbatim — confirming both points above.
 
 [dev-dependencies]
 cities-json = "0.6.8"
