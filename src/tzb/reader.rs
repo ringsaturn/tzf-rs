@@ -90,7 +90,25 @@ pub(crate) struct Reader<'a> {
     /// open. Lets the query walk skip a whole block of chunk records at once
     /// in groups with hundreds of chunks (full-precision rings).
     chunk_blocks: Vec<BBox>,
+    /// Prototype: per-group latitude stripes over chunk records. For group
+    /// g, `group_stripes[g]` gives the stripe geometry and the index of its
+    /// first stripe in `stripe_dir`; each stripe lists group-local chunk
+    /// indices in `stripe_chunks`.
+    group_stripes: Vec<GroupStripes>,
+    stripe_dir: Vec<(u32, u32)>,
+    stripe_chunks: Vec<u16>,
 }
+
+#[derive(Clone, Copy, Default)]
+struct GroupStripes {
+    y_min: i32,
+    height: u32,
+    k: u32,
+    first: u32,
+}
+
+/// Chunks per stripe the prototype aims for.
+const STRIPE_CHUNKS: u32 = 2;
 
 /// Chunk records per skip-block entry.
 const CHUNK_BLOCK: u32 = 16;
@@ -242,6 +260,9 @@ impl<'a> Reader<'a> {
             grid: None,
             fuzzy: None,
             chunk_blocks: Vec::new(),
+            group_stripes: Vec::new(),
+            stripe_dir: Vec::new(),
+            stripe_chunks: Vec::new(),
         };
         if r.poly_count == 0
             || r.ring_count == 0
@@ -402,17 +423,63 @@ impl<'a> Reader<'a> {
     /// Every GROUPDIR record's chunk run must exist and its chunk point
     /// counts must sum to `point_count`. Checked once here so the query walk
     /// can read a group record without re-walking its chunks.
-    fn validate_groups(&self) -> Result<(), Error> {
+    fn validate_groups(&mut self) -> Result<(), Error> {
+        let mut group_stripes = Vec::with_capacity(self.group_count as usize);
+        let mut stripe_dir: Vec<(u32, u32)> = Vec::new();
+        let mut stripe_chunks: Vec<u16> = Vec::new();
+        let mut boxes: Vec<BBox> = Vec::new();
         for i in 0..self.group_count {
             let g = self.group_at(i)?;
             let mut total = 0u64;
+            boxes.clear();
             for c in 0..u32::from(g.count) {
-                total += u64::from(self.chunk_at(g.first + c)?.count);
+                let ch = self.chunk_at(g.first + c)?;
+                total += u64::from(ch.count);
+                boxes.push(ch.bbox);
             }
             if total != u64::from(g.point_count) {
                 return malformed("group point count");
             }
+            let count = u32::from(g.count);
+            let k = (count / STRIPE_CHUNKS).clamp(1, 256);
+            if count < 2 {
+                group_stripes.push(GroupStripes::default());
+                continue;
+            }
+            let y_min = g.bbox.min_y;
+            let height = (g.bbox.max_y - y_min).max(1) as u32;
+            let first = stripe_dir.len() as u32;
+            let stripe_of = |y: i32| -> u32 {
+                (((y - y_min) as u64 * u64::from(k)) / u64::from(height)).min(u64::from(k - 1)) as u32
+            };
+            // Bucket chunks into stripes (two passes: count, then fill).
+            let mut counts = vec![0u32; k as usize];
+            for b in &boxes {
+                for st in stripe_of(b.min_y)..=stripe_of(b.max_y) {
+                    counts[st as usize] += 1;
+                }
+            }
+            let base = stripe_chunks.len() as u32;
+            let mut offs = Vec::with_capacity(k as usize);
+            let mut acc = base;
+            for &c in &counts {
+                offs.push(acc);
+                stripe_dir.push((acc, c));
+                acc += c;
+            }
+            stripe_chunks.resize(acc as usize, 0);
+            let mut fill = offs.clone();
+            for (ci, b) in boxes.iter().enumerate() {
+                for st in stripe_of(b.min_y)..=stripe_of(b.max_y) {
+                    stripe_chunks[fill[st as usize] as usize] = ci as u16;
+                    fill[st as usize] += 1;
+                }
+            }
+            group_stripes.push(GroupStripes { y_min, height, k, first });
         }
+        self.group_stripes = group_stripes;
+        self.stripe_dir = stripe_dir;
+        self.stripe_chunks = stripe_chunks;
         Ok(())
     }
 
@@ -741,7 +808,7 @@ impl<'a> Reader<'a> {
                 }
             }
             previous_exit = exit;
-            if group.bbox.ray_relevant(x, y) && self.scan_group(&group, p, &mut inside)? {
+            if group.bbox.ray_relevant(x, y) && self.scan_group(word & 0x7fff_ffff, &group, p, &mut inside)? {
                 return Ok(allow_on_edge);
             }
         }
@@ -764,8 +831,50 @@ impl<'a> Reader<'a> {
     /// Scans one group's chunks; returns true when p lies on a segment.
     /// Each CHUNKDIR record is read once: the record that bounds chunk *k*'s
     /// byte range is chunk *k+1*'s, which becomes the next iteration's chunk.
-    fn scan_group(&self, group: &GroupRecord, p: Point, inside: &mut bool) -> Result<bool, Error> {
+    fn scan_group(
+        &self,
+        group_index: u32,
+        group: &GroupRecord,
+        p: Point,
+        inside: &mut bool,
+    ) -> Result<bool, Error> {
         let count = u32::from(group.count);
+        if let Some(gs) = self.group_stripes.get(group_index as usize) && gs.k > 0 {
+            let st = (((p.y.floor() as i64 - i64::from(gs.y_min)).max(0) as u64 * u64::from(gs.k))
+                / u64::from(gs.height))
+                .min(u64::from(gs.k - 1)) as usize;
+            let (first, n) = self.stripe_dir[gs.first as usize + st];
+            for &local in &self.stripe_chunks[first as usize..(first + n) as usize] {
+                let i = u32::from(local);
+                let chunk_index = group.first + i;
+                let chunk = self.chunk_at(chunk_index)?;
+                if !chunk.bbox.ray_relevant(p.x, p.y) {
+                    continue;
+                }
+                let next = if i + 1 < count {
+                    Some(self.chunk_at(chunk_index + 1)?)
+                } else {
+                    None
+                };
+                let (start, end) = self.chunk_range(chunk_index, chunk, next)?;
+                let (last, on) = self.scan_chunk(start, end, chunk.count, p, inside)?;
+                if on {
+                    return Ok(true);
+                }
+                if let Some(next) = next {
+                    let (nstart, nend) = self.chunk_range(chunk_index + 1, next, None)?;
+                    let firstp = self.first_point(nstart, nend)?;
+                    let (cross, on) = raycast_seg(to_point(last), to_point(firstp), p);
+                    if on {
+                        return Ok(true);
+                    }
+                    if cross {
+                        *inside = !*inside;
+                    }
+                }
+            }
+            return Ok(false);
+        }
         let mut chunk = self.chunk_at(group.first)?;
         let mut i = 0u32;
         while i < count {
