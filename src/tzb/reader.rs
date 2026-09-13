@@ -450,7 +450,8 @@ impl<'a> Reader<'a> {
             let height = (g.bbox.max_y - y_min).max(1) as u32;
             let first = stripe_dir.len() as u32;
             let stripe_of = |y: i32| -> u32 {
-                (((y - y_min) as u64 * u64::from(k)) / u64::from(height)).min(u64::from(k - 1)) as u32
+                (((y - y_min) as u64 * u64::from(k)) / u64::from(height)).min(u64::from(k - 1))
+                    as u32
             };
             // Bucket chunks into stripes (two passes: count, then fill).
             let mut counts = vec![0u32; k as usize];
@@ -475,7 +476,12 @@ impl<'a> Reader<'a> {
                     fill[st as usize] += 1;
                 }
             }
-            group_stripes.push(GroupStripes { y_min, height, k, first });
+            group_stripes.push(GroupStripes {
+                y_min,
+                height,
+                k,
+                first,
+            });
         }
         self.group_stripes = group_stripes;
         self.stripe_dir = stripe_dir;
@@ -808,8 +814,20 @@ impl<'a> Reader<'a> {
                 }
             }
             previous_exit = exit;
-            if group.bbox.ray_relevant(x, y) && self.scan_group(word & 0x7fff_ffff, &group, p, &mut inside)? {
-                return Ok(allow_on_edge);
+            if group.bbox.ray_relevant(x, y) {
+                if f64::from(group.bbox.min_x) > x {
+                    // Endpoint-parity skip: the whole group lies strictly
+                    // right of p, so every crossing of its polyline with the
+                    // ray is counted and none of its segments can contain p.
+                    // The crossing parity is then decided by the two stored
+                    // endpoints alone (see `endpoint_parity`) — no CHUNKDIR
+                    // read, no decode.
+                    if endpoint_parity(group.entry, group.exit, y) {
+                        inside = !inside;
+                    }
+                } else if self.scan_group(word & 0x7fff_ffff, &group, p, &mut inside)? {
+                    return Ok(allow_on_edge);
+                }
             }
         }
         if sum < u64::from(ring.count) || sum - u64::from(ring.count) != u64::from(ring.point_count)
@@ -831,6 +849,13 @@ impl<'a> Reader<'a> {
     /// Scans one group's chunks; returns true when p lies on a segment.
     /// Each CHUNKDIR record is read once: the record that bounds chunk *k*'s
     /// byte range is chunk *k+1*'s, which becomes the next iteration's chunk.
+    ///
+    /// A ray-relevant chunk whose bbox lies strictly right of p is not
+    /// decoded: its polyline (own segments plus the joint to the next chunk,
+    /// all inside its bbox per spec §6.7) contributes the parity of its two
+    /// endpoints — the chunk's first point and the next chunk's first point,
+    /// or the group's stored last point for the final chunk. Only chunks
+    /// whose bbox straddles p.x are decoded.
     fn scan_group(
         &self,
         group_index: u32,
@@ -839,10 +864,12 @@ impl<'a> Reader<'a> {
         inside: &mut bool,
     ) -> Result<bool, Error> {
         let count = u32::from(group.count);
-        if let Some(gs) = self.group_stripes.get(group_index as usize) && gs.k > 0 {
+        if let Some(gs) = self.group_stripes.get(group_index as usize)
+            && gs.k > 0
+        {
             let st = (((p.y.floor() as i64 - i64::from(gs.y_min)).max(0) as u64 * u64::from(gs.k))
                 / u64::from(gs.height))
-                .min(u64::from(gs.k - 1)) as usize;
+            .min(u64::from(gs.k - 1)) as usize;
             let (first, n) = self.stripe_dir[gs.first as usize + st];
             for &local in &self.stripe_chunks[first as usize..(first + n) as usize] {
                 let i = u32::from(local);
@@ -857,6 +884,20 @@ impl<'a> Reader<'a> {
                     None
                 };
                 let (start, end) = self.chunk_range(chunk_index, chunk, next)?;
+                if f64::from(chunk.bbox.min_x) > p.x {
+                    let a = self.first_point(start, end)?;
+                    let b = match next {
+                        Some(next) => {
+                            let (nstart, nend) = self.chunk_range(chunk_index + 1, next, None)?;
+                            self.first_point(nstart, nend)?
+                        }
+                        None => group.exit,
+                    };
+                    if endpoint_parity(a, b, p.y) {
+                        *inside = !*inside;
+                    }
+                    continue;
+                }
                 let (last, on) = self.scan_chunk(start, end, chunk.count, p, inside)?;
                 if on {
                     return Ok(true);
@@ -876,6 +917,10 @@ impl<'a> Reader<'a> {
             return Ok(false);
         }
         let mut chunk = self.chunk_at(group.first)?;
+        // First point of `chunk` when the previous iteration already read it
+        // (as the far end of its own polyline), so a run of skipped chunks
+        // costs one first-point read per chunk rather than two.
+        let mut chunk_first: Option<I32Point> = None;
         let mut i = 0u32;
         while i < count {
             let chunk_index = group.first + i;
@@ -890,6 +935,7 @@ impl<'a> Reader<'a> {
                 if i < count {
                     chunk = self.chunk_at(group.first + i)?;
                 }
+                chunk_first = None;
                 continue;
             }
             let next = if i + 1 < count {
@@ -897,28 +943,50 @@ impl<'a> Reader<'a> {
             } else {
                 None
             };
+            let mut next_first: Option<I32Point> = None;
             if chunk.bbox.ray_relevant(p.x, p.y) {
                 let (start, end) = self.chunk_range(chunk_index, chunk, next)?;
-                let (last, on) = self.scan_chunk(start, end, chunk.count, p, inside)?;
-                if on {
-                    return Ok(true);
-                }
-                if let Some(next) = next {
-                    // Joint segment to the next chunk's first point.
-                    let (nstart, nend) = self.chunk_range(chunk_index + 1, next, None)?;
-                    let first = self.first_point(nstart, nend)?;
-                    let (cross, on) = raycast_seg(to_point(last), to_point(first), p);
+                if f64::from(chunk.bbox.min_x) > p.x {
+                    let a = match chunk_first {
+                        Some(a) => a,
+                        None => self.first_point(start, end)?,
+                    };
+                    let b = match next {
+                        Some(next) => {
+                            let (nstart, nend) = self.chunk_range(chunk_index + 1, next, None)?;
+                            let b = self.first_point(nstart, nend)?;
+                            next_first = Some(b);
+                            b
+                        }
+                        None => group.exit,
+                    };
+                    if endpoint_parity(a, b, p.y) {
+                        *inside = !*inside;
+                    }
+                } else {
+                    let (last, on) = self.scan_chunk(start, end, chunk.count, p, inside)?;
                     if on {
                         return Ok(true);
                     }
-                    if cross {
-                        *inside = !*inside;
+                    if let Some(next) = next {
+                        // Joint segment to the next chunk's first point.
+                        let (nstart, nend) = self.chunk_range(chunk_index + 1, next, None)?;
+                        let first = self.first_point(nstart, nend)?;
+                        let (cross, on) = raycast_seg(to_point(last), to_point(first), p);
+                        if on {
+                            return Ok(true);
+                        }
+                        if cross {
+                            *inside = !*inside;
+                        }
+                        next_first = Some(first);
                     }
                 }
             }
             if let Some(next) = next {
                 chunk = next;
             }
+            chunk_first = next_first;
             i += 1;
         }
         Ok(false)
@@ -1093,6 +1161,20 @@ fn section_allowed(typ: u32) -> bool {
 
 fn ranges_overlap(a: Section, b: Section) -> bool {
     u64::from(a.off) < b.end() && u64::from(b.off) < a.end()
+}
+
+/// Crossing parity of a polyline from `a` to `b` that lies entirely strictly
+/// right of the query point, against the horizontal ray at latitude `py`.
+///
+/// Every crossing of such a polyline is counted by the ray (`raycast_seg`
+/// counts crossings at x ≥ p.x), and no segment can contain p, so the
+/// number of crossings has the parity of "exactly one endpoint is above py".
+/// "Above" is `y > py`: `raycast_seg` nudges `py` upward off any vertex it
+/// equals, so a vertex exactly at `py` counts as below — the same half-open
+/// rule applied per segment, which telescopes over the polyline.
+#[inline]
+fn endpoint_parity(a: I32Point, b: I32Point, py: f64) -> bool {
+    (f64::from(a.y) > py) != (f64::from(b.y) > py)
 }
 
 fn to_point(p: I32Point) -> Point {

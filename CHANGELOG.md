@@ -23,6 +23,15 @@ world cities, edge cities and a 0.25° global grid, ~2.25M points, on both
   key range, instead of every zoom in `agg_zoom..=idx_zoom` over the whole
   array (the 2026c preindex has keys at zooms 5–10 only, so a miss did 11
   full binary searches).
+- Endpoint-parity skip: a ray-relevant group or chunk whose bbox lies
+  strictly right of the query point is not decoded. Every crossing of such
+  a polyline with the ray is counted and none of its segments can contain
+  the point, so its parity contribution is decided by its two endpoints
+  (GROUPDIR `first`/`last` for a group; the chunk's first point and the
+  next chunk's first point for a chunk). Only chunks whose bbox straddles
+  the query longitude are decoded — typically one or two per ring. Edge
+  cities on 64-point-chunk artifacts: full mean 1,000 → 448 ns, p99 3,540
+  → 1,222; lite 833 → 470, p99 2,430 → 1,056.
 
 Measured on Apple M3 Max, edge-city set (`benches/edges.json`), mean per
 query: lite in place 4.37 → 2.04 µs, full in place 6.48 → 2.74 µs. With
