@@ -298,7 +298,10 @@ impl Default for DefaultFinder {
 
 /// The low-memory finder: queries TZF embedded binary (`.tzb`) bytes in
 /// place, without expanding the geometry. Total footprint is roughly the file
-/// itself (the bundled lite data is ~4 MB) plus ~1 KB of state.
+/// itself (the bundled lite data is ~4 MB) plus the timezone names and a
+/// 16-bytes-per-16-chunks skip table built while validating the file at open
+/// (~6 KB for lite, ~20 KB for full at the encoder's default 256-point
+/// chunks).
 ///
 /// `get_tz_name` consults the file's FUZZY preindex first and falls back to
 /// the compressed-geometry scan; results match [`DefaultFinder`] over the

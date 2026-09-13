@@ -85,7 +85,15 @@ pub(crate) struct Reader<'a> {
     chunk_count: u32,
     grid: Option<GridInfo>,
     pub(super) fuzzy: Option<super::fuzzy::FuzzyInfo>,
+    /// Union bbox of every run of `CHUNK_BLOCK` consecutive CHUNKDIR records
+    /// (global chunk index / CHUNK_BLOCK), built from the validation pass at
+    /// open. Lets the query walk skip a whole block of chunk records at once
+    /// in groups with hundreds of chunks (full-precision rings).
+    chunk_blocks: Vec<BBox>,
 }
+
+/// Chunk records per skip-block entry.
+const CHUNK_BLOCK: u32 = 16;
 
 impl<'a> Reader<'a> {
     /// Validates and opens a byte-backed file (spec §8.1 "open" checks; the
@@ -233,6 +241,7 @@ impl<'a> Reader<'a> {
                 as u32,
             grid: None,
             fuzzy: None,
+            chunk_blocks: Vec::new(),
         };
         if r.poly_count == 0
             || r.ring_count == 0
@@ -250,6 +259,7 @@ impl<'a> Reader<'a> {
             r.validate_fuzzy()?;
         }
         r.validate_chunk_offsets()?;
+        r.validate_groups()?;
         Ok(r)
     }
 
@@ -389,8 +399,26 @@ impl<'a> Reader<'a> {
         Ok(())
     }
 
-    fn validate_chunk_offsets(&self) -> Result<(), Error> {
+    /// Every GROUPDIR record's chunk run must exist and its chunk point
+    /// counts must sum to `point_count`. Checked once here so the query walk
+    /// can read a group record without re-walking its chunks.
+    fn validate_groups(&self) -> Result<(), Error> {
+        for i in 0..self.group_count {
+            let g = self.group_at(i)?;
+            let mut total = 0u64;
+            for c in 0..u32::from(g.count) {
+                total += u64::from(self.chunk_at(g.first + c)?.count);
+            }
+            if total != u64::from(g.point_count) {
+                return malformed("group point count");
+            }
+        }
+        Ok(())
+    }
+
+    fn validate_chunk_offsets(&mut self) -> Result<(), Error> {
         let mut prev = 0u32;
+        let mut blocks = Vec::with_capacity(self.chunk_count.div_ceil(CHUNK_BLOCK) as usize);
         for i in 0..self.chunk_count {
             let c = self.chunk_at(i)?;
             if c.count == 0
@@ -400,7 +428,17 @@ impl<'a> Reader<'a> {
                 return malformed("chunk offset or count");
             }
             prev = c.off;
+            if i.is_multiple_of(CHUNK_BLOCK) {
+                blocks.push(c.bbox);
+            } else {
+                let b = blocks.last_mut().expect("block pushed at run start");
+                b.min_x = b.min_x.min(c.bbox.min_x);
+                b.min_y = b.min_y.min(c.bbox.min_y);
+                b.max_x = b.max_x.max(c.bbox.max_x);
+                b.max_y = b.max_y.max(c.bbox.max_y);
+            }
         }
+        self.chunk_blocks = blocks;
         Ok(())
     }
 
@@ -489,13 +527,6 @@ impl<'a> Reader<'a> {
             || !point_in_domain(v.exit)
         {
             return malformed("GROUPDIR record");
-        }
-        let mut total = 0u64;
-        for i in 0..u32::from(v.count) {
-            total += u64::from(self.chunk_at(v.first + i)?.count);
-        }
-        if total != u64::from(v.point_count) {
-            return malformed("group point count");
         }
         Ok(v)
     }
@@ -731,29 +762,55 @@ impl<'a> Reader<'a> {
     }
 
     /// Scans one group's chunks; returns true when p lies on a segment.
+    /// Each CHUNKDIR record is read once: the record that bounds chunk *k*'s
+    /// byte range is chunk *k+1*'s, which becomes the next iteration's chunk.
     fn scan_group(&self, group: &GroupRecord, p: Point, inside: &mut bool) -> Result<bool, Error> {
-        for i in 0..u32::from(group.count) {
+        let count = u32::from(group.count);
+        let mut chunk = self.chunk_at(group.first)?;
+        let mut i = 0u32;
+        while i < count {
             let chunk_index = group.first + i;
-            let chunk = self.chunk_at(chunk_index)?;
-            if !chunk.bbox.ray_relevant(p.x, p.y) {
+            // Skip-block test: the block's union bbox covers every chunk in it
+            // (joints included, §6.7), so an irrelevant block has no relevant
+            // chunk. Blocks are global-index aligned; the clamp to the group
+            // end keeps a block shared with the next group sound.
+            if chunk_index.is_multiple_of(CHUNK_BLOCK)
+                && !self.chunk_blocks[(chunk_index / CHUNK_BLOCK) as usize].ray_relevant(p.x, p.y)
+            {
+                i = (i + CHUNK_BLOCK).min(count);
+                if i < count {
+                    chunk = self.chunk_at(group.first + i)?;
+                }
                 continue;
             }
-            let (last, on) = self.scan_chunk(chunk_index, chunk, p, inside)?;
-            if on {
-                return Ok(true);
-            }
-            if i + 1 < u32::from(group.count) {
-                // Joint segment to the next chunk's first point.
-                let next = self.chunk_at(chunk_index + 1)?;
-                let first = self.first_chunk_point(chunk_index + 1, next)?;
-                let (cross, on) = raycast_seg(to_point(last), to_point(first), p);
+            let next = if i + 1 < count {
+                Some(self.chunk_at(chunk_index + 1)?)
+            } else {
+                None
+            };
+            if chunk.bbox.ray_relevant(p.x, p.y) {
+                let (start, end) = self.chunk_range(chunk_index, chunk, next)?;
+                let (last, on) = self.scan_chunk(start, end, chunk.count, p, inside)?;
                 if on {
                     return Ok(true);
                 }
-                if cross {
-                    *inside = !*inside;
+                if let Some(next) = next {
+                    // Joint segment to the next chunk's first point.
+                    let (nstart, nend) = self.chunk_range(chunk_index + 1, next, None)?;
+                    let first = self.first_point(nstart, nend)?;
+                    let (cross, on) = raycast_seg(to_point(last), to_point(first), p);
+                    if on {
+                        return Ok(true);
+                    }
+                    if cross {
+                        *inside = !*inside;
+                    }
                 }
             }
+            if let Some(next) = next {
+                chunk = next;
+            }
+            i += 1;
         }
         Ok(false)
     }
@@ -762,13 +819,13 @@ impl<'a> Reader<'a> {
     /// point and whether p lay on any segment.
     fn scan_chunk(
         &self,
-        index: u32,
-        chunk: ChunkRecord,
+        start: u64,
+        end: u64,
+        count: u16,
         p: Point,
         inside: &mut bool,
     ) -> Result<(I32Point, bool), Error> {
-        let (start, end) = self.chunk_range(index, chunk)?;
-        let mut cursor = StreamCursor::new(&self.data, start, end);
+        let mut cursor = StreamCursor::new(&self.data, start, end)?;
         let mut prev = I32Point {
             x: cursor.varint()?,
             y: cursor.varint()?,
@@ -777,7 +834,13 @@ impl<'a> Reader<'a> {
             return malformed("chunk coordinate domain");
         }
         let mut on_segment = false;
-        for _ in 1..chunk.count {
+        // Integer pre-filter: a segment strictly above or below the query
+        // latitude, or entirely left of the query longitude, can neither be
+        // crossed by the leftward ray nor contain p. Conservative in the
+        // rounding direction, so it never rejects what raycast_seg would keep.
+        #[allow(clippy::cast_possible_truncation)]
+        let (y_lo, y_hi, x_lo) = (p.y.floor() as i32, p.y.ceil() as i32, p.x.floor() as i32);
+        for _ in 1..count {
             let dx = cursor.varint()?;
             let dy = cursor.varint()?;
             let next = I32Point {
@@ -787,7 +850,10 @@ impl<'a> Reader<'a> {
             if !point_in_domain(next) {
                 return malformed("chunk coordinate domain");
             }
-            if !on_segment {
+            let skip = (prev.y < y_lo && next.y < y_lo)
+                || (prev.y > y_hi && next.y > y_hi)
+                || (prev.x < x_lo && next.x < x_lo);
+            if !on_segment && !skip {
                 let (cross, on) = raycast_seg(to_point(prev), to_point(next), p);
                 if on {
                     on_segment = true;
@@ -797,19 +863,15 @@ impl<'a> Reader<'a> {
             }
             prev = next;
         }
-        if cursor.pos != end {
+        if !cursor.at_end() {
             return malformed("trailing chunk bytes");
         }
         Ok((prev, on_segment))
     }
 
-    pub(crate) fn first_chunk_point(
-        &self,
-        index: u32,
-        chunk: ChunkRecord,
-    ) -> Result<I32Point, Error> {
-        let (start, end) = self.chunk_range(index, chunk)?;
-        let mut cursor = StreamCursor::new(&self.data, start, end);
+    /// The absolute first point of a chunk stream (two varints, O(1)).
+    fn first_point(&self, start: u64, end: u64) -> Result<I32Point, Error> {
+        let mut cursor = StreamCursor::new(&self.data, start, end)?;
         let p = I32Point {
             x: cursor.varint()?,
             y: cursor.varint()?,
@@ -822,11 +884,21 @@ impl<'a> Reader<'a> {
 
     /// The absolute byte range of one chunk's stream: `[point_off_k,
     /// point_off_{k+1})`, the last chunk ending at the POINTS section end.
-    fn chunk_range(&self, index: u32, chunk: ChunkRecord) -> Result<(u64, u64), Error> {
+    /// `next` is chunk *k+1*'s record when the caller already holds it.
+    fn chunk_range(
+        &self,
+        index: u32,
+        chunk: ChunkRecord,
+        next: Option<ChunkRecord>,
+    ) -> Result<(u64, u64), Error> {
         let points = self.sections[SECTION_POINTS as usize];
         let start = u64::from(points.off) + u64::from(chunk.off);
         let end = if index + 1 < self.chunk_count {
-            u64::from(points.off) + u64::from(self.chunk_at(index + 1)?.off)
+            let next_off = match next {
+                Some(n) => n.off,
+                None => self.chunk_at(index + 1)?.off,
+            };
+            u64::from(points.off) + u64::from(next_off)
         } else {
             points.end()
         };
@@ -843,8 +915,8 @@ impl<'a> Reader<'a> {
         chunk: ChunkRecord,
         out: &mut Vec<I32Point>,
     ) -> Result<(), Error> {
-        let (start, end) = self.chunk_range(index, chunk)?;
-        let mut cursor = StreamCursor::new(&self.data, start, end);
+        let (start, end) = self.chunk_range(index, chunk, None)?;
+        let mut cursor = StreamCursor::new(&self.data, start, end)?;
         let mut prev = I32Point {
             x: cursor.varint()?,
             y: cursor.varint()?,
@@ -865,7 +937,7 @@ impl<'a> Reader<'a> {
             }
             out.push(prev);
         }
-        if cursor.pos != end {
+        if !cursor.at_end() {
             return malformed("chunk termination");
         }
         Ok(())

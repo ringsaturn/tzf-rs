@@ -18,6 +18,11 @@ pub(crate) struct FuzzyInfo {
     pub multi_dir_off: u64,
     pub multi_values_off: u64,
     pub max_group_len: u32,
+    /// Key-array range `[start, end)` of each zoom level (index = zoom), taken
+    /// from the sorted keys at open: the probe searches only the zooms that
+    /// carry keys, each within its own range, instead of every zoom in
+    /// `agg_zoom..=idx_zoom` over the whole array.
+    pub zoom_ranges: [(u32, u32); 29],
 }
 
 impl Reader<'_> {
@@ -44,6 +49,7 @@ impl Reader<'_> {
             multi_dir_off: 0,
             multi_values_off: 0,
             max_group_len: 1,
+            zoom_ranges: [(0, 0); 29],
         };
         if raw[2] != 0
             || raw[3] != 0
@@ -82,6 +88,12 @@ impl Reader<'_> {
             let z = (key >> 56) as u8;
             if z < f.agg_zoom || z > f.idx_zoom {
                 return malformed("FUZZY key zoom");
+            }
+            let range = &mut f.zoom_ranges[z as usize];
+            if range.1 == 0 {
+                *range = (i, i + 1);
+            } else {
+                range.1 = i + 1;
             }
             let value = u16_le(data, (f.values_off + 2 * u64::from(i)) as usize);
             if value & FUZZY_MULTI == 0 {
@@ -123,7 +135,10 @@ impl Reader<'_> {
     /// Binary-searches the sorted key array. Because zoom occupies the key's
     /// high bits, a per-zoom probe is a single search.
     fn fuzzy_search(&self, f: &FuzzyInfo, target: u64) -> Option<u32> {
-        let (mut lo, mut hi) = (0u32, f.tile_count);
+        let (mut lo, mut hi) = f.zoom_ranges[(target >> 56) as usize];
+        if lo == hi {
+            return None;
+        }
         while lo < hi {
             let mid = lo + (hi - lo) / 2;
             if self.fuzzy_key_at(f, mid) < target {

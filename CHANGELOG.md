@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased
+
+### EmbeddedFinder query path
+
+No format or API change; results are byte-identical (parity swept over the
+world cities, edge cities and a 0.25° global grid, ~2.25M points, on both
+`lite.tzb` and `full.tzb`).
+
+- Group point-count validation moved from every `group_at` to open
+  (`validate_groups`): the query walk no longer re-reads a group's whole
+  chunk run before deciding whether the group is even ray-relevant.
+- `scan_group` reads each CHUNKDIR record once (lookahead) instead of three
+  times, and skips 16-chunk blocks by a union bbox built during the
+  open-time chunk validation pass.
+- `StreamCursor` slices the chunk range once and inlines the one- and
+  two-byte varint paths (98% of stored deltas); malformed-varint detection
+  is unchanged.
+- Integer pre-filter before `raycast_seg`: segments strictly above/below the
+  query latitude or entirely left of the query longitude are skipped.
+- FUZZY probes only the zoom levels that carry keys, each within its own
+  key range, instead of every zoom in `agg_zoom..=idx_zoom` over the whole
+  array (the 2026c preindex has keys at zooms 5–10 only, so a miss did 11
+  full binary searches).
+
+Measured on Apple M3 Max, edge-city set (`benches/edges.json`), mean per
+query: lite in place 4.37 → 2.04 µs, full in place 6.48 → 2.74 µs. With
+artifacts re-encoded at 64-point chunks (`topo2embed -chunk 64`, +5% lite /
++11% full file size) the same reader reaches 1.15 µs and 1.65 µs.
+
 ## v2.0.0 (2026-09-11)
 
 tzf-rs v2 is protobuf-free. The data source is the TZF embedded binary format
