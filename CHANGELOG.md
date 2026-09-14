@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## v2.1.1 (2026-09-14)
+
+Same content as v2.1.0. The v2.1.0 tag was cut on the branch commit before
+the PR merge landed on `main`; v2.1.1 is the same tree tagged on `main`.
+Prefer `2.1.1` in new pins.
+
+## v2.1.0 (2026-09-14)
 
 ### EmbeddedFinder query path
 

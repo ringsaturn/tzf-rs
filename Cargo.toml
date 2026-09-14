@@ -23,7 +23,7 @@ repository = "https://github.com/ringsaturn/tzf-rs"
 # uses let-chains (`if let … && let …`), stabilised for edition 2024 in 1.88.
 # Verified with `cargo +1.88 check --all-targets --features bundled,export-geojson,clap`.
 rust-version = "1.88"
-version = "2.1.0"
+version = "2.1.1"
 # Release paperwork and working notes are repo artifacts, not crate content.
 # rfc/, llm/, snapshot/ and tmp/ are listed defensively: they are ignored today,
 # so `cargo package` already skips them, and an `exclude` entry keeps that true
