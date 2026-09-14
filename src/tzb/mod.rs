@@ -247,30 +247,63 @@ const fn crc32_tables() -> [[u32; 256]; 8] {
 /// consume exactly the range: both a varint crossing the boundary and
 /// trailing undecoded bytes are malformed-file errors (spec §6.7).
 pub(crate) struct StreamCursor<'a> {
-    data: &'a [u8],
-    pub(crate) pos: u64,
-    pub(crate) end: u64,
+    buf: &'a [u8],
+    pos: usize,
 }
 
 impl<'a> StreamCursor<'a> {
-    pub(crate) fn new(data: &'a [u8], pos: u64, end: u64) -> Self {
-        Self { data, pos, end }
+    /// A cursor over `data[pos..end)`; the range is bounds-checked once here
+    /// instead of once per byte.
+    pub(crate) fn new(data: &'a [u8], pos: u64, end: u64) -> Result<Self, Error> {
+        let buf = data
+            .get(pos as usize..end as usize)
+            .ok_or(Error::Malformed("chunk byte range"))?;
+        Ok(Self { buf, pos: 0 })
     }
 
+    pub(crate) fn at_end(&self) -> bool {
+        self.pos == self.buf.len()
+    }
+
+    #[inline]
     pub(crate) fn varint(&mut self) -> Result<i32, Error> {
-        let mut u: u32 = 0;
-        for i in 0..5 {
-            if self.pos >= self.end {
-                return malformed("truncated varint");
+        let Some(&b0) = self.buf.get(self.pos) else {
+            return malformed("truncated varint");
+        };
+        // One- and two-byte deltas are ~98% of quantized boundary data
+        // (measured: 66%/32% full, 26%/72% lite), so both are inlined.
+        if b0 & 0x80 == 0 {
+            self.pos += 1;
+            let u = u32::from(b0);
+            return Ok(((u >> 1) ^ (u & 1).wrapping_neg()) as i32);
+        }
+        if let Some(&b1) = self.buf.get(self.pos + 1)
+            && b1 & 0x80 == 0
+        {
+            if b1 == 0 {
+                return malformed("nonminimal varint");
             }
-            let b = self.data[self.pos as usize];
+            self.pos += 2;
+            let u = u32::from(b0 & 0x7f) | u32::from(b1) << 7;
+            return Ok(((u >> 1) ^ (u & 1).wrapping_neg()) as i32);
+        }
+        self.varint_slow(u32::from(b0 & 0x7f))
+    }
+
+    #[inline(never)]
+    fn varint_slow(&mut self, mut u: u32) -> Result<i32, Error> {
+        self.pos += 1;
+        for i in 1..5 {
+            let Some(&b) = self.buf.get(self.pos) else {
+                return malformed("truncated varint");
+            };
             self.pos += 1;
             if i == 4 && b & 0xf0 != 0 {
                 return malformed("varint exceeds 32 bits");
             }
             u |= u32::from(b & 0x7f) << (7 * i);
             if b & 0x80 == 0 {
-                if i > 0 && b == 0 {
+                if b == 0 {
                     return malformed("nonminimal varint");
                 }
                 return Ok(((u >> 1) ^ (u & 1).wrapping_neg()) as i32);
