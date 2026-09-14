@@ -107,8 +107,8 @@ struct GroupStripes {
     first: u32,
 }
 
-/// Chunks per stripe the prototype aims for.
-const STRIPE_CHUNKS: u32 = 2;
+/// Chunks per stripe the per-group latitude index aims for.
+const STRIPE_CHUNKS: u32 = 4;
 
 /// Chunk records per skip-block entry.
 const CHUNK_BLOCK: u32 = 16;

@@ -10,8 +10,9 @@
 //!   queries from the FUZZY preindex tiles, falling back to exact
 //!   point-in-polygon for boundary cases.
 //! - [`EmbeddedFinder`] — the low-memory finder. Queries the `.tzb` bytes in
-//!   place (no expansion, roughly the file size plus ~1 KB of state), with
-//!   the same FUZZY fast path. Queries are slower than [`DefaultFinder`];
+//!   place (no expansion; roughly the file size plus a small open-time index
+//!   of chunk skip blocks and per-group latitude stripes, ~100 KB on lite),
+//!   with the same FUZZY fast path. Queries are slower than [`DefaultFinder`];
 //!   results are identical.
 //!
 //! ```rust
