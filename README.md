@@ -48,8 +48,9 @@ cargo build --no-default-features --features bundled
   cases; `get_tz_names` is always polygon-exact.
 - **`EmbeddedFinder`** — the low-memory finder. Queries the `.tzb` bytes in
   place, without expanding geometry: total footprint is roughly the ~4 MB
-  file plus ~1 KB of state. Queries are microseconds instead of hundreds of
-  nanoseconds on boundary cases; results are identical to `DefaultFinder`.
+  file plus a small open-time index (chunk skip blocks and per-group latitude
+  stripes, ~100 KB on lite). Boundary queries take a few microseconds instead
+  of hundreds of nanoseconds; results are identical to `DefaultFinder`.
 
 Both also load caller-supplied bytes: `DefaultFinder::from_tzb` /
 `EmbeddedFinder::from_tzb` (`EmbeddedFinder` takes `&'static [u8]` or an owned

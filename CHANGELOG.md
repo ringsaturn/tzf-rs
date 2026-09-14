@@ -32,6 +32,19 @@ world cities, edge cities and a 0.25° global grid, ~2.25M points, on both
   the query longitude are decoded — typically one or two per ring. Edge
   cities on 64-point-chunk artifacts: full mean 1,000 → 448 ns, p99 3,540
   → 1,222; lite 833 → 470, p99 2,430 → 1,056.
+- Per-group chunk latitude stripes, built at open from the CHUNKDIR bboxes
+  (about one stripe per four chunks): the query walk visits only the chunks
+  whose latitude range covers the query instead of every chunk in a
+  ray-relevant group. Costs ~1 ms open time and a few hundred KB of heap on
+  full, well under that on lite. `EmbeddedFinder` therefore no longer holds
+  "~1 KB of state": the open-time index is ~100 KB on lite.
+
+### Data
+
+- tzf-dist pinned to `0.0.2026-c-tzb2`: the same 2026c boundaries encoded
+  at 64-point chunks (`topo2embed -chunk 64`, +5% lite / +11% full file
+  size). The `.tzb` format is unchanged (1.1); either reader opens either
+  data release.
 
 Measured on Apple M3 Max, edge-city set (`benches/edges.json`), mean per
 query: lite in place 4.37 → 2.04 µs, full in place 6.48 → 2.74 µs. With
