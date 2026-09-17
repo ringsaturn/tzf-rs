@@ -43,6 +43,6 @@ mod tests {
     fn from_tzb_matches_new() {
         let finder = DefaultFinder::from_tzb(tzf_dist::load_lite_tzb()).expect("valid data");
         assert_eq!(finder.get_tz_name(116.3883, 39.9289), "Asia/Shanghai");
-        assert_eq!(finder.data_version(), "2026d");
+        assert_eq!(finder.data_version(), DefaultFinder::new().data_version());
     }
 }

@@ -33,11 +33,24 @@ mod tests {
         assert!(!get(8.61231565, 47.66148548).is_empty());
     }
 
+    /// A tzdata release name: four-digit year followed by one lowercase letter
+    /// (e.g. `2026d`). The exact value tracks the bundled tzf-dist release, so
+    /// tests check the shape rather than pin it.
+    fn assert_tzdata_release_name(version: &str) {
+        let bytes = version.as_bytes();
+        assert!(
+            bytes.len() == 5
+                && bytes[..4].iter().all(u8::is_ascii_digit)
+                && bytes[4].is_ascii_lowercase(),
+            "unexpected data_version {version:?}"
+        );
+    }
+
     #[test]
     fn default_finder_smoke_test() {
         let finder = DefaultFinder::new();
         assert_known_locations(|lng, lat| finder.get_tz_name(lng, lat).to_string());
-        assert_eq!(finder.data_version(), "2026d");
+        assert_tzdata_release_name(finder.data_version());
         assert!(!finder.timezonenames().is_empty());
     }
 
@@ -45,7 +58,8 @@ mod tests {
     fn embedded_finder_smoke_test() {
         let finder = EmbeddedFinder::new();
         assert_known_locations(|lng, lat| finder.get_tz_name(lng, lat).to_string());
-        assert_eq!(finder.data_version(), "2026d");
+        assert_tzdata_release_name(finder.data_version());
+        assert_eq!(finder.data_version(), DefaultFinder::new().data_version());
         assert!(!finder.timezonenames().is_empty());
     }
 
