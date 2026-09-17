@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.1.2 (2026-09-15)
+
+Bumped tzf-dist to `0.0.2026-d`.
+
 ## v2.1.1 (2026-09-14)
 
 Same content as v2.1.0. The v2.1.0 tag was cut on the branch commit before

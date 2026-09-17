@@ -23,7 +23,7 @@ repository = "https://github.com/ringsaturn/tzf-rs"
 # uses let-chains (`if let … && let …`), stabilised for edition 2024 in 1.88.
 # Verified with `cargo +1.88 check --all-targets --features bundled,export-geojson,clap`.
 rust-version = "1.88"
-version = "2.1.1"
+version = "2.1.2"
 # Release paperwork and working notes are repo artifacts, not crate content.
 # rfc/, llm/, snapshot/ and tmp/ are listed defensively: they are ignored today,
 # so `cargo package` already skips them, and an `exclude` entry keeps that true
@@ -74,10 +74,10 @@ serde_json = {version = "1.0.150", optional = true}
 # tzf-dist-git = {package = "tzf-dist", path = "../tzf-dist", optional = true}
 
 # == RELEASE FORM (active) ======================================================
-tzf-dist = {version = "0.0.2026-c-tzb2", optional = true}
+tzf-dist = {version = "0.0.2026-d", optional = true}
 # Git-only full-precision data. Mutually exclusive with "bundled":
 # use default-features = false.
-tzf-dist-git = {package = "tzf-dist", version = "0.0.2026-c-tzb2", git = "https://github.com/ringsaturn/tzf-dist", rev = "v0.0.2026-c-tzb2", optional = true}
+tzf-dist-git = {package = "tzf-dist", version = "0.0.2026-d", git = "https://github.com/ringsaturn/tzf-dist", rev = "v0.0.2026-d", optional = true}
 
 # == RELEASE FORM notes =========================================================
 # To go back to the dev form, swap the commented lines above.
