@@ -44,7 +44,7 @@ env:
   # crate* lose the git source (see Cargo.toml's release-form notes).
   TZF_REF: embedded
   TZF_DIST_REF: v2-artifacts
-  TBB_VERSION: 2026c
+  TBB_VERSION: 2026d
 
 permissions:
   contents: write

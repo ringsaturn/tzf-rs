@@ -8,7 +8,7 @@ env:
   # Same interim sibling bootstrap as rust.yml — see the note there.
   TZF_REF: embedded
   TZF_DIST_REF: v2-artifacts
-  TBB_VERSION: 2026c
+  TBB_VERSION: 2026d
 
 defaults:
   run:

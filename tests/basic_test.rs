@@ -37,7 +37,7 @@ mod tests {
     fn default_finder_smoke_test() {
         let finder = DefaultFinder::new();
         assert_known_locations(|lng, lat| finder.get_tz_name(lng, lat).to_string());
-        assert_eq!(finder.data_version(), "2026c");
+        assert_eq!(finder.data_version(), "2026d");
         assert!(!finder.timezonenames().is_empty());
     }
 
@@ -45,7 +45,7 @@ mod tests {
     fn embedded_finder_smoke_test() {
         let finder = EmbeddedFinder::new();
         assert_known_locations(|lng, lat| finder.get_tz_name(lng, lat).to_string());
-        assert_eq!(finder.data_version(), "2026c");
+        assert_eq!(finder.data_version(), "2026d");
         assert!(!finder.timezonenames().is_empty());
     }
 
