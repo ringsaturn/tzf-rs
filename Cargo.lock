@@ -172,9 +172,9 @@ checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 
 [[package]]
 name = "cc"
-version = "1.4.6"
+version = "1.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3eb0f42d6c360dc3f8a821f6bf2fdea7f72bfd36b3076eb0e6d1e9e0752fff4"
+checksum = "54413ede23c2daf518f35156dfde027feb2374004d63bd497f983c8db9c0e313"
 dependencies = [
  "find-msvc-tools",
  "shlex",
@@ -405,9 +405,9 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "find-msvc-tools"
-version = "0.1.12"
+version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e0f1c7c3a72c66fd80abe965175f7523475c0489a87d3ff9d6e8c87d87a9d2d"
+checksum = "ef25905e51abafe4dcea6c15fec58c57b601cdbd0ee53d22ea1d3016c587d39b"
 
 [[package]]
 name = "findshlibs"
@@ -1131,18 +1131,18 @@ dependencies = [
 
 [[package]]
 name = "tzf-dist"
-version = "0.0.2026-d"
+version = "0.0.2026-d-fix1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e2968ddd98d78d8f712b3165ee6dabc3f1e80c3a2fd7340ecd5c694e925782f"
+checksum = "2523c6471fd5827173b5b9d51d4444e1033a1f19339da61603cee9300e3f44be"
 
 [[package]]
 name = "tzf-dist"
-version = "0.0.2026-d"
-source = "git+https://github.com/ringsaturn/tzf-dist?rev=v0.0.2026-d#d3ddaca64800046ffef80f3e09269bc26be4bc45"
+version = "0.0.2026-d-fix1"
+source = "git+https://github.com/ringsaturn/tzf-dist?rev=v0.0.2026-d-fix1#d4412506fe597524fd43ff36588482acceaba9bb"
 
 [[package]]
 name = "tzf-rs"
-version = "2.1.2"
+version = "2.1.3"
 dependencies = [
  "cities-json",
  "clap",
@@ -1152,15 +1152,15 @@ dependencies = [
  "pprof",
  "serde",
  "serde_json",
- "tzf-dist 0.0.2026-d (registry+https://github.com/rust-lang/crates.io-index)",
- "tzf-dist 0.0.2026-d (git+https://github.com/ringsaturn/tzf-dist?rev=v0.0.2026-d)",
+ "tzf-dist 0.0.2026-d-fix1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tzf-dist 0.0.2026-d-fix1 (git+https://github.com/ringsaturn/tzf-dist?rev=v0.0.2026-d-fix1)",
 ]
 
 [[package]]
 name = "unicode-ident"
-version = "1.0.25"
+version = "1.0.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab72a15cf68d77cb0987d3684aa8a45c5ef827e8cb49ee2f30bfd7ba2feb519f"
+checksum = "d245f478577f809a851594d02313b640fb437e0bb33866753cff937863096954"
 
 [[package]]
 name = "utf8parse"
