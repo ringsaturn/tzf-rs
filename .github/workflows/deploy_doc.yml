@@ -74,7 +74,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           toolchain: nightly
-          workspaces: tzf-rs
+          cache-workspaces: tzf-rs
       - name: Build documentation with all features
         run: make doc
 

@@ -117,7 +117,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           components: rustfmt, clippy
-          workspaces: tzf-rs
+          cache-workspaces: tzf-rs
 
       - run: make ci
 

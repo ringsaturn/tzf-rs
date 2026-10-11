@@ -10,7 +10,6 @@ categories = [
 description = "Fast convert longitude,latitude to timezone name."
 documentation = "https://docs.rs/tzf-rs"
 edition = "2024"
-homepage = "https://github.com/ringsaturn/tzf-rs"
 keywords = [
   "timezone",
   "geo",
