@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.1.3 (2026-10-11)
+
+Bumped tzf-dist to `0.0.2026-e` (upstream
+[timezone-boundary-builder 2026e](https://github.com/evansiroky/timezone-boundary-builder/releases/tag/2026e):
+latest OSM data, Chilean territorial waters only for `Pacific/Easter`,
+since-1970 / since-now zone sets recalculated against the current tz
+database). `data_version()` now returns `"2026e"`. No API change.
+
 ## v2.1.2 (2026-09-15)
 
 Bumped tzf-dist to `0.0.2026-d`.
