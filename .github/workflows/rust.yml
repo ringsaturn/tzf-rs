@@ -5,6 +5,7 @@ on:
     branches: ["main", "v2"]
     paths:
       - "**/*.rs"
+      - "README.md"
       - "Cargo.toml"
       - "Cargo.lock"
       - "rust-toolchain.toml"
@@ -15,6 +16,7 @@ on:
     branches: ["main", "v2"]
     paths:
       - "**/*.rs"
+      - "README.md"
       - "Cargo.toml"
       - "Cargo.lock"
       - "rust-toolchain.toml"
