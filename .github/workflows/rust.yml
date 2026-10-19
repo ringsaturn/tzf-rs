@@ -10,6 +10,7 @@ on:
       - "rust-toolchain.toml"
       - ".cargo/**"
       - "Makefile"
+      - "README.md"
       - ".github/workflows/rust.yml"
   pull_request:
     branches: ["main", "v2"]
@@ -20,6 +21,7 @@ on:
       - "rust-toolchain.toml"
       - ".cargo/**"
       - "Makefile"
+      - "README.md"
       - ".github/workflows/rust.yml"
   workflow_dispatch:
 
