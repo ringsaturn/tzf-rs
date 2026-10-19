@@ -46,8 +46,12 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         println!("{:?}", finder.get_tz_name(params.lng, params.lat));
     } else if let Some(stdin_order) = cli.stdin_order {
         let (mut stdin, mut stdout) = (io::stdin().lock(), io::stdout().lock());
-        let mut line = String::new();
-        while stdin.read_line(&mut line)? != 0 && line.ends_with("\n") {
+        let mut buf = String::new();
+        while stdin.read_line(&mut buf)? != 0 {
+            // The final line at EOF may come without a line ending.
+            let line = buf
+                .strip_suffix('\n')
+                .map_or(buf.as_str(), |l| l.strip_suffix('\r').unwrap_or(l));
             let mut iter = line.chars().skip(1);
             let i = 1 + iter.position(is_delimiter).expect("Missing delimiter");
             let j = i
@@ -55,14 +59,13 @@ pub fn main() -> Result<(), Box<dyn Error>> {
                 + iter
                     .position(|c| !is_delimiter(c))
                     .expect("Missing second coordinate");
-            let k = line.len() - if line.ends_with("\r\n") { 2 } else { 1 };
-            let (a, b) = (line[0..i].parse::<f64>()?, line[j..k].parse::<f64>()?);
+            let (a, b) = (line[0..i].parse::<f64>()?, line[j..].parse::<f64>()?);
             let (lng, lat) = match stdin_order {
                 StdinOrder::LngLat => (a, b),
                 StdinOrder::LatLng => (b, a),
             };
             writeln!(stdout, "{:?}", finder.get_tz_name(lng, lat))?;
-            line.clear();
+            buf.clear();
         }
     }
     Ok(())
