@@ -1,3 +1,7 @@
+# bash for `set -o pipefail` in the bench recipes, so a cargo failure is not
+# masked by tee's exit status. (.SHELLFLAGS needs make >= 3.82; macOS ships 3.81.)
+SHELL := /bin/bash
+
 .PHONY: fmt
 fmt:
 	cargo fmt
@@ -36,11 +40,11 @@ doc:
 
 .PHONY: bench
 bench:
-	cargo bench | tee benchmark_result.txt
+	set -o pipefail; cargo bench | tee benchmark_result.txt
 
 .PHONY: bench-full
 bench-full:
-	cargo bench --no-default-features --features full | tee benchmark_full_result.txt
+	set -o pipefail; cargo bench --no-default-features --features full | tee benchmark_full_result.txt
 
 .PHONY: test-full
 test-full:
