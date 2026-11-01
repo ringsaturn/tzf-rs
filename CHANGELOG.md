@@ -1,5 +1,26 @@
 # Changelog
 
+## v2.2.0 (2026-11-01)
+
+### DefaultFinder fuzzy-index lookup
+
+No format or API change; results are identical (the gated lookup is checked
+against probing every zoom on `lite.tzb` and `full.tzb`, ~450k points each
+including the polar caps, 1° cell edges and the ±85.0511° Mercator limit).
+
+- The FUZZY tile map now uses FxHash (`rustc-hash`) instead of SipHash. The
+  map is read-only after load, so HashDoS resistance buys nothing there.
+- A 360×180 table built at load records, per 1° cell, the coarsest and finest
+  zoom of any tile touching the cell. A lookup probes only that zoom range
+  (and skips the map entirely for cells with no tiles) instead of every zoom
+  from `agg_zoom` to `idx_zoom`. The table is ~130 KB.
+
+Criterion, Apple M-series, bundled data: all-cities sweep 24.8 → ~17.9 ms
+(−28%), edge cities 452 → ~360 ns/point (−20%), `DefaultFinder::new`
+11.6 → 12.1 ms (+4%).
+
+New dependency: `rustc-hash = "2"`.
+
 ## v2.1.4 (2026-11-01)
 
 Bumped tzf-dist to `0.0.2026-f` (upstream

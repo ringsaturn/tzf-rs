@@ -1148,7 +1148,7 @@ source = "git+https://github.com/ringsaturn/tzf-dist?rev=v0.0.2026-f#eab6431f8a7
 
 [[package]]
 name = "tzf-rs"
-version = "2.1.4"
+version = "2.2.0"
 dependencies = [
  "cities-json",
  "clap",
