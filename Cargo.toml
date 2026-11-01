@@ -47,6 +47,7 @@ clap = {version = "4", features = [
   "derive",
 ], optional = true}
 geometry-rs = "0.5.1"
+rustc-hash = "2"
 serde = {version = "1.0.228", features = [
   "derive",
 ], optional = true}
