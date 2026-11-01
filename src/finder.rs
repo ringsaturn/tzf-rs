@@ -4,6 +4,8 @@
 
 use crate::tzb::{Error, ExpandedPolygon, Reader, TileId};
 use geometry_rs::{I32Polygon, I32RaycastMode, Point, PolygonBuildOptions};
+use rustc_hash::{FxBuildHasher, FxHashMap};
+#[cfg(feature = "export-geojson")]
 use std::collections::HashMap;
 
 /// Minimum ring segment count for building the YStripes acceleration index;
@@ -247,7 +249,101 @@ impl TileEntry {
 pub(crate) struct FuzzyIndex {
     idx_zoom: u8,
     agg_zoom: u8,
-    tiles: HashMap<u64, TileEntry>,
+    /// Keyed by tile id. The map is built once from the dataset and only read
+    /// afterwards, so a fast non-keyed hasher is safe here: query coordinates
+    /// cannot insert keys, so they cannot degrade the table.
+    tiles: FxHashMap<u64, TileEntry>,
+    /// Per 1°×1° cell (`ZOOM_CELLS_LNG` × `ZOOM_CELLS_LAT`, row-major from
+    /// lat -90, lng -180), the coarsest and finest zoom of any tile touching
+    /// the cell, packed as `zmin | zmax << 8`; [`NO_TILES`] when none does.
+    /// A lookup probes only that zoom range: a tile covering a point always
+    /// touches the point's cell, so the skipped zooms can never match, and
+    /// the probe order (coarsest first) is unchanged.
+    zoom_ranges: Box<[u16]>,
+}
+
+const ZOOM_CELLS_LNG: usize = 360;
+const ZOOM_CELLS_LAT: usize = 180;
+const NO_TILES: u16 = u16::MAX;
+
+/// The 1°×1° cell holding (lng, lat); the caller has range-checked both.
+/// `lng = 180` and `lat = 90` fold into the last column / row.
+#[allow(clippy::cast_sign_loss)]
+fn zoom_cell(lng: f64, lat: f64) -> usize {
+    let cx = ((lng + 180.0) as usize).min(ZOOM_CELLS_LNG - 1);
+    let cy = ((lat + 90.0) as usize).min(ZOOM_CELLS_LAT - 1);
+    cy * ZOOM_CELLS_LNG + cx
+}
+
+/// Builds [`FuzzyIndex::zoom_ranges`] from the tile keys.
+#[allow(clippy::cast_sign_loss)]
+fn build_zoom_ranges(keys: &[u64]) -> Box<[u16]> {
+    // Widen each tile by a hair so float error in the projection can only
+    // mark extra cells, never miss one.
+    const MARGIN: f64 = 1e-7;
+
+    // Row edge latitudes per zoom (inverse of the Web-Mercator row in
+    // `tile_xy`), computed once: a zoom has 2^z + 1 row edges but holds far
+    // more tiles than that.
+    let max_zoom = keys.iter().map(|&k| TileId(k).xyz().2).max().unwrap_or(0);
+    let row_edges: Vec<Vec<f64>> = (0..=max_zoom)
+        .map(|z| {
+            let n = f64::from(1u32 << z);
+            (0..=(1u32 << z))
+                .map(|y| {
+                    (std::f64::consts::PI * (1.0 - 2.0 * f64::from(y) / n))
+                        .sinh()
+                        .atan()
+                        .to_degrees()
+                })
+                .collect()
+        })
+        .collect();
+
+    let cells = ZOOM_CELLS_LNG * ZOOM_CELLS_LAT;
+    let mut zmin = vec![u8::MAX; cells];
+    let mut zmax = vec![0u8; cells];
+    for &key in keys {
+        let (x, y, z) = TileId(key).xyz();
+        let rows = 1u32 << z;
+        let n = f64::from(rows);
+        let edges = &row_edges[usize::from(z)];
+        let lng0 = f64::from(x) / n * 360.0 - 180.0 - MARGIN;
+        let lng1 = f64::from(x + 1) / n * 360.0 - 180.0 + MARGIN;
+        // `tile_xy` clamps latitudes beyond ±85.0511° into the first / last
+        // row, so those rows reach the poles.
+        let lat_top = if y == 0 {
+            90.0
+        } else {
+            edges[y as usize] + MARGIN
+        };
+        let lat_bottom = if y + 1 >= rows {
+            -90.0
+        } else {
+            edges[y as usize + 1] - MARGIN
+        };
+        let cx0 = ((lng0 + 180.0).floor().max(0.0) as usize).min(ZOOM_CELLS_LNG - 1);
+        let cx1 = ((lng1 + 180.0).floor().max(0.0) as usize).min(ZOOM_CELLS_LNG - 1);
+        let cy0 = ((lat_bottom + 90.0).floor().max(0.0) as usize).min(ZOOM_CELLS_LAT - 1);
+        let cy1 = ((lat_top + 90.0).floor().max(0.0) as usize).min(ZOOM_CELLS_LAT - 1);
+        for cy in cy0..=cy1 {
+            for cx in cx0..=cx1 {
+                let c = cy * ZOOM_CELLS_LNG + cx;
+                zmin[c] = zmin[c].min(z);
+                zmax[c] = zmax[c].max(z);
+            }
+        }
+    }
+    zmin.iter()
+        .zip(&zmax)
+        .map(|(&lo, &hi)| {
+            if lo == u8::MAX {
+                NO_TILES
+            } else {
+                u16::from(lo) | u16::from(hi) << 8
+            }
+        })
+        .collect()
 }
 
 impl FuzzyIndex {
@@ -259,7 +355,9 @@ impl FuzzyIndex {
             return Ok(None);
         };
         let entries = reader.fuzzy_entries()?;
-        let mut tiles = HashMap::with_capacity(entries.len());
+        let keys: Vec<u64> = entries.iter().map(|(key, _)| *key).collect();
+        let zoom_ranges = build_zoom_ranges(&keys);
+        let mut tiles = FxHashMap::with_capacity_and_hasher(entries.len(), FxBuildHasher);
         for (key, indices) in entries {
             let entry = if indices.len() == 1 {
                 TileEntry::One(indices[0])
@@ -272,6 +370,7 @@ impl FuzzyIndex {
             idx_zoom,
             agg_zoom,
             tiles,
+            zoom_ranges,
         }))
     }
 
@@ -286,8 +385,14 @@ impl FuzzyIndex {
         {
             return None;
         }
+        let range = self.zoom_ranges[zoom_cell(lng, lat)];
+        if range == NO_TILES {
+            return None;
+        }
+        #[allow(clippy::cast_possible_truncation)]
+        let (lo, hi) = ((range & 0xff) as u8, (range >> 8) as u8);
         let tile = TileId::new(lng, lat, u32::from(self.idx_zoom));
-        for z in self.agg_zoom..=self.idx_zoom {
+        for z in lo.max(self.agg_zoom)..=hi.min(self.idx_zoom) {
             let key = tile.shift(self.idx_zoom - z).0;
             if let Some(entry) = self.tiles.get(&key) {
                 return Some(entry.first());
@@ -326,5 +431,82 @@ impl FuzzyIndex {
             keys.sort_unstable();
         }
         grouped
+    }
+}
+
+#[cfg(all(test, any(feature = "bundled", feature = "full")))]
+mod tests {
+    use super::*;
+
+    impl FuzzyIndex {
+        /// The pre-gate lookup: every zoom from `agg_zoom` to `idx_zoom`.
+        fn get_all_zooms(&self, lng: f64, lat: f64) -> Option<u16> {
+            if !lng.is_finite()
+                || !lat.is_finite()
+                || !(-180.0..=180.0).contains(&lng)
+                || !(-90.0..=90.0).contains(&lat)
+            {
+                return None;
+            }
+            let tile = TileId::new(lng, lat, u32::from(self.idx_zoom));
+            (self.agg_zoom..=self.idx_zoom)
+                .find_map(|z| self.tiles.get(&tile.shift(self.idx_zoom - z).0))
+                .map(TileEntry::first)
+        }
+    }
+
+    /// Deterministic xorshift in [0, 1).
+    struct Rng(u64);
+    impl Rng {
+        #[allow(clippy::cast_precision_loss)]
+        fn next(&mut self) -> f64 {
+            self.0 ^= self.0 << 13;
+            self.0 ^= self.0 >> 7;
+            self.0 ^= self.0 << 17;
+            (self.0 >> 11) as f64 / (1u64 << 53) as f64
+        }
+    }
+
+    #[test]
+    fn zoom_gate_matches_probing_every_zoom() {
+        check_zoom_gate(crate::load_lite_tzb());
+    }
+
+    #[cfg(feature = "full")]
+    #[test]
+    fn zoom_gate_matches_probing_every_zoom_full() {
+        check_zoom_gate(tzf_dist_git::load_full_tzb());
+    }
+
+    fn check_zoom_gate(data: &[u8]) {
+        let reader = Reader::open(std::borrow::Cow::Borrowed(data)).unwrap();
+        let fuzzy = FuzzyIndex::from_reader(&reader).unwrap().unwrap();
+
+        let mut rng = Rng(0x9e37_79b9_7f4a_7c15);
+        let mut points: Vec<(f64, f64)> = (0..300_000)
+            .map(|_| (rng.next() * 360.0 - 180.0, rng.next() * 180.0 - 90.0))
+            .collect();
+        // polar caps, where the Mercator rows are clamped
+        points.extend((0..50_000).map(|_| (rng.next() * 360.0 - 180.0, 80.0 + rng.next() * 10.0)));
+        points.extend((0..50_000).map(|_| (rng.next() * 360.0 - 180.0, -90.0 + rng.next() * 10.0)));
+        // points exactly on 1° cell edges and the domain edges
+        for lat in (-90..=90).step_by(5) {
+            for lng in (-180..=180).step_by(5) {
+                points.push((f64::from(lng), f64::from(lat)));
+            }
+        }
+        for lat in [-85.0511, 85.0511, -85.051_13, 85.051_13] {
+            for lng in [-180.0, -0.0, 0.0, 179.999_999, 180.0] {
+                points.push((lng, lat));
+            }
+        }
+
+        let mut hits = 0;
+        for &(lng, lat) in &points {
+            let gated = fuzzy.get(lng, lat);
+            assert_eq!(gated, fuzzy.get_all_zooms(lng, lat), "at ({lng}, {lat})");
+            hits += usize::from(gated.is_some());
+        }
+        assert!(hits > 0, "the sample never reached the fuzzy index");
     }
 }

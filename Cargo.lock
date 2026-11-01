@@ -920,6 +920,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b74b56ffa8bb2830709a538c2cbcae9aa062db0d2a42563bfb09bdaae44020eb"
 
 [[package]]
+name = "rustc-hash"
+version = "2.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6b1e7f9a428571be2dc5bc0505c13fb6bf936822b894ec87abf8a08a4e51742d"
+
+[[package]]
 name = "rustix"
 version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1150,6 +1156,7 @@ dependencies = [
  "geometry-rs",
  "lazy_static",
  "pprof",
+ "rustc-hash",
  "serde",
  "serde_json",
  "tzf-dist 0.0.2026-f (registry+https://github.com/rust-lang/crates.io-index)",
