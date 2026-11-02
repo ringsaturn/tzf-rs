@@ -1,5 +1,30 @@
 # Changelog
 
+## v2.3.0 (2026-11-02)
+
+### New API
+
+- `DefaultFinder::get_tz_index(lng, lat) -> Option<usize>`: the position in
+  `timezonenames()` of the timezone `get_tz_name` would return, or `None`
+  when no timezone covers the point. Batch callers can resolve names once
+  and index them per point instead of handling a string per lookup.
+  `get_tz_name` is now built on it; its results are unchanged.
+
+### DefaultFinder fuzzy-index lookup
+
+No format change; results are identical (checked against probing every zoom
+on `lite.tzb` and `full.tzb`, including tile corners/centres at every zoom,
+NaN and out-of-range input).
+
+- The FUZZY tiles are flattened at load into a tile grid: a root grid at
+  zoom ≤ 8 plus 4×4 child blocks (two zoom levels each), with identical
+  blocks deduplicated and nodes stored as `u16`. A lookup is one root read
+  plus at most a few block reads, instead of a hash probe per zoom. This
+  replaces the v2.2.0 1° zoom-range table.
+
+Criterion, Apple M-series, bundled data: all-cities sweep −16%, edge cities
+−10%, `DefaultFinder::new` +0.9% (within noise).
+
 ## v2.2.0 (2026-11-01)
 
 ### DefaultFinder fuzzy-index lookup
