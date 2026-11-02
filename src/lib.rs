@@ -151,12 +151,32 @@ impl DefaultFinder {
     /// ```
     #[must_use]
     pub fn get_tz_name(&self, lng: f64, lat: f64) -> &str {
+        self.get_tz_index(lng, lat)
+            .map_or("", |i| self.finder.items[i].name.as_str())
+    }
+
+    /// Returns the position in [`timezonenames`](Self::timezonenames) of the
+    /// timezone [`get_tz_name`](Self::get_tz_name) would return, or `None`
+    /// when no timezone covers the point.
+    ///
+    /// For batch callers: resolving names once and indexing them per point
+    /// avoids handling a string per lookup.
+    ///
+    /// ```rust
+    /// use tzf_rs::DefaultFinder;
+    /// let finder = DefaultFinder::new();
+    /// let names = finder.timezonenames();
+    /// let idx = finder.get_tz_index(116.3883, 39.9289).unwrap();
+    /// assert_eq!("Asia/Shanghai", names[idx]);
+    /// ```
+    #[must_use]
+    pub fn get_tz_index(&self, lng: f64, lat: f64) -> Option<usize> {
         if let Some(fuzzy) = &self.fuzzy
             && let Some(idx) = fuzzy.get(lng, lat)
         {
-            return &self.finder.items[usize::from(idx)].name;
+            return Some(usize::from(idx));
         }
-        self.finder.get_tz_name(lng, lat)
+        self.finder.get_index(lng, lat)
     }
 
     /// Returns all matching timezone names (overlapping areas produce more
